@@ -4,12 +4,12 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Finnegans ERP - Programación de Compras Semanal</title>
-  <!-- Google Fonts & Tailwind CSS -->
+  <!-- Google Fonts & Tailwind CSS CDN -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- SheetJS para lectura de reportes Finnegans y exportación Excel -->
+  <!-- SheetJS para lectura y exportación Excel (.xlsx) -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <script>
@@ -47,7 +47,7 @@
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
 
   <header class="bg-slate-900 text-white shadow-md border-b border-slate-800 sticky top-0 z-40">
-    <div class="max-w-[1560px] mx-auto px-4 sm:px-6 lg:px-8">
+    <div class="max-w-[1600px] mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
         
         <!-- Logo e Identidad -->
@@ -61,7 +61,7 @@
             <div class="flex items-center space-x-2">
               <span class="text-[10px] uppercase tracking-widest text-indigo-400 font-bold leading-none">Finnegans ERP Integration</span>
               <!-- Indicador de conexión con Google Sheets -->
-              <button onclick="requestAdminAccess('sheets_config')" id="dbStatusBadge" class="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] px-2 py-0.5 rounded-full font-mono font-medium flex items-center space-x-1 hover:bg-amber-500/30 transition" title="Configurar Google Sheets / Apps Script">
+              <button onclick="requestAdminAccess('sheets_config')" id="dbStatusBadge" class="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] px-2 py-0.5 rounded-full font-mono font-medium flex items-center space-x-1 hover:bg-amber-500/30 transition" title="Configurar enlace Google Sheets">
                 <span id="dbStatusDot" class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
                 <span id="dbStatusText">Google Sheets: No Conectado</span>
               </button>
@@ -70,31 +70,30 @@
           </div>
         </div>
 
-        <!-- Indicadores Rápidos y Botón Discreto de Configuración/Carga Manual -->
+        <!-- Indicadores Rápidos, Exportación y Botón Discreto de Configuración (Candado) -->
         <div class="flex items-center space-x-2 sm:space-x-3">
-          <div class="hidden md:flex items-center space-x-3 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700 text-xs">
-            <div class="flex items-center space-x-1.5">
-              <span class="text-slate-400">Dólar Hoy:</span>
-              <span class="font-bold text-emerald-400 font-mono" id="headerRateDisplay">$ 1.250,00</span>
-            </div>
+          <div class="hidden md:flex items-center space-x-2 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700 text-xs">
+            <span class="text-slate-400">Dólar Hoy:</span>
+            <span class="font-bold text-emerald-400 font-mono" id="headerRateDisplay">$ 1.250,00</span>
           </div>
 
-          <button onclick="syncWithGoogleSheets()" id="btnSyncSheets" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-xl transition flex items-center space-x-1.5 border border-slate-700 shadow-xs" title="Sincronizar base de datos">
+          <button onclick="syncWithGoogleSheets()" id="btnSyncSheets" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-xl transition flex items-center space-x-1.5 border border-slate-700 shadow-xs" title="Sincronizar base de datos con Google Sheets">
             <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
             <span class="hidden lg:inline">Sincronizar</span>
           </button>
 
-          <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-xl transition flex items-center space-x-1.5 shadow-sm">
+          <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-xl transition flex items-center space-x-1.5 shadow-sm" title="Descargar reporte en formato oficial Excel">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
             <span class="hidden sm:inline">Exportar Excel</span>
           </button>
 
-          <!-- ICONO DISCRETO DE CONFIGURACIÓN & EDICIÓN MANUAL PROTEGIDO POR CONTRASEÑA -->
-          <button onclick="handleAdminButtonClick()" id="btnAdminAccess" class="bg-slate-800 hover:bg-indigo-600 text-slate-300 hover:text-white p-2 sm:px-3 sm:py-2 rounded-xl border border-slate-700 transition flex items-center space-x-1.5 shadow-xs" title="Configuraciones & Carga Manual de Compras (Requiere Contraseña)">
+          <!-- ICONO DISCRETO TIPO CONFIGURACIÓN / CANDADO PROTEGIDO POR CONTRASEÑA -->
+          <button onclick="handleAdminButtonClick()" id="btnAdminAccess" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition flex items-center justify-center relative shadow-xs" title="Panel de Configuración y Carga Manual (Requiere Contraseña)">
             <svg id="iconAdminLock" class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
             </svg>
-            <span class="text-xs font-semibold hidden md:inline" id="txtAdminButton">Gestión & Edición</span>
+            <span id="badgeLockDot" class="w-2 h-2 rounded-full bg-amber-400 absolute -top-0.5 -right-0.5 ring-2 ring-slate-900"></span>
           </button>
         </div>
       </div>
@@ -121,9 +120,9 @@
     </div>
   </header>
 
-  <main class="flex-grow max-w-[1560px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+  <main class="flex-grow max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
 
-    <!-- Toast de Notificaciones Accesible -->
+    <!-- Toast de Notificaciones Flotante -->
     <div id="toastNotification" class="fixed bottom-6 right-6 max-w-sm bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-2xl border border-slate-700 z-50 transform translate-y-24 opacity-0 transition-all duration-300 flex items-center space-x-3 pointer-events-none">
       <div id="toastIcon" class="text-emerald-400">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
@@ -185,10 +184,11 @@
         </div>
       </div>
 
+      <!-- Barra de Filtros Inteligentes -->
       <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           
-          <!-- Búsqueda Global en Cualquier Campo -->
+          <!-- Búsqueda Global -->
           <div class="relative w-full lg:w-96">
             <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
@@ -250,6 +250,7 @@
         </div>
       </div>
 
+      <!-- TABLA PRINCIPAL: ORDEN EXACTO SOLICITADO -->
       <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div class="overflow-x-auto max-h-[680px]">
           <table class="w-full text-left border-collapse text-xs" id="mainDataTable">
@@ -977,20 +978,20 @@
     function updateAdminUIState() {
       const badge = document.getElementById('adminBadgeUnlocked');
       const lockIcon = document.getElementById('iconAdminLock');
-      const txtBtn = document.getElementById('txtAdminButton');
+      const lockDot = document.getElementById('badgeLockDot');
 
       if (window.isAdminAuthenticated) {
         badge.classList.remove('hidden');
         badge.classList.add('flex');
         lockIcon.classList.remove('text-amber-400');
         lockIcon.classList.add('text-emerald-400');
-        txtBtn.innerText = "Panel Habilitado";
+        lockDot.className = "w-2 h-2 rounded-full bg-emerald-400 absolute -top-0.5 -right-0.5 ring-2 ring-slate-900";
       } else {
         badge.classList.add('hidden');
         badge.classList.remove('flex');
         lockIcon.classList.add('text-amber-400');
         lockIcon.classList.remove('text-emerald-400');
-        txtBtn.innerText = "Gestión & Edición";
+        lockDot.className = "w-2 h-2 rounded-full bg-amber-400 absolute -top-0.5 -right-0.5 ring-2 ring-slate-900";
       }
       renderTable();
     }
@@ -1995,7 +1996,8 @@
         return;
       }
 
-      // Orden estricto solicitado
+      // Orden estricto solicitado:
+      // Semana, Nro de PC, Fecha del Pedido, En reprogramación con, Descripcion, Unidad, Prioridad, Presupuesto (usd), Presupuesto ($), Comprador, Estado, Compras, Reprogramacion
       const exportRows = window.masterPCData.map(item => ({
         "Semana": item.semana,
         "Nro de PC": item.nroPC,
