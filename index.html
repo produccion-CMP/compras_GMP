@@ -1,0 +1,1262 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Automatización Finnegans - Programación de Compras</title>
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- SheetJS para lectura y exportación de archivos Excel -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#eef2ff',
+              100: '#e0e7ff',
+              500: '#6366f1',
+              600: '#4f46e5',
+              700: '#4338ca',
+              800: '#3730a3',
+              900: '#312e81',
+            }
+          }
+        }
+      }
+    }
+  </script>
+  <style>
+    /* Estilos personalizados para barras de desplazamiento suaves */
+    ::-webkit-scrollbar { width: 6px; height: 6px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 9999px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased">
+
+  <header class="bg-slate-900 text-white shadow-md border-b border-slate-800 sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <div class="flex items-center space-x-3">
+          <div class="bg-indigo-600 text-white p-2 rounded-lg font-bold text-lg shadow-sm flex items-center justify-center">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+          </div>
+          <div>
+            <span class="text-xs uppercase tracking-widest text-indigo-400 font-semibold block leading-none">Finnegans ERP Automation</span>
+            <h1 class="text-lg font-bold text-white tracking-tight leading-tight">Programación de Compras Semanal</h1>
+          </div>
+        </div>
+
+        <!-- Indicador de Cotización en Vivo -->
+        <div class="hidden md:flex items-center space-x-4 bg-slate-800/80 px-3.5 py-1.5 rounded-xl border border-slate-700 text-xs">
+          <div class="flex items-center space-x-1.5">
+            <span class="inline-block w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="text-slate-400">Cotización USD/ARS:</span>
+          </div>
+          <div class="flex items-center space-x-2">
+            <span class="font-bold text-emerald-400" id="headerRateDisplay">$ 1.250,00</span>
+            <button onclick="openRateModal()" class="text-slate-400 hover:text-white transition underline" title="Configurar cotización">Ajustar</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Barra de pestañas -->
+      <nav class="flex space-x-1 sm:space-x-4 border-t border-slate-800 pt-2 pb-2 text-sm overflow-x-auto">
+        <button id="navTabDashboard" onclick="switchTab('dashboard')" class="tab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center space-x-2 bg-indigo-600 text-white">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+          <span>Programación PC</span>
+          <span id="badgeTotalItems" class="bg-indigo-800 text-indigo-200 text-xs px-2 py-0.5 rounded-full font-bold">0</span>
+        </button>
+        <button id="navTabManual" onclick="switchTab('manual')" class="tab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center space-x-2 text-slate-300 hover:text-white hover:bg-slate-800">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+          <span>Apartado de Carga Manual</span>
+        </button>
+        <button id="navTabImport" onclick="switchTab('import')" class="tab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center space-x-2 text-slate-300 hover:text-white hover:bg-slate-800">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+          <span>Cargar Reportes Finnegans</span>
+        </button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="flex-grow max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+    <!-- Toast de Notificaciones Flotante (Reemplazo accesible de alert()) -->
+    <div id="toastNotification" class="fixed bottom-6 right-6 max-w-sm bg-slate-900 text-white px-4 py-3 rounded-xl shadow-2xl border border-slate-700 z-50 transform translate-y-24 opacity-0 transition-all duration-300 flex items-center space-x-3 pointer-events-none">
+      <div id="toastIcon" class="text-emerald-400">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+      </div>
+      <div>
+        <p id="toastMessage" class="text-sm font-medium">Operación realizada con éxito</p>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- PESTAÑA 1: TABLERO / PROGRAMACION PC       -->
+    <!-- ========================================== -->
+    <div id="sectionDashboard" class="space-y-6">
+      
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Total Pedidos (PC)</p>
+            <h3 class="text-2xl font-bold text-slate-800" id="kpiTotalCount">0</h3>
+            <span class="text-xs text-slate-400" id="kpiWeeksCovered">0 semanas activas</span>
+          </div>
+          <div class="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Presupuesto Total (USD)</p>
+            <h3 class="text-2xl font-bold text-indigo-600" id="kpiTotalUSD">$ 0,00</h3>
+            <span class="text-xs text-emerald-600 font-medium" id="kpiConvertedARS">≈ $ 0 ARS</span>
+          </div>
+          <div class="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">En Reprogramación</p>
+            <h3 class="text-2xl font-bold text-amber-600" id="kpiWaitingCount">0</h3>
+            <span class="text-xs text-amber-600 font-medium" id="kpiWaitingPerc">0% del total</span>
+          </div>
+          <div class="p-3 bg-amber-50 text-amber-600 rounded-xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex items-center justify-between">
+          <div>
+            <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider">Carga Manual Pendiente</p>
+            <h3 class="text-2xl font-bold text-rose-600" id="kpiUnassignedCount">0</h3>
+            <span class="text-xs text-slate-500">Sin comprador/prioridad</span>
+          </div>
+          <div class="p-3 bg-rose-50 text-rose-600 rounded-xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div class="flex flex-wrap items-center gap-3 flex-1">
+          <!-- Búsqueda rápida -->
+          <div class="relative w-full sm:w-64">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </span>
+            <input type="text" id="filterSearch" oninput="renderTable()" placeholder="Buscar PC, detalle, actividad..." class="w-full pl-9 pr-3 py-1.5 text-xs rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+          </div>
+
+          <!-- Filtro por Semana -->
+          <select id="filterSemana" onchange="renderTable()" class="text-xs rounded-lg border border-slate-300 py-1.5 px-2 bg-white text-slate-700 focus:ring-indigo-500">
+            <option value="">Todas las Semanas</option>
+          </select>
+
+          <!-- Filtro por Prioridad -->
+          <select id="filterPrioridad" onchange="renderTable()" class="text-xs rounded-lg border border-slate-300 py-1.5 px-2 bg-white text-slate-700 focus:ring-indigo-500">
+            <option value="">Todas las Prioridades</option>
+            <option value="Urgente">Urgente</option>
+            <option value="Alta">Alta</option>
+            <option value="Media">Media</option>
+            <option value="Baja">Baja</option>
+            <option value="Sin asignar">Sin asignar</option>
+          </select>
+
+          <!-- Filtro por Estado -->
+          <select id="filterEstado" onchange="renderTable()" class="text-xs rounded-lg border border-slate-300 py-1.5 px-2 bg-white text-slate-700 focus:ring-indigo-500">
+            <option value="">Todos los Estados</option>
+            <option value="Pendiente">Pendiente</option>
+            <option value="En cotización">En cotización</option>
+            <option value="Adjudicado">Adjudicado</option>
+            <option value="En espera">En espera</option>
+            <option value="Entregado">Entregado</option>
+            <option value="Cancelado">Cancelado</option>
+          </select>
+
+          <button onclick="resetFilters()" class="text-xs text-indigo-600 hover:text-indigo-800 font-medium px-2 py-1">Limpiar Filtros</button>
+        </div>
+
+        <!-- Botones de Acción -->
+        <div class="flex items-center space-x-2">
+          <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center space-x-1.5 shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <span>Exportar Programación PC (.xlsx)</span>
+          </button>
+          <button onclick="switchTab('import')" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold px-3 py-2 rounded-lg transition flex items-center space-x-1 border border-slate-300">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
+            <span>Recargar Reportes</span>
+          </button>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div class="overflow-x-auto max-h-[640px]">
+          <table class="w-full text-left border-collapse text-xs">
+            <thead class="bg-slate-100/90 text-slate-700 font-semibold sticky top-0 z-10 backdrop-blur border-b border-slate-200 uppercase tracking-wider text-[11px]">
+              <tr>
+                <th class="p-3 whitespace-nowrap">Semana</th>
+                <th class="p-3 whitespace-nowrap">Nro de PC</th>
+                <th class="p-3 whitespace-nowrap">Fecha Pedido</th>
+                <th class="p-3 whitespace-nowrap">En Reprogramación con</th>
+                <th class="p-3 min-w-[200px]">Descripción</th>
+                <th class="p-3 whitespace-nowrap">Unidad</th>
+                <th class="p-3 whitespace-nowrap bg-indigo-50/60 text-indigo-900 border-x border-indigo-100">Actividad (Rep. 1)</th>
+                <th class="p-3 whitespace-nowrap bg-indigo-50/60 text-indigo-900 border-r border-indigo-100">Resp. Pedido (Rep. 1)</th>
+                <th class="p-3 whitespace-nowrap">Prioridad</th>
+                <th class="p-3 whitespace-nowrap text-right">Presupuesto (USD)</th>
+                <th class="p-3 whitespace-nowrap text-right">Presupuesto ($ ARS)</th>
+                <th class="p-3 whitespace-nowrap">Comprador</th>
+                <th class="p-3 whitespace-nowrap">Estado</th>
+                <th class="p-3 min-w-[150px]">Compras</th>
+                <th class="p-3 whitespace-nowrap">Reprogramación</th>
+                <th class="p-3 whitespace-nowrap text-center">Acciones</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody" class="divide-y divide-slate-100 text-slate-700">
+              <!-- Filas generadas dinámicamente -->
+              <tr>
+                <td colspan="16" class="p-8 text-center text-slate-400">
+                  <div class="flex flex-col items-center justify-center space-y-2">
+                    <svg class="w-10 h-10 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+                    <p class="font-medium text-slate-600">No hay datos procesados aún</p>
+                    <p class="text-xs text-slate-400">Dirígete a la pestaña "Cargar Reportes Finnegans" o sube un archivo de prueba.</p>
+                    <button onclick="switchTab('import')" class="mt-2 text-indigo-600 hover:text-indigo-800 font-semibold underline text-xs">Cargar Reporte (1) y Reporte (2)</button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        <div class="p-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-500 flex items-center justify-between">
+          <span id="tableSummary">Mostrando 0 registros</span>
+          <span class="text-slate-400 italic">Los campos de Actividad y Responsable provienen de Gestión de Compras CMP (Reporte 1)</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- PESTAÑA 2: APARTADO DE CARGA MANUAL        -->
+    <!-- ========================================== -->
+    <div id="sectionManual" class="space-y-6 hidden">
+      
+      <div class="bg-gradient-to-r from-indigo-900 to-slate-900 rounded-2xl p-6 text-white shadow-lg">
+        <div class="max-w-3xl">
+          <span class="px-2.5 py-1 bg-indigo-500/30 text-indigo-200 rounded-full text-xs font-semibold uppercase tracking-wider">Centro de Carga Manual</span>
+          <h2 class="text-2xl font-bold mt-2">Gestión y Asignación de Pedidos de Compra</h2>
+          <p class="text-sm text-slate-300 mt-1">
+            En este apartado puedes ingresar o actualizar los campos manuales: <b>Prioridad, Presupuesto USD (congelado en pesos según la fecha), Comprador, Reprogramación, Estado y Observaciones</b>.
+          </p>
+        </div>
+      </div>
+
+      <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Lista de Selección de PC para Carga Manual -->
+        <div class="lg:col-span-4 bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex flex-col h-[700px]">
+          <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+            <h3 class="font-bold text-sm text-slate-800">Seleccionar Pedido</h3>
+            <span id="manualCounterBadge" class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">0 disponibles</span>
+          </div>
+
+          <div class="mt-3 relative">
+            <input type="text" id="manualListSearch" oninput="filterManualList()" placeholder="Filtrar por N° PC o descripción..." class="w-full text-xs pl-8 pr-3 py-2 rounded-lg border border-slate-300 focus:ring-indigo-500">
+            <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          </div>
+
+          <!-- Selector rápido de vista (Todos vs Incompletos) -->
+          <div class="flex space-x-1 mt-2 text-xs">
+            <button onclick="setManualFilter('all')" id="btnManualFilterAll" class="px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg font-medium">Todos</button>
+            <button onclick="setManualFilter('pending')" id="btnManualFilterPending" class="px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200">Solo Incompletos</button>
+          </div>
+
+          <div id="manualItemsList" class="flex-grow overflow-y-auto mt-3 divide-y divide-slate-100 pr-1 space-y-1">
+            <!-- Items de la lista -->
+            <p class="text-center text-xs text-slate-400 py-8">Carga reportes para ver pedidos de compra.</p>
+          </div>
+        </div>
+
+        <div class="lg:col-span-8 bg-white rounded-xl border border-slate-200 shadow-sm p-6 flex flex-col justify-between">
+          <div id="manualFormContainer">
+            <div id="manualEmptyState" class="py-20 text-center text-slate-400">
+              <svg class="w-12 h-12 mx-auto text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+              <h4 class="text-base font-medium text-slate-600">Selecciona un Pedido de Compra de la lista</h4>
+              <p class="text-xs text-slate-400 max-w-sm mx-auto mt-1">Haz clic en un registro de la izquierda para desplegar y editar todos sus campos manuales.</p>
+            </div>
+
+            <form id="manualEditForm" class="hidden space-y-5" onsubmit="event.preventDefault(); saveManualData();">
+              <!-- Encabezado de la PC en edición -->
+              <div class="bg-indigo-50/70 border border-indigo-100 p-4 rounded-xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div>
+                  <div class="flex items-center space-x-2">
+                    <span class="text-xs font-bold text-indigo-700 bg-indigo-200/80 px-2 py-0.5 rounded">PC N°</span>
+                    <h3 id="formPcNumber" class="text-xl font-black text-indigo-950">PC-0000</h3>
+                    <span id="formPcSemanaBadge" class="text-xs bg-slate-200 text-slate-700 px-2 py-0.5 rounded font-mono font-bold">2026-(40)</span>
+                  </div>
+                  <p id="formPcDescription" class="text-xs text-slate-600 mt-1 line-clamp-1">Descripción del ítem o pedido...</p>
+                </div>
+                <div class="text-right text-xs">
+                  <span class="text-slate-400">Fecha Pedido:</span>
+                  <span id="formPcFecha" class="font-semibold text-slate-700 block">-</span>
+                </div>
+              </div>
+
+              <!-- Metadatos leídos automáticamente de Reporte (1) -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-lg border border-slate-200 text-xs">
+                <div>
+                  <span class="text-slate-400 block font-medium">Actividad (de Reporte 1):</span>
+                  <span id="formPcActividad" class="font-bold text-slate-800">-</span>
+                </div>
+                <div>
+                  <span class="text-slate-400 block font-medium">Responsable Pedido (de Reporte 1):</span>
+                  <span id="formPcResponsable" class="font-bold text-slate-800">-</span>
+                </div>
+              </div>
+
+              <!-- Campos de Carga Manual -->
+              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                
+                <!-- En reprogramación con -->
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">En reprogramación con</label>
+                  <input type="text" id="manualEnReprogramacionCon" placeholder="Ej: Proveedor X / Finanzas / Planta" class="w-full text-xs rounded-lg border border-slate-300 p-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+
+                <!-- Prioridad -->
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Prioridad</label>
+                  <select id="manualPrioridad" class="w-full text-xs rounded-lg border border-slate-300 p-2 bg-white focus:ring-2 focus:ring-indigo-500">
+                    <option value="">-- Seleccionar Prioridad --</option>
+                    <option value="Urgente">🔴 Urgente</option>
+                    <option value="Alta">🟠 Alta</option>
+                    <option value="Media">🟡 Media</option>
+                    <option value="Baja">🔵 Baja</option>
+                  </select>
+                </div>
+
+                <!-- Presupuesto USD -->
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Presupuesto (USD)</label>
+                  <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400 text-xs font-bold">USD</span>
+                    <input type="number" step="0.01" min="0" id="manualPresupuestoUSD" oninput="calculateARSOnInput()" placeholder="0.00" class="w-full text-xs pl-12 pr-3 p-2 rounded-lg border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+                  </div>
+                  <span class="text-[10px] text-slate-400">Ingresa el monto presupuestado en dólares.</span>
+                </div>
+
+                <!-- Presupuesto ($ ARS) con conversión y congelamiento -->
+                <div>
+                  <div class="flex items-center justify-between mb-1">
+                    <label class="text-xs font-semibold text-slate-700">Presupuesto ($ ARS)</label>
+                    <span id="manualCotizSnapshot" class="text-[10px] text-emerald-600 font-mono">Tasa: $1.250</span>
+                  </div>
+                  <div class="relative">
+                    <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400 text-xs font-bold">$</span>
+                    <input type="text" id="manualPresupuestoARS" readonly class="w-full text-xs pl-7 pr-3 p-2 rounded-lg border border-slate-200 bg-slate-50 font-bold text-slate-800 outline-none" placeholder="Calculado automáticamente">
+                  </div>
+                  <span id="manualFechaCotizLabel" class="text-[10px] text-slate-400 block mt-0.5">Calculado con la cotización del día en que se cargó.</span>
+                </div>
+
+                <!-- Comprador -->
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Comprador Asignado</label>
+                  <input type="text" id="manualComprador" placeholder="Nombre del comprador" class="w-full text-xs rounded-lg border border-slate-300 p-2 focus:ring-2 focus:ring-indigo-500 outline-none">
+                </div>
+
+                <!-- Estado -->
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Estado</label>
+                  <select id="manualEstado" class="w-full text-xs rounded-lg border border-slate-300 p-2 bg-white focus:ring-2 focus:ring-indigo-500">
+                    <option value="Pendiente">Pendiente</option>
+                    <option value="En cotización">En cotización</option>
+                    <option value="En evaluación">En evaluación</option>
+                    <option value="Adjudicado">Adjudicado</option>
+                    <option value="En espera">En espera</option>
+                    <option value="Entregado">Entregado</option>
+                    <option value="Cancelado">Cancelado</option>
+                  </select>
+                </div>
+
+                <!-- Reprogramación -->
+                <div>
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Reprogramación</label>
+                  <select id="manualReprogramacion" onchange="toggleSemanaReprogramacion()" class="w-full text-xs rounded-lg border border-slate-300 p-2 bg-white focus:ring-2 focus:ring-indigo-500">
+                    <option value="No">No</option>
+                    <option value="En espera">En espera</option>
+                    <option value="Reprogramada">Reprogramada</option>
+                  </select>
+                </div>
+
+                <!-- Semana de reprogramación (Solo si es "En espera") -->
+                <div id="containerSemanaReprog" class="hidden">
+                  <label class="block text-xs font-semibold text-amber-700 mb-1">Semana de Reprogramación</label>
+                  <input type="text" id="manualSemanaReprogramada" placeholder="Ej: 2026-(42)" class="w-full text-xs rounded-lg border border-amber-300 bg-amber-50/50 p-2 focus:ring-2 focus:ring-amber-500 outline-none font-mono">
+                  <span class="text-[10px] text-amber-600">Formato: aaaa-(n° semana).</span>
+                </div>
+
+                <!-- Campo Compras (Texto/Notas) -->
+                <div class="sm:col-span-2">
+                  <label class="block text-xs font-semibold text-slate-700 mb-1">Compras (Observaciones / Gestión)</label>
+                  <textarea id="manualCompras" rows="2" placeholder="Observaciones de la gestión de compras, proveedores consultados, etc..." class="w-full text-xs rounded-lg border border-slate-300 p-2 focus:ring-2 focus:ring-indigo-500 outline-none"></textarea>
+                </div>
+              </div>
+
+              <!-- Botones de guardar -->
+              <div class="flex items-center justify-between pt-4 border-t border-slate-100">
+                <button type="button" onclick="cancelManualEdit()" class="text-xs text-slate-500 hover:text-slate-800 font-medium">Descartar cambios</button>
+                <div class="flex space-x-2">
+                  <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-5 py-2.5 rounded-lg shadow-sm transition flex items-center space-x-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <span>Guardar y Actualizar</span>
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- PESTAÑA 3: CARGAR REPORTES FINNEGANS       -->
+    <!-- ========================================== -->
+    <div id="sectionImport" class="space-y-6 hidden">
+      
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
+        <div class="border-b border-slate-100 pb-4 mb-6">
+          <span class="text-xs font-bold uppercase tracking-wider text-indigo-600">Importador Finnegans</span>
+          <h2 class="text-xl font-bold text-slate-900 mt-1">Cargar y Procesar Exportaciones ERP</h2>
+          <p class="text-xs text-slate-500 mt-1">
+            Sube los dos archivos generados por Finnegans. El sistema extraerá de <b>Reporte (1)</b> ("Gestión de Compras CMP - Autorizaciones") únicamente <i>Actividad</i> y <i>Responsable pedido</i>, y de <b>Reporte (2)</b> ("Análisis de Pedidos de Compra Pendientes") todos los pedidos de la programación principal.
+          </p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          
+          <!-- Dropzone Reporte (1) -->
+          <div class="border-2 border-dashed border-slate-300 hover:border-indigo-500 rounded-xl p-6 text-center bg-slate-50/50 transition cursor-pointer flex flex-col items-center justify-center min-h-[220px]" id="dropZone1" onclick="document.getElementById('fileInput1').click()">
+            <input type="file" id="fileInput1" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileSelected(event, 1)">
+            <div class="w-12 h-12 bg-indigo-100 text-indigo-600 rounded-full flex items-center justify-center mb-3">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            </div>
+            <h3 class="text-sm font-bold text-slate-800">Reporte (1): CMP - Autorizaciones</h3>
+            <p class="text-xs text-slate-500 mt-1">Hoja requerida: <code class="bg-indigo-50 text-indigo-700 px-1.5 py-0.5 rounded font-mono">master autorizaciones</code></p>
+            <p class="text-[11px] text-slate-400 mt-2">Extrae: <b>Actividad</b> y <b>Responsable pedido</b></p>
+            
+            <!-- Estado del archivo 1 -->
+            <div id="statusFile1" class="mt-3 text-xs text-slate-500 font-medium">Ningún archivo seleccionado</div>
+          </div>
+
+          <!-- Dropzone Reporte (2) -->
+          <div class="border-2 border-dashed border-slate-300 hover:border-emerald-500 rounded-xl p-6 text-center bg-slate-50/50 transition cursor-pointer flex flex-col items-center justify-center min-h-[220px]" id="dropZone2" onclick="document.getElementById('fileInput2').click()">
+            <input type="file" id="fileInput2" accept=".xlsx, .xls, .csv" class="hidden" onchange="handleFileSelected(event, 2)">
+            <div class="w-12 h-12 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mb-3">
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7v8a2 2 0 002 2h6M8 7V5a2 2 0 012-2h4.586a1 1 0 01.707.293l4.414 4.414a1 1 0 01.293.707V15a2 2 0 01-2 2h-2M8 7H6a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2v-2"></path></svg>
+            </div>
+            <h3 class="text-sm font-bold text-slate-800">Reporte (2): Pedidos Pendientes</h3>
+            <p class="text-xs text-slate-500 mt-1">Hoja: <code class="bg-emerald-50 text-emerald-700 px-1.5 py-0.5 rounded font-mono">Programacion PC</code> o listado principal</p>
+            <p class="text-[11px] text-slate-400 mt-2">Extrae: <b>Nro PC, Fecha, Descripción, Unidad</b></p>
+            
+            <!-- Estado del archivo 2 -->
+            <div id="statusFile2" class="mt-3 text-xs text-slate-500 font-medium">Ningún archivo seleccionado</div>
+          </div>
+        </div>
+
+        <!-- Botón de Procesamiento Principal -->
+        <div class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100">
+          <div class="text-xs text-slate-500">
+            <span>¿Quieres probar la aplicación de inmediato?</span>
+            <button onclick="loadDemoSampleData()" class="text-indigo-600 hover:text-indigo-800 underline font-semibold ml-1">Cargar Datos Demo de Prueba</button>
+          </div>
+          
+          <button id="btnProcessReports" onclick="processUploadedFiles()" disabled class="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold px-6 py-3 rounded-xl shadow-sm transition flex items-center space-x-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14 5l7 7m0 0l-7 7m7-7H3"></path></svg>
+            <span>Procesar y Fusionar Reportes</span>
+          </button>
+        </div>
+
+        <!-- Visor de diagnóstico de cruce -->
+        <div id="importDiagnostics" class="mt-6 p-4 bg-slate-50 rounded-xl border border-slate-200 text-xs hidden">
+          <h4 class="font-bold text-slate-800 mb-2 flex items-center space-x-1.5">
+            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span>Resumen del Proceso de Integración</span>
+          </h4>
+          <ul id="diagnosticsList" class="space-y-1 text-slate-600 font-mono text-[11px]"></ul>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- Modal para Configurar Cotización del Dólar -->
+  <div id="rateModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl border border-slate-100 transform transition-all">
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <h3 class="font-bold text-slate-800 text-base">Ajuste de Cotización Dólar</h3>
+        <button onclick="closeRateModal()" class="text-slate-400 hover:text-slate-600">✕</button>
+      </div>
+      
+      <div class="mt-4 space-y-4 text-xs">
+        <p class="text-slate-600">
+          Esta cotización se utilizará para calcular el <b>Presupuesto ($ ARS)</b> cuando cargues o modifiques el presupuesto en USD de un pedido.
+        </p>
+
+        <div>
+          <label class="block font-semibold text-slate-700 mb-1">Tipo de Cambio Actual ($ ARS por USD)</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 font-bold">$</span>
+            <input type="number" id="inputCustomRate" step="0.5" class="w-full pl-8 pr-3 py-2 rounded-lg border border-slate-300 font-bold text-slate-800 focus:ring-2 focus:ring-indigo-500">
+          </div>
+        </div>
+
+        <div class="bg-slate-50 p-3 rounded-lg border border-slate-200">
+          <span class="text-[11px] font-semibold text-slate-500 block mb-2">Consultar Cotizaciones Oficiales Online:</span>
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="fetchOnlineRate('oficial')" class="bg-white hover:bg-slate-100 border border-slate-300 py-1.5 px-2 rounded text-slate-700 font-medium text-left">
+              <span class="block text-[10px] text-slate-400">Dólar Oficial</span>
+              <span id="rateLabelOficial" class="font-bold text-slate-800">Consultar...</span>
+            </button>
+            <button onclick="fetchOnlineRate('blue')" class="bg-white hover:bg-slate-100 border border-slate-300 py-1.5 px-2 rounded text-slate-700 font-medium text-left">
+              <span class="block text-[10px] text-slate-400">Dólar Blue</span>
+              <span id="rateLabelBlue" class="font-bold text-slate-800">Consultar...</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div class="mt-6 flex justify-end space-x-2">
+        <button onclick="closeRateModal()" class="px-4 py-2 rounded-lg text-xs font-semibold text-slate-600 hover:bg-slate-100">Cancelar</button>
+        <button onclick="applyNewRate()" class="px-4 py-2 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-700 text-white">Aplicar Cotización</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    let parsedReport1 = []; // Datos de Autorizaciones (Actividad, Responsable)
+    let parsedReport2 = []; // Datos de Pedidos Pendientes
+    let masterPCData = [];  // Datos fusionados en memoria
+    let currentDollarRate = 1250.00; // Tasa por defecto
+    let selectedPCId = null;
+    let manualFilterMode = 'all';
+
+    // Buffers para archivos subidos
+    let fileBuffer1 = null;
+    let fileBuffer2 = null;
+
+    window.onload = function() {
+      // Intentar obtener cotización real de Argentina mediante DolarApi
+      fetchOnlineRate('oficial', true);
+      updateRateDisplays();
+    };
+
+    /**
+     * Consulta API pública de cotización de Argentina (DolarApi)
+     */
+    async function fetchOnlineRate(type = 'oficial', silent = false) {
+      try {
+        const response = await fetch(`https://dolarapi.com/v1/dolares/${type}`);
+        if (response.ok) {
+          const data = await response.json();
+          const rate = data.venta || data.promedio || 1250;
+          if (type === 'oficial') {
+            document.getElementById('rateLabelOficial').innerText = `$ ${rate.toLocaleString('es-AR')}`;
+          } else {
+            document.getElementById('rateLabelBlue').innerText = `$ ${rate.toLocaleString('es-AR')}`;
+          }
+          if (silent) {
+            currentDollarRate = rate;
+            updateRateDisplays();
+          } else {
+            document.getElementById('inputCustomRate').value = rate;
+            showToast(`Cotización ${type.toUpperCase()} obtenida: $${rate}`);
+          }
+        }
+      } catch (err) {
+        console.warn("No se pudo obtener cotización remota, usando valor local:", err);
+        document.getElementById('rateLabelOficial').innerText = "$ 1.250,00";
+        document.getElementById('rateLabelBlue').innerText = "$ 1.380,00";
+      }
+    }
+
+    function updateRateDisplays() {
+      document.getElementById('headerRateDisplay').innerText = `$ ${currentDollarRate.toLocaleString('es-AR', {minimumFractionDigits: 2})}`;
+      document.getElementById('manualCotizSnapshot').innerText = `Tasa actual: $${currentDollarRate.toLocaleString('es-AR', {minimumFractionDigits: 2})}`;
+    }
+
+    function openRateModal() {
+      document.getElementById('inputCustomRate').value = currentDollarRate;
+      document.getElementById('rateModal').classList.remove('hidden');
+    }
+
+    function closeRateModal() {
+      document.getElementById('rateModal').classList.add('hidden');
+    }
+
+    function applyNewRate() {
+      const val = parseFloat(document.getElementById('inputCustomRate').value);
+      if (!isNaN(val) && val > 0) {
+        currentDollarRate = val;
+        updateRateDisplays();
+        closeRateModal();
+        showToast(`Cotización actualizada a $ ${val.toLocaleString('es-AR', {minimumFractionDigits: 2})}`);
+      }
+    }
+
+    function switchTab(tab) {
+      document.getElementById('sectionDashboard').classList.add('hidden');
+      document.getElementById('sectionManual').classList.add('hidden');
+      document.getElementById('sectionImport').classList.add('hidden');
+
+      const tabs = ['Dashboard', 'Manual', 'Import'];
+      tabs.forEach(t => {
+        const btn = document.getElementById(`navTab${t}`);
+        btn.className = "tab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center space-x-2 text-slate-300 hover:text-white hover:bg-slate-800";
+      });
+
+      if (tab === 'dashboard') {
+        document.getElementById('sectionDashboard').classList.remove('hidden');
+        document.getElementById('navTabDashboard').className = "tab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center space-x-2 bg-indigo-600 text-white";
+        renderTable();
+      } else if (tab === 'manual') {
+        document.getElementById('sectionManual').classList.remove('hidden');
+        document.getElementById('navTabManual').className = "tab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center space-x-2 bg-indigo-600 text-white";
+        renderManualList();
+      } else if (tab === 'import') {
+        document.getElementById('sectionImport').classList.remove('hidden');
+        document.getElementById('navTabImport').className = "tab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center space-x-2 bg-indigo-600 text-white";
+      }
+    }
+
+    /**
+     * Calcula la semana ISO en formato: aaaa-(n° semana)
+     * Ej: 2026-(40)
+     */
+    function calculateSemana(dateVal) {
+      if (!dateVal) return '-';
+      let d;
+
+      // Si viene como número serial de Excel (ej: 45500)
+      if (typeof dateVal === 'number') {
+        d = new Date((dateVal - (25567 + 2)) * 86400 * 1000);
+      } else if (typeof dateVal === 'string') {
+        // Intenta parsear formatos DD/MM/AAAA o AAAA-MM-DD
+        if (dateVal.includes('/')) {
+          const parts = dateVal.split('/');
+          if (parts.length === 3) {
+            d = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+          }
+        } else {
+          d = new Date(dateVal);
+        }
+      } else if (dateVal instanceof Date) {
+        d = dateVal;
+      }
+
+      if (!d || isNaN(d.getTime())) return '-';
+
+      // Cálculo formal de la semana ISO 8601
+      const target = new Date(d.valueOf());
+      const dayNr = (d.getDay() + 6) % 7;
+      target.setDate(target.getDate() - dayNr + 3);
+      const firstThursday = target.valueOf();
+      target.setMonth(0, 1);
+      if (target.getDay() !== 4) {
+        target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
+      }
+      const weekNum = 1 + Math.ceil((firstThursday - target) / 604800000);
+      const year = d.getFullYear();
+      const padWeek = weekNum < 10 ? '0' + weekNum : weekNum;
+      
+      return `${year}-(${padWeek})`;
+    }
+
+    function formatDisplayDate(dateVal) {
+      if (!dateVal) return '-';
+      if (dateVal instanceof Date && !isNaN(dateVal)) {
+        return dateVal.toLocaleDateString('es-AR');
+      }
+      if (typeof dateVal === 'number') {
+        const d = new Date((dateVal - (25567 + 2)) * 86400 * 1000);
+        return isNaN(d) ? dateVal : d.toLocaleDateString('es-AR');
+      }
+      return String(dateVal);
+    }
+
+    /**
+     * Manejador de selección de archivos
+     */
+    function handleFileSelected(event, reportIndex) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const data = new Uint8Array(e.target.result);
+        const workbook = XLSX.read(data, { type: 'array', cellDates: true });
+
+        if (reportIndex === 1) {
+          fileBuffer1 = { workbook, fileName: file.name };
+          document.getElementById('statusFile1').innerHTML = `<span class="text-indigo-600 font-bold">✓ ${file.name}</span> (${workbook.SheetNames.length} hojas)`;
+        } else {
+          fileBuffer2 = { workbook, fileName: file.name };
+          document.getElementById('statusFile2').innerHTML = `<span class="text-emerald-600 font-bold">✓ ${file.name}</span> (${workbook.SheetNames.length} hojas)`;
+        }
+
+        // Si tenemos ambos archivos listos, habilitar botón de proceso
+        if (fileBuffer1 || fileBuffer2) {
+          document.getElementById('btnProcessReports').disabled = false;
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function normalizeKey(str) {
+      if (!str) return '';
+      return String(str)
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]/g, '');
+    }
+
+    function processUploadedFiles() {
+      const diagnostics = [];
+      let rep1Map = new Map(); // Mapa por Nro de PC -> { actividad, responsable }
+
+      // ============================================
+      // 1. PROCESAR REPORTE (1): CMP - AUTORIZACIONES
+      // ============================================
+      if (fileBuffer1) {
+        const wb = fileBuffer1.workbook;
+        // Buscar la hoja "master autorizaciones" especificada por el usuario
+        let sheetName = wb.SheetNames.find(s => normalizeKey(s).includes('masterautorizaciones')) || wb.SheetNames[0];
+        const sheet = wb.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+        diagnostics.push(`Reporte 1 leído: Hoja "${sheetName}" con ${rows.length} filas.`);
+
+        rows.forEach(row => {
+          // Identificar columna PC / Pedido
+          let pcNum = '';
+          let actividad = '';
+          let responsable = '';
+
+          for (const [k, v] of Object.entries(row)) {
+            const normKey = normalizeKey(k);
+            if (normKey.includes('nropc') || normKey.includes('pedido') || normKey.includes('nro') || normKey.includes('transaccion') || normKey.includes('comprobante')) {
+              if (!pcNum && v) pcNum = String(v).trim();
+            }
+            if (normKey.includes('actividad')) {
+              actividad = String(v).trim();
+            }
+            if (normKey.includes('responsable') || normKey.includes('solicitante') || normKey.includes('usuario')) {
+              responsable = String(v).trim();
+            }
+          }
+
+          if (pcNum) {
+            rep1Map.set(normalizeKey(pcNum), {
+              actividad: actividad || 'General',
+              responsable: responsable || 'Sin especificar'
+            });
+          }
+        });
+        diagnostics.push(`Identificados ${rep1Map.size} pedidos con datos de Actividad y Responsable.`);
+      }
+
+      // ============================================================
+      // 2. PROCESAR REPORTE (2): ANÁLISIS DE PEDIDOS PENDIENTES (PC)
+      // ============================================================
+      if (fileBuffer2) {
+        const wb = fileBuffer2.workbook;
+        // Buscar la hoja "Programacion PC" o primera hoja
+        let sheetName = wb.SheetNames.find(s => normalizeKey(s).includes('programacionpc')) || wb.SheetNames[0];
+        const sheet = wb.Sheets[sheetName];
+        const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' });
+
+        diagnostics.push(`Reporte 2 leído: Hoja "${sheetName}" con ${rows.length} registros principales.`);
+
+        masterPCData = rows.map((row, index) => {
+          let pcNum = '';
+          let fechaPedido = '';
+          let descripcion = '';
+          let unidad = '';
+
+          for (const [k, v] of Object.entries(row)) {
+            const normKey = normalizeKey(k);
+            if (!pcNum && (normKey.includes('nropc') || normKey.includes('pedido') || normKey.includes('nro') || normKey.includes('comprobante'))) {
+              pcNum = String(v).trim();
+            }
+            if (!fechaPedido && (normKey.includes('fecha') || normKey.includes('emision'))) {
+              fechaPedido = v;
+            }
+            if (!descripcion && (normKey.includes('descripcion') || normKey.includes('detalle') || normKey.includes('articulo') || normKey.includes('concepto'))) {
+              descripcion = String(v).trim();
+            }
+            if (!unidad && (normKey.includes('unidad') || normKey.includes('um') || normKey.includes('medida'))) {
+              unidad = String(v).trim();
+            }
+          }
+
+          // Fallback seguro si no tiene nro
+          if (!pcNum) pcNum = `PC-${index + 1001}`;
+
+          // Cruce con Reporte 1 por Nro de PC
+          const rep1Data = rep1Map.get(normalizeKey(pcNum)) || { actividad: 'No asignada', responsable: 'Sin asignar' };
+
+          // Cálculo automático de Semana
+          const semanaCalculada = calculateSemana(fechaPedido);
+
+          return {
+            id: pcNum,
+            semana: semanaCalculada,
+            nroPC: pcNum,
+            fechaPedido: fechaPedido,
+            descripcion: descripcion || 'Sin descripción',
+            unidad: unidad || 'UN',
+            actividad: rep1Data.actividad,
+            responsablePedido: rep1Data.responsable,
+            // Campos de carga manual inicializados
+            enReprogramacionCon: '',
+            prioridad: '',
+            presupuestoUSD: null,
+            presupuestoARS: null,
+            cotizacionAplicada: null,
+            fechaCotizacion: null,
+            comprador: '',
+            estado: 'Pendiente',
+            compras: '',
+            reprogramacion: 'No',
+            semanaReprogramada: ''
+          };
+        });
+
+        diagnostics.push(`Integración completada: ${masterPCData.length} Pedidos de Compra consolidados.`);
+      }
+
+      // Mostrar diagnóstico
+      const diagContainer = document.getElementById('importDiagnostics');
+      const diagList = document.getElementById('diagnosticsList');
+      diagList.innerHTML = diagnostics.map(d => `<li>• ${d}</li>`).join('');
+      diagContainer.classList.remove('hidden');
+
+      // Actualizar vista y resumen
+      populateSemanaFilter();
+      renderTable();
+      updateKPIs();
+      showToast(`¡Reportes integrados con éxito! (${masterPCData.length} registros)`);
+
+      // Pasar a la tabla automáticamente
+      setTimeout(() => switchTab('dashboard'), 1000);
+    }
+
+    function loadDemoSampleData() {
+      const today = new Date();
+      const mockPCs = [
+        { pc: 'PC-2024-00891', daysAgo: 5, desc: 'Rodamientos SKF 6204-2RSH para Línea de Envasado', un: 'UN', act: 'Mantenimiento Mecánico', resp: 'Gómez, Carlos' },
+        { pc: 'PC-2024-00892', daysAgo: 12, desc: 'Válvulas esféricas de acero inoxidable 2" paso total', un: 'UN', act: 'Planta Tratamiento', resp: 'Pérez, Martín' },
+        { pc: 'PC-2024-00893', daysAgo: 18, desc: 'Aceite sintético Mobil SHC 630 para reductores', un: 'L', act: 'Operaciones Planta', resp: 'Sánchez, Laura' },
+        { pc: 'PC-2024-00894', daysAgo: 2, desc: 'Sensores inductivos Telemecanique M18 24V DC', un: 'UN', act: 'Automatización y Control', resp: 'Martínez, Diego' },
+        { pc: 'PC-2024-00895', daysAgo: 25, desc: 'Cinta transportadora corrugada 600mm x 15m', un: 'M', act: 'Logística y Despacho', resp: 'Fernández, Lucía' },
+        { pc: 'PC-2024-00896', daysAgo: 40, desc: 'Filtros prensa hidráulicos de alta presión', un: 'UN', act: 'Mantenimiento Mecánico', resp: 'Gómez, Carlos' }
+      ];
+
+      masterPCData = mockPCs.map((m, idx) => {
+        const d = new Date();
+        d.setDate(today.getDate() - m.daysAgo);
+        const sem = calculateSemana(d);
+        const usdVal = (idx + 1) * 750;
+
+        return {
+          id: m.pc,
+          semana: sem,
+          nroPC: m.pc,
+          fechaPedido: d,
+          descripcion: m.desc,
+          unidad: m.un,
+          actividad: m.act,
+          responsablePedido: m.resp,
+          enReprogramacionCon: idx === 1 ? 'Proveedor Válvulas SA' : '',
+          prioridad: idx === 0 ? 'Urgente' : idx === 3 ? 'Alta' : 'Media',
+          presupuestoUSD: usdVal,
+          presupuestoARS: usdVal * currentDollarRate,
+          cotizacionAplicada: currentDollarRate,
+          fechaCotizacion: new Date().toLocaleDateString('es-AR'),
+          comprador: idx % 2 === 0 ? 'Ramiro López' : 'Valeria Bianchi',
+          estado: idx === 1 ? 'En espera' : idx === 0 ? 'En cotización' : 'Pendiente',
+          compras: idx === 1 ? 'Demora en cotización de importador' : 'En proceso normal',
+          reprogramacion: idx === 1 ? 'En espera' : 'No',
+          semanaReprogramada: idx === 1 ? calculateSemana(new Date(today.getTime() + 14 * 86400000)) : ''
+        };
+      });
+
+      populateSemanaFilter();
+      renderTable();
+      updateKPIs();
+      showToast("Datos de demostración cargados exitosamente");
+      switchTab('dashboard');
+    }
+
+    function populateSemanaFilter() {
+      const select = document.getElementById('filterSemana');
+      const weeks = [...new Set(masterPCData.map(d => d.semana))].filter(w => w && w !== '-').sort();
+      select.innerHTML = '<option value="">Todas las Semanas</option>';
+      weeks.forEach(w => {
+        const opt = document.createElement('option');
+        opt.value = w;
+        opt.textContent = `Semana ${w}`;
+        select.appendChild(opt);
+      });
+    }
+
+    function resetFilters() {
+      document.getElementById('filterSearch').value = '';
+      document.getElementById('filterSemana').value = '';
+      document.getElementById('filterPrioridad').value = '';
+      document.getElementById('filterEstado').value = '';
+      renderTable();
+    }
+
+    function renderTable() {
+      const search = document.getElementById('filterSearch').value.toLowerCase();
+      const semFilter = document.getElementById('filterSemana').value;
+      const prioFilter = document.getElementById('filterPrioridad').value;
+      const estFilter = document.getElementById('filterEstado').value;
+
+      const filtered = masterPCData.filter(item => {
+        const matchSearch = !search || 
+          item.nroPC.toLowerCase().includes(search) ||
+          item.descripcion.toLowerCase().includes(search) ||
+          item.actividad.toLowerCase().includes(search) ||
+          item.comprador.toLowerCase().includes(search);
+
+        const matchSem = !semFilter || item.semana === semFilter;
+        const matchPrio = !prioFilter || (prioFilter === 'Sin asignar' ? !item.prioridad : item.prioridad === prioFilter);
+        const matchEst = !estFilter || item.estado === estFilter;
+
+        return matchSearch && matchSem && matchPrio && matchEst;
+      });
+
+      const tbody = document.getElementById('tableBody');
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="16" class="p-8 text-center text-slate-400">
+              No se encontraron registros que coincidan con los filtros seleccionados.
+            </td>
+          </tr>`;
+      } else {
+        tbody.innerHTML = filtered.map(item => {
+          // Badges de prioridad
+          let prioBadge = '<span class="text-slate-400 italic">Sin asignar</span>';
+          if (item.prioridad === 'Urgente') prioBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">🔴 Urgente</span>';
+          else if (item.prioridad === 'Alta') prioBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">🟠 Alta</span>';
+          else if (item.prioridad === 'Media') prioBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-100 text-blue-700">🟡 Media</span>';
+          else if (item.prioridad === 'Baja') prioBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-slate-100 text-slate-600">🔵 Baja</span>';
+
+          // Badges de estado
+          let estadoBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-slate-100 text-slate-700">${item.estado || 'Pendiente'}</span>`;
+          if (item.estado === 'Adjudicado' || item.estado === 'Entregado') estadoBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-100 text-emerald-800">${item.estado}</span>`;
+          else if (item.estado === 'En espera') estadoBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-100 text-amber-800">⏳ En espera</span>`;
+          else if (item.estado === 'En cotización') estadoBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-indigo-100 text-indigo-800">En cotización</span>`;
+
+          // Formateo de Presupuestos
+          const formattedUSD = item.presupuestoUSD !== null ? `$ ${Number(item.presupuestoUSD).toLocaleString('en-US', {minimumFractionDigits: 2})}` : '-';
+          const formattedARS = item.presupuestoARS !== null ? `$ ${Number(item.presupuestoARS).toLocaleString('es-AR', {minimumFractionDigits: 0})}` : '-';
+
+          // Reprogramación
+          let reprogDisplay = item.reprogramacion || 'No';
+          if (item.reprogramacion === 'En espera' && item.semanaReprogramada) {
+            reprogDisplay = `<span class="text-amber-700 font-bold">En espera (${item.semanaReprogramada})</span>`;
+          }
+
+          return `
+            <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+              <td class="p-3 font-mono font-bold text-slate-900 whitespace-nowrap">${item.semana}</td>
+              <td class="p-3 font-bold text-indigo-700 whitespace-nowrap">${item.nroPC}</td>
+              <td class="p-3 whitespace-nowrap text-slate-600">${formatDisplayDate(item.fechaPedido)}</td>
+              <td class="p-3 whitespace-nowrap text-slate-600">${item.enReprogramacionCon || '-'}</td>
+              <td class="p-3 text-slate-800 font-medium">${item.descripcion}</td>
+              <td class="p-3 whitespace-nowrap text-slate-500 font-mono">${item.unidad}</td>
+              <td class="p-3 whitespace-nowrap bg-indigo-50/40 font-semibold text-slate-700 border-x border-indigo-50">${item.actividad}</td>
+              <td class="p-3 whitespace-nowrap bg-indigo-50/40 text-slate-600 border-r border-indigo-50">${item.responsablePedido}</td>
+              <td class="p-3 whitespace-nowrap">${prioBadge}</td>
+              <td class="p-3 whitespace-nowrap text-right font-mono font-semibold text-indigo-700">${formattedUSD}</td>
+              <td class="p-3 whitespace-nowrap text-right font-mono font-bold text-emerald-700" title="${item.cotizacionAplicada ? `Tasa aplicada: $${item.cotizacionAplicada} (${item.fechaCotizacion})` : ''}">${formattedARS}</td>
+              <td class="p-3 whitespace-nowrap font-medium text-slate-700">${item.comprador || '<span class="text-slate-400 italic">No asignado</span>'}</td>
+              <td class="p-3 whitespace-nowrap">${estadoBadge}</td>
+              <td class="p-3 text-slate-600 max-w-[200px] truncate" title="${item.compras}">${item.compras || '-'}</td>
+              <td class="p-3 whitespace-nowrap">${reprogDisplay}</td>
+              <td class="p-3 whitespace-nowrap text-center">
+                <button onclick="openManualEditForPC('${item.nroPC}')" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold rounded-lg text-[11px] transition shadow-2xs">
+                  Editar Manual
+                </button>
+              </td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      document.getElementById('tableSummary').innerText = `Mostrando ${filtered.length} de ${masterPCData.length} pedidos`;
+      document.getElementById('badgeTotalItems').innerText = masterPCData.length;
+    }
+
+    function updateKPIs() {
+      const total = masterPCData.length;
+      document.getElementById('kpiTotalCount').innerText = total;
+
+      const activeWeeks = new Set(masterPCData.map(d => d.semana).filter(s => s && s !== '-')).size;
+      document.getElementById('kpiWeeksCovered').innerText = `${activeWeeks} semanas activas`;
+
+      let totalUSD = 0;
+      let totalARS = 0;
+      let waitingCount = 0;
+      let unassignedCount = 0;
+
+      masterPCData.forEach(item => {
+        if (item.presupuestoUSD) totalUSD += Number(item.presupuestoUSD);
+        if (item.presupuestoARS) totalARS += Number(item.presupuestoARS);
+        if (item.reprogramacion === 'En espera' || item.estado === 'En espera') waitingCount++;
+        if (!item.comprador || !item.prioridad) unassignedCount++;
+      });
+
+      document.getElementById('kpiTotalUSD').innerText = `$ ${totalUSD.toLocaleString('en-US', {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+      document.getElementById('kpiConvertedARS').innerText = `≈ $ ${totalARS.toLocaleString('es-AR', {maximumFractionDigits: 0})} ARS`;
+      document.getElementById('kpiWaitingCount').innerText = waitingCount;
+      document.getElementById('kpiWaitingPerc').innerText = total > 0 ? `${Math.round((waitingCount / total) * 100)}% del total` : '0% del total';
+      document.getElementById('kpiUnassignedCount').innerText = unassignedCount;
+    }
+
+    function setManualFilter(mode) {
+      manualFilterMode = mode;
+      document.getElementById('btnManualFilterAll').className = mode === 'all' ? "px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg font-medium" : "px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200";
+      document.getElementById('btnManualFilterPending').className = mode === 'pending' ? "px-2.5 py-1 bg-indigo-50 text-indigo-700 rounded-lg font-medium" : "px-2.5 py-1 bg-slate-100 text-slate-600 rounded-lg hover:bg-slate-200";
+      renderManualList();
+    }
+
+    function filterManualList() {
+      renderManualList();
+    }
+
+    function renderManualList() {
+      const container = document.getElementById('manualItemsList');
+      const search = (document.getElementById('manualListSearch')?.value || '').toLowerCase();
+
+      let items = masterPCData.filter(item => {
+        const matchesSearch = !search || item.nroPC.toLowerCase().includes(search) || item.descripcion.toLowerCase().includes(search);
+        if (manualFilterMode === 'pending') {
+          return matchesSearch && (!item.comprador || !item.prioridad || item.presupuestoUSD === null);
+        }
+        return matchesSearch;
+      });
+
+      document.getElementById('manualCounterBadge').innerText = `${items.length} pedidos`;
+
+      if (items.length === 0) {
+        container.innerHTML = `<p class="text-center text-xs text-slate-400 py-8">No se encontraron pedidos con ese criterio.</p>`;
+        return;
+      }
+
+      container.innerHTML = items.map(item => {
+        const isSelected = item.nroPC === selectedPCId;
+        const hasData = item.comprador && item.prioridad;
+
+        return `
+          <div onclick="selectPCForManualEdit('${item.nroPC}')" class="p-2.5 rounded-lg cursor-pointer transition border ${isSelected ? 'bg-indigo-50/90 border-indigo-400 shadow-xs' : 'bg-white hover:bg-slate-50 border-slate-200'}">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-xs text-indigo-900">${item.nroPC}</span>
+              <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">${item.semana}</span>
+            </div>
+            <p class="text-[11px] text-slate-600 truncate mt-1">${item.descripcion}</p>
+            <div class="flex items-center justify-between mt-2 pt-1 border-t border-slate-100 text-[10px]">
+              <span class="text-slate-400">${item.comprador || 'Sin comprador'}</span>
+              <span class="${hasData ? 'text-emerald-600 font-semibold' : 'text-rose-500 font-medium'}">${hasData ? '✓ Completo' : '● Incompleto'}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function openManualEditForPC(pcId) {
+      switchTab('manual');
+      selectPCForManualEdit(pcId);
+    }
+
+    function selectPCForManualEdit(pcId) {
+      selectedPCId = pcId;
+      const pc = masterPCData.find(p => p.nroPC === pcId);
+      if (!pc) return;
+
+      renderManualList(); // Refrescar selección activa
+
+      document.getElementById('manualEmptyState').classList.add('hidden');
+      document.getElementById('manualEditForm').classList.remove('hidden');
+
+      // Cargar datos en el formulario
+      document.getElementById('formPcNumber').innerText = pc.nroPC;
+      document.getElementById('formPcSemanaBadge').innerText = pc.semana;
+      document.getElementById('formPcDescription').innerText = pc.descripcion;
+      document.getElementById('formPcFecha').innerText = formatDisplayDate(pc.fechaPedido);
+      document.getElementById('formPcActividad').innerText = pc.actividad;
+      document.getElementById('formPcResponsable').innerText = pc.responsablePedido;
+
+      // Campos manuales
+      document.getElementById('manualEnReprogramacionCon').value = pc.enReprogramacionCon || '';
+      document.getElementById('manualPrioridad').value = pc.prioridad || '';
+      document.getElementById('manualPresupuestoUSD').value = pc.presupuestoUSD !== null ? pc.presupuestoUSD : '';
+      
+      // Presupuesto ARS y cotización
+      if (pc.presupuestoARS !== null) {
+        document.getElementById('manualPresupuestoARS').value = `$ ${Number(pc.presupuestoARS).toLocaleString('es-AR', {minimumFractionDigits: 2})}`;
+        document.getElementById('manualCotizSnapshot').innerText = `Tasa fijada: $${pc.cotizacionAplicada || currentDollarRate}`;
+        document.getElementById('manualFechaCotizLabel').innerText = `Fijado el: ${pc.fechaCotizacion || 'Fecha actual'}`;
+      } else {
+        document.getElementById('manualPresupuestoARS').value = '';
+        document.getElementById('manualCotizSnapshot').innerText = `Tasa actual: $${currentDollarRate}`;
+        document.getElementById('manualFechaCotizLabel').innerText = `Se calculará con cotización de hoy ($${currentDollarRate})`;
+      }
+
+      document.getElementById('manualComprador').value = pc.comprador || '';
+      document.getElementById('manualEstado').value = pc.estado || 'Pendiente';
+      document.getElementById('manualCompras').value = pc.compras || '';
+      document.getElementById('manualReprogramacion').value = pc.reprogramacion || 'No';
+      document.getElementById('manualSemanaReprogramada').value = pc.semanaReprogramada || '';
+
+      toggleSemanaReprogramacion();
+    }
+
+    /**
+     * Calcula en tiempo real el valor en pesos con la cotización del día
+     * y fija el momento exacto para que no se modifique en el futuro.
+     */
+    function calculateARSOnInput() {
+      const usdInput = parseFloat(document.getElementById('manualPresupuestoUSD').value);
+      if (!isNaN(usdInput) && usdInput >= 0) {
+        const arsVal = usdInput * currentDollarRate;
+        document.getElementById('manualPresupuestoARS').value = `$ ${arsVal.toLocaleString('es-AR', {minimumFractionDigits: 2})}`;
+        document.getElementById('manualFechaCotizLabel').innerText = `Calculado con tasa actual de $${currentDollarRate} (${new Date().toLocaleDateString('es-AR')})`;
+      } else {
+        document.getElementById('manualPresupuestoARS').value = '';
+      }
+    }
+
+    function toggleSemanaReprogramacion() {
+      const repVal = document.getElementById('manualReprogramacion').value;
+      const container = document.getElementById('containerSemanaReprog');
+      if (repVal === 'En espera') {
+        container.classList.remove('hidden');
+      } else {
+        container.classList.add('hidden');
+      }
+    }
+
+    function saveManualData() {
+      if (!selectedPCId) return;
+      const pc = masterPCData.find(p => p.nroPC === selectedPCId);
+      if (!pc) return;
+
+      const usdVal = document.getElementById('manualPresupuestoUSD').value !== '' ? parseFloat(document.getElementById('manualPresupuestoUSD').value) : null;
+
+      // Si se cargó un presupuesto en USD nuevo o modificado, fijar cotización inalterable
+      if (usdVal !== null) {
+        // Si no tenía cotización previa o cambió el monto, actualizamos con la cotización del día actual
+        if (pc.presupuestoUSD !== usdVal || !pc.cotizacionAplicada) {
+          pc.cotizacionAplicada = currentDollarRate;
+          pc.fechaCotizacion = new Date().toLocaleDateString('es-AR');
+        }
+        pc.presupuestoUSD = usdVal;
+        pc.presupuestoARS = usdVal * pc.cotizacionAplicada;
+      } else {
+        pc.presupuestoUSD = null;
+        pc.presupuestoARS = null;
+        pc.cotizacionAplicada = null;
+        pc.fechaCotizacion = null;
+      }
+
+      pc.enReprogramacionCon = document.getElementById('manualEnReprogramacionCon').value.trim();
+      pc.prioridad = document.getElementById('manualPrioridad').value;
+      pc.comprador = document.getElementById('manualComprador').value.trim();
+      pc.estado = document.getElementById('manualEstado').value;
+      pc.compras = document.getElementById('manualCompras').value.trim();
+      pc.reprogramacion = document.getElementById('manualReprogramacion').value;
+      pc.semanaReprogramada = pc.reprogramacion === 'En espera' ? document.getElementById('manualSemanaReprogramada').value.trim() : '';
+
+      renderManualList();
+      renderTable();
+      updateKPIs();
+      showToast(`Pedido ${pc.nroPC} actualizado correctamente`);
+    }
+
+    function cancelManualEdit() {
+      if (selectedPCId) selectPCForManualEdit(selectedPCId);
+    }
+
+    function exportToExcel() {
+      if (masterPCData.length === 0) {
+        showToast("No hay datos para exportar a Excel");
+        return;
+      }
+
+      // Preparar estructura para la hoja "Programacion PC"
+      const exportRows = masterPCData.map(item => {
+        return {
+          "Semana": item.semana,
+          "Nro de PC": item.nroPC,
+          "Fecha del Pedido": formatDisplayDate(item.fechaPedido),
+          "En reprogramación con": item.enReprogramacionCon,
+          "Descripcion": item.descripcion,
+          "Unidad": item.unidad,
+          "Actividad": item.actividad,
+          "Responsable pedido": item.responsablePedido,
+          "Prioridad": item.prioridad,
+          "Presupuesto (usd)": item.presupuestoUSD !== null ? item.presupuestoUSD : '',
+          "Presupuesto ($)": item.presupuestoARS !== null ? Math.round(item.presupuestoARS) : '',
+          "Comprador": item.comprador,
+          "Estado": item.estado,
+          "Compras": item.compras,
+          "Reprogramacion": item.reprogramacion === 'En espera' && item.semanaReprogramada ? `En espera (${item.semanaReprogramada})` : item.reprogramacion,
+          "Cotización Aplicada": item.cotizacionAplicada || '',
+          "Fecha Cotización": item.fechaCotizacion || ''
+        };
+      });
+
+      const worksheet = XLSX.utils.json_to_sheet(exportRows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Programacion PC");
+
+      // Auto-ancho de columnas
+      const maxProps = Object.keys(exportRows[0] || {}).map(key => ({
+        wch: Math.max(key.length, 14)
+      }));
+      worksheet['!cols'] = maxProps;
+
+      const dateStr = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(workbook, `Programacion_de_Compras_Semanal_${dateStr}.xlsx`);
+      showToast("Archivo Excel descargado con éxito");
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toastNotification');
+      const msg = document.getElementById('toastMessage');
+      msg.innerText = message;
+
+      toast.classList.remove('translate-y-24', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-24', 'opacity-0');
+      }, 3500);
+    }
+  </script>
+</body>
+</html>
