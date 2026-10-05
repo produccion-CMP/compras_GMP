@@ -3,13 +3,13 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Automatización Finnegans - Programación de Compras y Consulta</title>
+  <title>Automatización Finnegans - Programación de Compras y Google Sheets DB</title>
   <!-- Google Fonts & Tailwind CSS -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   <script src="https://cdn.tailwindcss.com"></script>
-  <!-- SheetJS para lectura binaria y exportación Excel -->
+  <!-- SheetJS para lectura de reportes Finnegans y exportación Excel -->
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <script>
@@ -59,25 +59,31 @@
           <div>
             <div class="flex items-center space-x-2">
               <span class="text-[10px] uppercase tracking-widest text-indigo-400 font-bold leading-none">Finnegans ERP Integration</span>
-              <span id="cloudSyncBadge" class="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] px-1.5 py-0.5 rounded-full font-mono font-medium flex items-center space-x-1">
-                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
-                <span id="cloudStatusText">Conectando...</span>
-              </span>
+              <!-- Indicador de conexión con Google Sheets -->
+              <button onclick="openSheetsConfigModal()" id="dbStatusBadge" class="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] px-2 py-0.5 rounded-full font-mono font-medium flex items-center space-x-1 hover:bg-amber-500/30 transition" title="Configurar Google Sheets / Apps Script">
+                <span id="dbStatusDot" class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                <span id="dbStatusText">Google Sheets: No Conectado (Clic para configurar)</span>
+              </button>
             </div>
-            <h1 class="text-base sm:text-lg font-bold text-white tracking-tight leading-tight">Programación de Compras & Portal de Consulta</h1>
+            <h1 class="text-base sm:text-lg font-bold text-white tracking-tight leading-tight">Programación de Compras & Desduplicación por Doc.-nro. interno</h1>
           </div>
         </div>
 
-        <div class="flex items-center space-x-3">
+        <div class="flex items-center space-x-2 sm:space-x-3">
           <div class="hidden sm:flex items-center space-x-3 bg-slate-800/80 px-3 py-1.5 rounded-xl border border-slate-700 text-xs">
             <div class="flex items-center space-x-1.5">
               <span class="text-slate-400">Dólar Hoy:</span>
               <span class="font-bold text-emerald-400 font-mono" id="headerRateDisplay">$ 1.250,00</span>
             </div>
             <button onclick="openDailyRatesModal()" class="text-indigo-400 hover:text-indigo-300 font-medium underline transition" title="Ver historial de cotizaciones diarias">
-              Ver Cotizaciones
+              Cotizaciones
             </button>
           </div>
+
+          <button onclick="syncWithGoogleSheets()" id="btnSyncSheets" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold px-3 py-2 rounded-xl transition flex items-center space-x-1.5 shadow-sm" title="Sincronizar cambios bidireccionalmente con Google Sheets">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            <span class="hidden md:inline">Sincronizar DB</span>
+          </button>
 
           <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-xl transition flex items-center space-x-1.5 shadow-sm">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
@@ -89,7 +95,7 @@
       <nav class="flex space-x-1 sm:space-x-4 border-t border-slate-800 pt-2 pb-2 text-xs sm:text-sm overflow-x-auto">
         <button id="navTabDashboard" onclick="switchTab('dashboard')" class="tab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center space-x-2 bg-indigo-600 text-white">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-          <span>Programación PC (Consulta General)</span>
+          <span>Programación PC (Órdenes Únicas)</span>
           <span id="badgeTotalItems" class="bg-indigo-800 text-indigo-200 text-[10px] px-2 py-0.5 rounded-full font-bold">0</span>
         </button>
         
@@ -108,6 +114,11 @@
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
           <span>Cotizaciones por Día</span>
         </button>
+
+        <button onclick="openSheetsConfigModal()" class="tab-btn px-3 py-1.5 rounded-lg font-medium transition flex items-center space-x-2 text-emerald-300 hover:text-emerald-100 hover:bg-emerald-950/40">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg>
+          <span>Conexión Google Sheets</span>
+        </button>
       </nav>
     </div>
   </header>
@@ -125,14 +136,14 @@
     </div>
 
     <!-- ============================================================== -->
-    <!-- PESTAÑA 1: TABLERO / PROGRAMACION PC (CONSULTA EJECUTIVA)      -->
+    <!-- PESTAÑA 1: PROGRAMACION PC (CONSULTA DESDUPLICADA)            -->
     <!-- ============================================================== -->
     <div id="sectionDashboard" class="space-y-6">
       
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
-            <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Pedidos en Historial</p>
+            <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Órdenes Únicas (Doc.-nro. int)</p>
             <h3 class="text-2xl font-black text-slate-800" id="kpiTotalCount">0</h3>
             <span class="text-xs text-slate-400" id="kpiWeeksCovered">0 semanas activas</span>
           </div>
@@ -183,7 +194,7 @@
             <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             </span>
-            <input type="text" id="filterSearch" oninput="renderTable()" placeholder="Buscar por cualquier campo (PC, detalle, comprador...)" class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+            <input type="text" id="filterSearch" oninput="renderTable()" placeholder="Buscar por N° doc, detalle, actividad, responsable..." class="w-full pl-9 pr-3 py-2 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
           </div>
 
           <!-- Filtro de Fecha Predefinido (Últimos 6 meses por defecto) -->
@@ -237,7 +248,7 @@
 
         <div class="flex items-center justify-between text-[11px] text-slate-500 pt-2 border-t border-slate-100">
           <span id="activeFilterBadge" class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium">Filtrando: Últimos 6 meses</span>
-          <span class="text-slate-400">💡 Haz clic en los encabezados de columna para ordenar</span>
+          <span class="text-slate-400">💡 Cada fila es un comprobante único. Haz clic en los encabezados para ordenar</span>
         </div>
       </div>
 
@@ -249,17 +260,17 @@
                 <th onclick="handleSort('semana')" class="p-3 whitespace-nowrap th-sortable">
                   <div class="flex items-center space-x-1"><span>Semana</span><span id="sortIcon_semana">↕</span></div>
                 </th>
-                <th onclick="handleSort('nroPC')" class="p-3 whitespace-nowrap th-sortable">
-                  <div class="flex items-center space-x-1"><span>Nro de PC</span><span id="sortIcon_nroPC">↕</span></div>
+                <th onclick="handleSort('docNroInterno')" class="p-3 whitespace-nowrap th-sortable">
+                  <div class="flex items-center space-x-1"><span>Doc.-nro. interno</span><span id="sortIcon_docNroInterno">↕</span></div>
                 </th>
                 <th onclick="handleSort('fechaPedido')" class="p-3 whitespace-nowrap th-sortable">
-                  <div class="flex items-center space-x-1"><span>Fecha Pedido</span><span id="sortIcon_fechaPedido">↕</span></div>
+                  <div class="flex items-center space-x-1"><span>F.comp (Pedido)</span><span id="sortIcon_fechaPedido">↕</span></div>
                 </th>
                 <th onclick="handleSort('enReprogramacionCon')" class="p-3 whitespace-nowrap th-sortable">
                   <div class="flex items-center space-x-1"><span>En Reprogramación con</span><span id="sortIcon_enReprogramacionCon">↕</span></div>
                 </th>
-                <th onclick="handleSort('descripcion')" class="p-3 min-w-[220px] th-sortable">
-                  <div class="flex items-center space-x-1"><span>Descripción</span><span id="sortIcon_descripcion">↕</span></div>
+                <th onclick="handleSort('descripcion')" class="p-3 min-w-[240px] th-sortable">
+                  <div class="flex items-center space-x-1"><span>Descripción e Ítems</span><span id="sortIcon_descripcion">↕</span></div>
                 </th>
                 <th class="p-3 whitespace-nowrap">Unidad</th>
                 <th onclick="handleSort('actividad')" class="p-3 whitespace-nowrap bg-indigo-50/70 text-indigo-950 border-x border-indigo-100 th-sortable">
@@ -291,7 +302,6 @@
               </tr>
             </thead>
             <tbody id="tableBody" class="divide-y divide-slate-100 text-slate-700">
-              <!-- Filas generadas dinámicamente -->
               <tr>
                 <td colspan="16" class="p-8 text-center text-slate-400">
                   <p class="font-medium text-slate-600">Cargando registros del sistema...</p>
@@ -301,10 +311,10 @@
           </table>
         </div>
         <div class="p-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span id="tableSummary">Mostrando 0 registros</span>
+          <span id="tableSummary">Mostrando 0 registros únicos</span>
           <div class="flex items-center space-x-2 text-[11px] text-slate-400">
             <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
-            <span>Datos compartidos y respaldados en la nube</span>
+            <span>Cada fila agrupa todos los renglones del mismo Doc.-nro. interno</span>
           </div>
         </div>
       </div>
@@ -320,22 +330,22 @@
           <span class="px-2.5 py-1 bg-indigo-500/30 text-indigo-200 rounded-full text-[10px] font-bold uppercase tracking-wider">Gestión Compartida</span>
           <h2 class="text-xl sm:text-2xl font-black mt-2">Apartado de Carga y Asignación Manual</h2>
           <p class="text-xs sm:text-sm text-slate-300 mt-1">
-            Los cambios guardados aquí se sincronizan automáticamente para todos los usuarios. Cuando se asigne un presupuesto en USD, el sistema tomará la cotización de la fecha correspondiente y <b>congelará el valor en pesos</b> para que no se altere en el futuro.
+            Los datos cargados aquí quedan vinculados al <b>Doc.-nro. interno</b> y se sincronizan en Google Sheets para todos los usuarios. Cuando se define el presupuesto en USD, el sistema calcula la conversión en pesos con la cotización de la fecha elegida y la <b>congela permanentemente</b>.
           </p>
         </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-12 gap-6">
         
-        <!-- Lista de Selección de PC -->
-        <div class="lg:col-span-4 bg-white rounded-2xl border border-slate-200 shadow-xs p-4 flex flex-col h-[740px]">
+        <!-- Lista de Selección de Comprobantes -->
+        <div class="lg:col-span-4 bg-white rounded-2xl border border-slate-200 shadow-xs p-4 flex flex-col h-[760px]">
           <div class="flex items-center justify-between pb-3 border-b border-slate-100">
-            <h3 class="font-bold text-sm text-slate-800">Seleccionar Pedido</h3>
-            <span id="manualCounterBadge" class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">0 pedidos</span>
+            <h3 class="font-bold text-sm text-slate-800">Seleccionar Comprobante</h3>
+            <span id="manualCounterBadge" class="text-xs bg-slate-100 text-slate-600 px-2 py-0.5 rounded-full font-medium">0 comprobantes</span>
           </div>
 
           <div class="mt-3 relative">
-            <input type="text" id="manualListSearch" oninput="filterManualList()" placeholder="Filtrar por N° PC o descripción..." class="w-full text-xs pl-8 pr-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+            <input type="text" id="manualListSearch" oninput="filterManualList()" placeholder="Filtrar por Doc.-nro. interno o detalle..." class="w-full text-xs pl-8 pr-3 py-2 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
             <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
           </div>
 
@@ -345,38 +355,37 @@
           </div>
 
           <div id="manualItemsList" class="flex-grow overflow-y-auto mt-3 divide-y divide-slate-100 pr-1 space-y-1">
-            <p class="text-center text-xs text-slate-400 py-8">Cargando pedidos...</p>
+            <p class="text-center text-xs text-slate-400 py-8">Cargando comprobantes...</p>
           </div>
         </div>
 
-        <!-- Formulario de Edición Manual -->
         <div class="lg:col-span-8 bg-white rounded-2xl border border-slate-200 shadow-xs p-6 flex flex-col justify-between">
           <div id="manualFormContainer">
             
             <div id="manualEmptyState" class="py-24 text-center text-slate-400">
               <svg class="w-12 h-12 mx-auto text-slate-300 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
               <h4 class="text-base font-semibold text-slate-700">Selecciona un Pedido de Compra</h4>
-              <p class="text-xs text-slate-400 max-w-sm mx-auto mt-1">Haz clic en un registro de la izquierda para editar sus atributos manuales y congelar presupuestos.</p>
+              <p class="text-xs text-slate-400 max-w-sm mx-auto mt-1">Haz clic en un comprobante de la izquierda para editar sus atributos manuales y congelar presupuestos.</p>
             </div>
 
             <form id="manualEditForm" class="hidden space-y-4" onsubmit="event.preventDefault(); saveManualData();">
-              <!-- Encabezado de la PC en edición -->
+              <!-- Encabezado del comprobante en edición -->
               <div class="bg-indigo-50/70 border border-indigo-100 p-4 rounded-2xl flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                 <div>
                   <div class="flex items-center space-x-2">
-                    <span class="text-[10px] font-bold text-indigo-700 bg-indigo-200/80 px-2 py-0.5 rounded">PC N°</span>
-                    <h3 id="formPcNumber" class="text-xl font-black text-indigo-950">PC-0000</h3>
+                    <span class="text-[10px] font-bold text-indigo-700 bg-indigo-200/80 px-2 py-0.5 rounded">Doc.-nro. interno</span>
+                    <h3 id="formPcNumber" class="text-xl font-black text-indigo-950">OC-0000</h3>
                     <span id="formPcSemanaBadge" class="text-xs bg-slate-200 text-slate-800 px-2 py-0.5 rounded font-mono font-bold">2026-(40)</span>
                   </div>
-                  <p id="formPcDescription" class="text-xs text-slate-600 mt-1 line-clamp-2">Descripción del pedido...</p>
+                  <p id="formPcDescription" class="text-xs text-slate-600 mt-1 line-clamp-2">Descripción principal...</p>
                 </div>
                 <div class="text-left sm:text-right text-xs">
-                  <span class="text-slate-400 block">Fecha Pedido:</span>
+                  <span class="text-slate-400 block">F.comp (Fecha Pedido):</span>
                   <span id="formPcFecha" class="font-bold text-slate-800">-</span>
                 </div>
               </div>
 
-              <!-- Metadatos de Finnegans -->
+              <!-- Metadatos de Finnegans y lista de renglones consolidados -->
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3 bg-slate-50 rounded-xl border border-slate-200 text-xs">
                 <div>
                   <span class="text-slate-400 block font-medium">Actividad (de CMP - Autorizaciones):</span>
@@ -385,6 +394,10 @@
                 <div>
                   <span class="text-slate-400 block font-medium">Responsable Pedido (de CMP - Autorizaciones):</span>
                   <span id="formPcResponsable" class="font-bold text-slate-800">-</span>
+                </div>
+                <div class="sm:col-span-2 pt-1 border-t border-slate-200/60 flex items-center justify-between">
+                  <span class="text-slate-500 font-medium" id="formPcItemCount">Renglones/Ítems asociados: 1</span>
+                  <button type="button" onclick="openItemsModalForSelected()" class="text-indigo-600 hover:text-indigo-800 font-bold underline text-[11px]">Ver todos los ítems de esta orden</button>
                 </div>
               </div>
 
@@ -423,7 +436,7 @@
                   <label class="block text-xs font-semibold text-slate-700 mb-1">Fecha de Cotización para Conversión</label>
                   <div class="flex items-center space-x-2">
                     <input type="date" id="manualFechaCotizacion" onchange="calculateARSOnInput()" class="text-xs rounded-xl border border-slate-300 p-2 focus:ring-2 focus:ring-indigo-500 flex-grow">
-                    <button type="button" onclick="setCotizDateToOrderDate()" class="text-[10px] bg-slate-100 hover:bg-slate-200 px-2 py-2 rounded-lg font-medium text-slate-700" title="Usar la fecha del pedido">Fecha Pedido</button>
+                    <button type="button" onclick="setCotizDateToOrderDate()" class="text-[10px] bg-slate-100 hover:bg-slate-200 px-2 py-2 rounded-lg font-medium text-slate-700" title="Usar la fecha del pedido (F.comp)">Fecha F.comp</button>
                     <button type="button" onclick="setCotizDateToToday()" class="text-[10px] bg-slate-100 hover:bg-slate-200 px-2 py-2 rounded-lg font-medium text-slate-700" title="Usar la fecha de hoy">Hoy</button>
                   </div>
                 </div>
@@ -436,7 +449,7 @@
                   </div>
                   <div class="relative">
                     <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400 text-xs font-bold">$</span>
-                    <input type="text" id="manualPresupuestoARS" readonly class="w-full text-xs pl-8 pr-3 p-2.5 rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-800 outline-none" placeholder="Calculado según fecha de cotización">
+                    <input type="text" id="manualPresupuestoARS" readonly class="w-full text-xs pl-8 pr-3 p-2.5 rounded-xl border border-slate-200 bg-slate-50 font-bold text-slate-800 outline-none" placeholder="Calculado según cotización elegida">
                   </div>
                   <span id="manualFechaCotizLabel" class="text-[10px] text-slate-400 block mt-0.5">La cotización se congelará permanentemente.</span>
                 </div>
@@ -471,7 +484,7 @@
                   </select>
                 </div>
 
-                <!-- Semana reprogramada (Condicional) -->
+                <!-- Semana reprogramada (Condicional si es 'En espera') -->
                 <div id="containerSemanaReprog" class="hidden">
                   <label class="block text-xs font-semibold text-amber-700 mb-1">Semana de Reprogramación</label>
                   <input type="text" id="manualSemanaReprogramada" placeholder="Ej: 2026-(42)" class="w-full text-xs rounded-xl border border-amber-300 bg-amber-50/50 p-2.5 focus:ring-2 focus:ring-amber-500 outline-none font-mono">
@@ -490,7 +503,7 @@
                 <button type="button" onclick="cancelManualEdit()" class="text-xs text-slate-500 hover:text-slate-800 font-medium">Descartar</button>
                 <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-6 py-2.5 rounded-xl shadow-xs transition flex items-center space-x-1.5">
                   <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
-                  <span>Guardar y Sincronizar en la Nube</span>
+                  <span>Guardar y Sincronizar</span>
                 </button>
               </div>
             </form>
@@ -507,11 +520,11 @@
       <div class="bg-white rounded-3xl border border-slate-200 shadow-xs p-6">
         <div class="border-b border-slate-100 pb-4 mb-6">
           <div class="flex items-center space-x-2">
-            <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">Reconocimiento Inteligente por Estructura</span>
+            <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">Reconocimiento Inteligente por Columnas y Hojas</span>
           </div>
-          <h2 class="text-xl font-black text-slate-900 mt-1">Cargar Reportes Finnegans (Sin importar el nombre)</h2>
+          <h2 class="text-xl font-black text-slate-900 mt-1">Cargar Reportes Finnegans (Sin importar el nombre ni los duplicados)</h2>
           <p class="text-xs text-slate-500 mt-1">
-            Puedes soltar los archivos con cualquier nombre (ej: <code class="bg-slate-100 px-1 py-0.5 rounded font-mono">Reporte (33).xlsx</code>, <code class="bg-slate-100 px-1 py-0.5 rounded font-mono">Reporte (35).xlsx</code>). El sistema examina las hojas y columnas para identificar cuál es el de <b>Autorizaciones (Actividad y Responsable)</b> y cuál es el de <b>Pedidos Pendientes</b>.
+            Puedes soltar los archivos con cualquier nombre (ej: <code class="bg-slate-100 px-1 py-0.5 rounded font-mono">Reporte (33).xlsx</code>, <code class="bg-slate-100 px-1 py-0.5 rounded font-mono">Reporte (35).xlsx</code>). El sistema examina las columnas exactas de <b>Gestión de Compras CMP - Autorizaciones</b> y de <b>Análisis de Pedidos Pendientes</b>, agrupando los renglones repetidos en un solo <b>Doc.-nro. interno</b> y preservando las cargas manuales.
           </p>
         </div>
 
@@ -522,7 +535,7 @@
             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
           </div>
           <h3 class="text-base font-bold text-slate-800">Haz clic aquí o arrastra ambos reportes juntos o por separado</h3>
-          <p class="text-xs text-slate-500 mt-1 max-w-md">Formatos soportados: Excel (.xlsx, .xls). Detección automática de la hoja <span class="font-mono text-indigo-600 font-bold">master autorizaciones</span> y de <span class="font-mono text-emerald-600 font-bold">Programacion PC</span>.</p>
+          <p class="text-xs text-slate-500 mt-1 max-w-md">Formatos soportados: Excel (.xlsx, .xls) o CSV. Detección automática por las columnas de Finnegans.</p>
         </div>
 
         <!-- Tarjetas de Archivos Detectados -->
@@ -542,20 +555,20 @@
               <span id="badgeDetect2" class="text-[10px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-medium">Pendiente</span>
             </div>
             <h4 class="font-bold text-sm text-slate-800 mt-2" id="nameDetect2">No cargado</h4>
-            <p class="text-[11px] text-slate-500 mt-0.5" id="detailDetect2">Aporta: N° PC, Fecha, Descripción y Unidad.</p>
+            <p class="text-[11px] text-slate-500 mt-0.5" id="detailDetect2">Aporta: Doc.-nro. interno, F.comp, Descripción, Ítems y Unidad.</p>
           </div>
         </div>
 
         <!-- Botón de Procesamiento y Fusión con Detección de Duplicados -->
         <div class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100">
           <div class="text-xs text-slate-500">
-            <span>¿Quieres simular la integración con datos de prueba?</span>
-            <button onclick="loadDemoSampleData()" class="text-indigo-600 hover:text-indigo-800 underline font-semibold ml-1">Cargar Demo</button>
+            <span>¿Deseas probar la interfaz con datos de ejemplo?</span>
+            <button onclick="loadDemoSampleData()" class="text-indigo-600 hover:text-indigo-800 underline font-semibold ml-1">Cargar Datos Demo</button>
           </div>
           
           <button id="btnProcessReports" onclick="executeSmartMerge()" disabled class="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold px-6 py-3 rounded-xl shadow-xs transition flex items-center space-x-2">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
-            <span>Fusionar y Detectar Duplicados</span>
+            <span>Desduplicar por Doc.-nro. interno y Consolidar</span>
           </button>
         </div>
 
@@ -563,7 +576,7 @@
         <div id="importDiagnostics" class="mt-6 p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs hidden">
           <h4 class="font-bold text-slate-800 mb-2 flex items-center space-x-1.5">
             <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-            <span>Resultados de la Fusión y Resguardo de Modificaciones Manuales</span>
+            <span>Resultados de la Desduplicación y Resguardo de Cambios</span>
           </h4>
           <ul id="diagnosticsList" class="space-y-1 text-slate-600 font-mono text-[11px]"></ul>
         </div>
@@ -573,7 +586,7 @@
   </main>
 
   <!-- ============================================================== -->
-  <!-- MODAL: TABLA DE COTIZACIONES DIARIAS USD / ARS                 -->
+  <!-- MODAL 1: TABLA DE COTIZACIONES DIARIAS USD / ARS               -->
   <!-- ============================================================== -->
   <div id="dailyRatesModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 flex flex-col max-h-[90vh]">
@@ -581,14 +594,14 @@
       <div class="flex items-center justify-between pb-3 border-b border-slate-100">
         <div>
           <h3 class="font-black text-slate-900 text-base">Tabla de Cotizaciones Diarias (USD/ARS)</h3>
-          <p class="text-xs text-slate-500">Permite aplicar la cotización exacta del día en que se hizo el pedido o se cargó el presupuesto.</p>
+          <p class="text-xs text-slate-500">Aplica la cotización del día en que se hizo el pedido (F.comp) o se fijó el presupuesto.</p>
         </div>
         <button onclick="closeDailyRatesModal()" class="text-slate-400 hover:text-slate-600 p-1 text-lg font-bold">✕</button>
       </div>
 
       <!-- Formulario para agregar cotización de un día específico -->
       <div class="mt-4 p-4 bg-slate-50 rounded-2xl border border-slate-200">
-        <span class="text-xs font-bold text-slate-700 block mb-2">Registrar o Actualizar Cotización por Fecha</span>
+        <span class="text-xs font-bold text-slate-700 block mb-2">Registrar o Modificar Cotización por Fecha</span>
         <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
           <div>
             <label class="block text-[11px] font-semibold text-slate-600 mb-1">Fecha</label>
@@ -599,7 +612,7 @@
             <input type="number" step="0.5" id="rateInputValue" placeholder="1250.00" class="w-full text-xs rounded-xl border border-slate-300 p-2 bg-white font-mono font-bold">
           </div>
           <div class="flex space-x-2">
-            <button onclick="saveDailyRateManual()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-2 px-3 rounded-xl transition">Guardar Fecha</button>
+            <button onclick="saveDailyRateManual()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-2 px-3 rounded-xl transition">Guardar</button>
             <button onclick="fetchOnlineTodayRate()" class="bg-slate-200 hover:bg-slate-300 text-slate-700 text-xs font-semibold py-2 px-3 rounded-xl transition" title="Consultar hoy online">Hoy API</button>
           </div>
         </div>
@@ -617,7 +630,6 @@
             </tr>
           </thead>
           <tbody id="ratesTableBody" class="divide-y divide-slate-100 font-mono">
-            <!-- Filas de cotizaciones -->
           </tbody>
         </table>
       </div>
@@ -629,170 +641,146 @@
   </div>
 
   <!-- ============================================================== -->
-  <!-- JAVASCRIPT: LÓGICA DE NEGOCIO, FIRESTORE Y PROCESAMIENTO EXCEL -->
+  <!-- MODAL 2: DETALLE DE RENGLONES / ITEMS DE UN COMPROBANTE        -->
   <!-- ============================================================== -->
-  <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
-    import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
-    import { getFirestore, doc, setDoc, onSnapshot, collection } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+  <div id="itemsDetailModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-3xl w-full p-6 shadow-2xl border border-slate-100 flex flex-col max-h-[90vh]">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div>
+          <div class="flex items-center space-x-2">
+            <span class="text-[10px] font-bold text-indigo-700 bg-indigo-100 px-2 py-0.5 rounded">Renglones de la Orden</span>
+            <h3 class="font-black text-slate-900 text-base" id="modalItemsDocNro">OC-0000</h3>
+          </div>
+          <p class="text-xs text-slate-500 mt-0.5" id="modalItemsDocDesc">-</p>
+        </div>
+        <button onclick="closeItemsModal()" class="text-slate-400 hover:text-slate-600 p-1 text-lg font-bold">✕</button>
+      </div>
 
-    // Variables globales inyectadas por el entorno
-    const appId = typeof __app_id !== 'undefined' ? __app_id : 'finnegans-pc-app';
-    const firebaseConfig = typeof __firebase_config !== 'undefined' ? JSON.parse(__firebase_config) : {
-      apiKey: "demo-key",
-      authDomain: "demo.firebaseapp.com",
-      projectId: "demo-project"
-    };
+      <div class="mt-4 flex-grow overflow-y-auto max-h-[380px] border border-slate-200 rounded-2xl">
+        <table class="w-full text-xs text-left">
+          <thead class="bg-slate-100 text-slate-600 uppercase font-bold sticky top-0">
+            <tr>
+              <th class="p-2.5">Producto</th>
+              <th class="p-2.5">Descripción Ítem</th>
+              <th class="p-2.5 text-right">Pendiente Destino</th>
+              <th class="p-2.5">Empresa</th>
+            </tr>
+          </thead>
+          <tbody id="modalItemsTableBody" class="divide-y divide-slate-100">
+          </tbody>
+        </table>
+      </div>
 
-    let app = null;
-    let auth = null;
-    let db = null;
-    let currentUser = null;
-    let firestoreConnected = false;
+      <div class="mt-4 pt-3 border-t border-slate-100 flex justify-end">
+        <button onclick="closeItemsModal()" class="px-5 py-2 rounded-xl text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800 transition">Cerrar</button>
+      </div>
+    </div>
+  </div>
 
+  <!-- ============================================================== -->
+  <!-- MODAL 3: CONEXIÓN GOOGLE SHEETS / APPS SCRIPT                  -->
+  <!-- ============================================================== -->
+  <div id="sheetsConfigModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-2xl w-full p-6 shadow-2xl border border-slate-100 flex flex-col max-h-[90vh]">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center space-x-2">
+          <div class="p-2 bg-emerald-100 text-emerald-700 rounded-xl">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg>
+          </div>
+          <div>
+            <h3 class="font-black text-slate-900 text-base">Conexión a Base de Datos en Google Sheets</h3>
+            <p class="text-xs text-slate-500">Sincronización en vivo con tu hoja de cálculo compartida mediante Google Apps Script.</p>
+          </div>
+        </div>
+        <button onclick="closeSheetsConfigModal()" class="text-slate-400 hover:text-slate-600 p-1 text-lg font-bold">✕</button>
+      </div>
+
+      <div class="mt-4 space-y-4 text-xs flex-grow overflow-y-auto pr-1">
+        <div class="bg-indigo-50 border border-indigo-100 p-3.5 rounded-2xl text-slate-700 space-y-2">
+          <p class="font-semibold text-indigo-950">¿Cómo conectar tu Google Sheet?</p>
+          <ol class="list-decimal pl-4 space-y-1 text-slate-600 text-[11px]">
+            <li>Abre tu Google Sheet donde quieres guardar la base de datos.</li>
+            <li>Ve a <b>Extensiones &gt; Apps Script</b> y pega el código provisto en el archivo <code class="bg-white px-1 py-0.5 rounded font-mono font-bold">codigo_apps_script.gs</code>.</li>
+            <li>Haz clic en <b>Implementar &gt; Nueva implementación</b>, elige tipo <i>"Aplicación web"</i>, acceso: <i>"Cualquier usuario"</i> (Anyone).</li>
+            <li>Copia la URL de la aplicación web generada y pégala aquí abajo.</li>
+          </ol>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">URL de la Aplicación Web (Google Apps Script Web App URL)</label>
+          <input type="url" id="inputAppsScriptUrl" placeholder="https://script.google.com/macros/s/AKfycb.../exec" class="w-full text-xs font-mono p-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+          <span class="text-[10px] text-slate-400">Esta URL gestionará la lectura y escritura compartida para todos los compradores.</span>
+        </div>
+
+        <div class="flex items-center space-x-2 pt-2">
+          <button onclick="testGoogleSheetsConnection()" id="btnTestSheets" class="bg-indigo-600 hover:bg-indigo-700 text-white font-semibold py-2 px-4 rounded-xl transition">
+            Probar Conexión &amp; Sincronizar
+          </button>
+          <button onclick="disconnectGoogleSheets()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 font-semibold py-2 px-3 rounded-xl transition">
+            Usar Modo Local
+          </button>
+        </div>
+
+        <div id="sheetsConnectionResult" class="p-3 rounded-xl text-[11px] font-mono hidden"></div>
+      </div>
+
+      <div class="mt-4 pt-3 border-t border-slate-100 flex justify-end">
+        <button onclick="closeSheetsConfigModal()" class="px-5 py-2 rounded-xl text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800 transition">Listo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============================================================== -->
+  <!-- JAVASCRIPT: LÓGICA DE NEGOCIO, DESDUPLICACIÓN Y APPS SCRIPT    -->
+  <!-- ============================================================== -->
+  <script>
     // Estado principal en memoria
     window.masterPCData = [];
-    window.dailyRatesMap = {}; // 'YYYY-MM-DD' -> { rate: 1250, source: 'Oficial' }
+    window.dailyRatesMap = {}; // 'YYYY-MM-DD' -> { date, rate, source }
     window.currentSortCol = 'fechaPedido';
     window.currentSortDir = 'desc';
+    window.googleAppsScriptUrl = '';
 
-    // Inicializar Firebase
-    try {
-      app = initializeApp(firebaseConfig);
-      auth = getAuth(app);
-      db = getFirestore(app);
-
-      // Autenticación inicial requerida según las reglas
-      const initAuth = async () => {
-        if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-          await signInWithCustomToken(auth, __initial_auth_token);
-        } else {
-          await signInAnonymously(auth);
-        }
-      };
-
-      initAuth().then(() => {
-        onAuthStateChanged(auth, (user) => {
-          if (user) {
-            currentUser = user;
-            firestoreConnected = true;
-            document.getElementById('cloudStatusText').innerText = "En Línea (Sincronizado)";
-            document.getElementById('cloudSyncBadge').className = "bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[10px] px-1.5 py-0.5 rounded-full font-mono font-medium flex items-center space-x-1";
-            
-            // Suscribirse a la colección pública de Pedidos de Compra (RULE 1 & 2)
-            subscribeToPublicOrders();
-            // Suscribirse a la colección de Cotizaciones Diarias
-            subscribeToDailyRates();
-          }
-        });
-      }).catch(err => {
-        console.warn("Modo local o fuera de línea:", err);
-        fallbackLocalState();
-      });
-
-    } catch (e) {
-      console.warn("Inicializando en modo local aislado:", e);
-      fallbackLocalState();
-    }
-
-    function fallbackLocalState() {
-      firestoreConnected = false;
-      document.getElementById('cloudStatusText').innerText = "Modo Local";
-      document.getElementById('cloudSyncBadge').className = "bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] px-1.5 py-0.5 rounded-full font-mono font-medium flex items-center space-x-1";
-    }
-
-    function subscribeToPublicOrders() {
-      if (!currentUser || !db) return;
-      const ordersCol = collection(db, 'artifacts', appId, 'public', 'data', 'pedidos_compra');
-      
-      onSnapshot(ordersCol, (snapshot) => {
-        const loaded = [];
-        snapshot.forEach(docSnap => {
-          loaded.push(docSnap.data());
-        });
-        if (loaded.length > 0) {
-          window.masterPCData = loaded;
-          window.populateSemanaFilter();
-          window.renderTable();
-          window.updateKPIs();
-          window.renderManualList();
-        }
-      }, (error) => {
-        console.error("Error en snapshot de pedidos:", error);
-      });
-    }
-
-    function subscribeToDailyRates() {
-      if (!currentUser || !db) return;
-      const ratesCol = collection(db, 'artifacts', appId, 'public', 'data', 'cotizaciones_dolar');
-
-      onSnapshot(ratesCol, (snapshot) => {
-        snapshot.forEach(docSnap => {
-          const d = docSnap.data();
-          if (d.date && d.rate) {
-            window.dailyRatesMap[d.date] = d;
-          }
-        });
-        window.renderRatesTable();
-        window.updateLatestRateHeader();
-      }, (error) => {
-        console.error("Error en snapshot de cotizaciones:", error);
-      });
-    }
-
-    window.syncOrderToCloud = async function(orderObj) {
-      if (!firestoreConnected || !currentUser || !db) return;
-      try {
-        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'pedidos_compra', orderObj.id);
-        await setDoc(docRef, { ...orderObj, updatedAt: new Date().toISOString(), updatedBy: currentUser.uid }, { merge: true });
-      } catch (err) {
-        console.error("Error al sincronizar pedido:", err);
-      }
-    };
-
-    window.syncRateToCloud = async function(dateStr, rateValue, sourceStr) {
-      if (!firestoreConnected || !currentUser || !db) return;
-      try {
-        const docRef = doc(db, 'artifacts', appId, 'public', 'data', 'cotizaciones_dolar', dateStr);
-        await setDoc(docRef, {
-          date: dateStr,
-          rate: Number(rateValue),
-          source: sourceStr || 'Manual',
-          updatedAt: new Date().toISOString()
-        }, { merge: true });
-      } catch (err) {
-        console.error("Error al sincronizar cotización:", err);
-      }
-    };
-  </script>
-
-  <script>
-    // Variables de trabajo
-    let rawDetectedReport1 = null; // { rows, fileName, sheetName }
-    let rawDetectedReport2 = null; // { rows, fileName, sheetName }
+    let rawDetectedReport1 = null; // Autorizaciones
+    let rawDetectedReport2 = null; // Pedidos pendientes
     let selectedPCId = null;
     let manualFilterMode = 'all';
 
     window.addEventListener('DOMContentLoaded', () => {
-      // Iniciar con cotizaciones históricas por defecto para pruebas
+      // Iniciar con cotizaciones históricas por defecto
       initDefaultRates();
-      // Establecer fecha por defecto en el modal de cotización
+
+      // Cargar URL guardada de Apps Script si existe
+      try {
+        const savedUrl = localStorage.getItem('finnegans_gas_url');
+        if (savedUrl) {
+          window.googleAppsScriptUrl = savedUrl;
+          document.getElementById('inputAppsScriptUrl').value = savedUrl;
+          setSheetsConnectionStatus(true, "Conectado a Google Sheets");
+          // Sincronizar silenciosamente al inicio
+          syncWithGoogleSheets(true);
+        }
+      } catch (e) {
+        console.warn("Storage restricted or empty:", e);
+      }
+
       document.getElementById('rateInputDate').value = new Date().toISOString().slice(0, 10);
       document.getElementById('manualFechaCotizacion').value = new Date().toISOString().slice(0, 10);
-      // Aplicar filtro de fecha predeterminado: Últimos 6 meses
       applyDatePreset();
     });
 
     function initDefaultRates() {
       const today = new Date();
-      for (let i = 0; i < 30; i++) {
+      for (let i = 0; i < 45; i++) {
         const d = new Date(today);
         d.setDate(today.getDate() - i);
         const ymd = d.toISOString().slice(0, 10);
         if (!window.dailyRatesMap[ymd]) {
           window.dailyRatesMap[ymd] = {
             date: ymd,
-            rate: 1250.00 - (i * 1.5),
+            rate: 1250.00 - (i * 1.2),
             source: 'Oficial'
           };
         }
@@ -816,16 +804,12 @@
             source: 'DolarAPI Oficial'
           };
 
-          if (window.syncRateToCloud) {
-            window.syncRateToCloud(todayStr, rateVal, 'DolarAPI Oficial');
-          }
-
           renderRatesTable();
           updateLatestRateHeader();
           if (!silent) showToast(`Cotización de hoy actualizada: $${rateVal}`);
         }
       } catch (err) {
-        console.warn("Fallo al consultar API remota de cotización:", err);
+        console.warn("API de cotización no disponible:", err);
       }
     }
 
@@ -850,7 +834,7 @@
       const rateVal = parseFloat(document.getElementById('rateInputValue').value);
 
       if (!dateVal || isNaN(rateVal) || rateVal <= 0) {
-        showToast("Por favor ingresa una fecha válida y un valor numérico de cotización.");
+        showToast("Por favor ingresa una fecha válida y un valor de cotización.");
         return;
       }
 
@@ -860,13 +844,13 @@
         source: 'Manual'
       };
 
-      if (window.syncRateToCloud) {
-        window.syncRateToCloud(dateVal, rateVal, 'Manual');
-      }
-
       renderRatesTable();
       updateLatestRateHeader();
       showToast(`Cotización guardada para ${dateVal}: $${rateVal}`);
+
+      if (window.googleAppsScriptUrl) {
+        syncSingleRateToSheets(dateVal, rateVal);
+      }
     }
 
     function renderRatesTable() {
@@ -902,90 +886,11 @@
 
     function normalizeStr(str) {
       if (!str) return '';
-      return String(str).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '');
-    }
-
-    async function handleSmartFiles(event) {
-      const files = Array.from(event.target.files);
-      if (!files.length) return;
-
-      for (const file of files) {
-        const buffer = await file.arrayBuffer();
-        const workbook = XLSX.read(new Uint8Array(buffer), { type: 'array', cellDates: true });
-        
-        let recognizedType = null;
-        let bestSheet = null;
-        let rows = [];
-
-        // Evaluar cada hoja buscando las firmas de Autorizaciones o Pedidos
-        for (const sheetName of workbook.SheetNames) {
-          const normSheet = normalizeStr(sheetName);
-          const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' });
-          if (!sheetData.length) continue;
-
-          // Analizar encabezados
-          const headers = Object.keys(sheetData[0] || {}).map(h => normalizeStr(h));
-
-          const hasAutorizacionesSign = normSheet.includes('masterautorizaciones') || 
-            (headers.some(h => h.includes('actividad')) && headers.some(h => h.includes('responsable') || h.includes('solicitante')));
-
-          const hasPedidosSign = normSheet.includes('programacionpc') || normSheet.includes('pedidospendientes') ||
-            (headers.some(h => h.includes('pedido') || h.includes('nropc') || h.includes('comprobante')) && headers.some(h => h.includes('descripcion') || h.includes('detalle')));
-
-          if (hasAutorizacionesSign) {
-            recognizedType = 'autorizaciones';
-            bestSheet = sheetName;
-            rows = sheetData;
-            break;
-          } else if (hasPedidosSign) {
-            recognizedType = 'pedidos';
-            bestSheet = sheetName;
-            rows = sheetData;
-            break;
-          }
-        }
-
-        // Si el nombre de la hoja no fue explícito, buscar por columnas en la primera hoja
-        if (!recognizedType && workbook.SheetNames.length > 0) {
-          const firstSheet = workbook.SheetNames[0];
-          const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[firstSheet], { defval: '' });
-          if (sheetData.length) {
-            const headers = Object.keys(sheetData[0]).map(h => normalizeStr(h));
-            if (headers.some(h => h.includes('actividad')) && headers.some(h => h.includes('responsable'))) {
-              recognizedType = 'autorizaciones';
-              bestSheet = firstSheet;
-              rows = sheetData;
-            } else if (headers.some(h => h.includes('nropc') || h.includes('pedido'))) {
-              recognizedType = 'pedidos';
-              bestSheet = firstSheet;
-              rows = sheetData;
-            }
-          }
-        }
-
-        // Asignar al slot correspondiente
-        if (recognizedType === 'autorizaciones') {
-          rawDetectedReport1 = { rows, fileName: file.name, sheetName: bestSheet };
-          document.getElementById('nameDetect1').innerText = file.name;
-          document.getElementById('detailDetect1').innerHTML = `<span class="text-indigo-600 font-bold font-mono">Hoja: ${bestSheet}</span> (${rows.length} autorizaciones)`;
-          document.getElementById('badgeDetect1').className = "text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold";
-          document.getElementById('badgeDetect1').innerText = "✓ Reconocido";
-          showToast(`Reconocido: ${file.name} como Reporte de Autorizaciones`);
-        } else if (recognizedType === 'pedidos') {
-          rawDetectedReport2 = { rows, fileName: file.name, sheetName: bestSheet };
-          document.getElementById('nameDetect2').innerText = file.name;
-          document.getElementById('detailDetect2').innerHTML = `<span class="text-emerald-600 font-bold font-mono">Hoja: ${bestSheet}</span> (${rows.length} pedidos pendientes)`;
-          document.getElementById('badgeDetect2').className = "text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold";
-          document.getElementById('badgeDetect2').innerText = "✓ Reconocido";
-          showToast(`Reconocido: ${file.name} como Reporte de Pedidos Pendientes`);
-        } else {
-          showToast(`No se pudo clasificar automáticamente ${file.name}. Asegúrate de exportar desde Finnegans.`);
-        }
-      }
-
-      if (rawDetectedReport1 || rawDetectedReport2) {
-        document.getElementById('btnProcessReports').disabled = false;
-      }
+      return String(str)
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]/g, '');
     }
 
     function calculateSemana(dateVal) {
@@ -1050,88 +955,211 @@
       return d.toLocaleDateString('es-AR');
     }
 
+    async function handleSmartFiles(event) {
+      const files = Array.from(event.target.files);
+      if (!files.length) return;
+
+      for (const file of files) {
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(new Uint8Array(buffer), { type: 'array', cellDates: true });
+        
+        let recognizedType = null;
+        let bestSheet = null;
+        let rows = [];
+
+        for (const sheetName of workbook.SheetNames) {
+          const normSheet = normalizeStr(sheetName);
+          const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' });
+          if (!sheetData.length) continue;
+
+          // Analizar nombres exactos de encabezados
+          const headers = Object.keys(sheetData[0] || {}).map(h => normalizeStr(h));
+
+          // Firmas de CMP - Autorizaciones:
+          // "Doc nro interno", "Actividad", "Responsable pedido", "Fechaultactividad", etc.
+          const hasAutorizacionesCols = headers.some(h => h.includes('actividad')) && 
+            (headers.some(h => h.includes('responsable') || h.includes('usuarioaltaoc') || h.includes('autorizante')));
+
+          // Firmas de Pedidos Pendientes:
+          // "Doc.-nro. interno", "F.comp", "Producto", "Descripción item", "Pendiente destino", "Situacion"
+          const hasPedidosCols = (headers.some(h => h.includes('fcomp') || h.includes('pendientedestino') || h.includes('producto'))) &&
+            headers.some(h => h.includes('doc') || h.includes('interno'));
+
+          if (normSheet.includes('masterautorizaciones') || hasAutorizacionesCols) {
+            recognizedType = 'autorizaciones';
+            bestSheet = sheetName;
+            rows = sheetData;
+            break;
+          } else if (normSheet.includes('programacionpc') || normSheet.includes('pedidospendientes') || hasPedidosCols) {
+            recognizedType = 'pedidos';
+            bestSheet = sheetName;
+            rows = sheetData;
+            break;
+          }
+        }
+
+        // Asignación de reporte detectado
+        if (recognizedType === 'autorizaciones') {
+          rawDetectedReport1 = { rows, fileName: file.name, sheetName: bestSheet };
+          document.getElementById('nameDetect1').innerText = file.name;
+          document.getElementById('detailDetect1').innerHTML = `<span class="text-indigo-600 font-bold font-mono">Hoja: ${bestSheet}</span> (${rows.length} autorizaciones)`;
+          document.getElementById('badgeDetect1').className = "text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold";
+          document.getElementById('badgeDetect1').innerText = "✓ Reconocido";
+          showToast(`Reconocido: ${file.name} como Reporte de Autorizaciones`);
+        } else if (recognizedType === 'pedidos') {
+          rawDetectedReport2 = { rows, fileName: file.name, sheetName: bestSheet };
+          document.getElementById('nameDetect2').innerText = file.name;
+          document.getElementById('detailDetect2').innerHTML = `<span class="text-emerald-600 font-bold font-mono">Hoja: ${bestSheet}</span> (${rows.length} renglones de pedidos pendientes)`;
+          document.getElementById('badgeDetect2').className = "text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold";
+          document.getElementById('badgeDetect2').innerText = "✓ Reconocido";
+          showToast(`Reconocido: ${file.name} como Reporte de Pedidos Pendientes`);
+        } else {
+          showToast(`No se reconoció automáticamente el archivo ${file.name}. Asegúrate de exportarlo desde Finnegans.`);
+        }
+      }
+
+      if (rawDetectedReport1 || rawDetectedReport2) {
+        document.getElementById('btnProcessReports').disabled = false;
+      }
+    }
+
     function executeSmartMerge() {
       const diagnostics = [];
+      let totalRawRows = 0;
       let newCount = 0;
       let updatedCount = 0;
       let preservedManualCount = 0;
 
-      // 1. Construir mapa de autorizaciones (Actividad y Responsable)
+      // 1. Mapear Reporte CMP - Autorizaciones por Doc.-nro. interno
       const rep1Map = new Map();
       if (rawDetectedReport1) {
         rawDetectedReport1.rows.forEach(row => {
-          let pcNum = '';
+          let docNum = '';
           let actividad = '';
           let responsable = '';
+          let fechaUltActividad = '';
+          let autorizante = '';
 
           for (const [k, v] of Object.entries(row)) {
             const nk = normalizeStr(k);
-            if (!pcNum && (nk.includes('nropc') || nk.includes('pedido') || nk.includes('nro') || nk.includes('comprobante'))) pcNum = String(v).trim();
-            if (nk.includes('actividad')) actividad = String(v).trim();
-            if (nk.includes('responsable') || nk.includes('solicitante')) responsable = String(v).trim();
+            if (!docNum && (nk.includes('docnrointerno') || nk.includes('nrointerno') || nk.includes('comprobante') || nk.includes('pedido'))) docNum = String(v).trim();
+            if (nk.includes('actividad') && !nk.includes('fecha')) actividad = String(v).trim();
+            if (nk.includes('responsablepedido') || nk.includes('responsable')) responsable = String(v).trim();
+            if (nk.includes('fechaultactividad')) fechaUltActividad = v;
+            if (nk.includes('usuarioautorizante') || nk.includes('autorizante')) autorizante = String(v).trim();
           }
 
-          if (pcNum) {
-            rep1Map.set(normalizeStr(pcNum), {
+          if (docNum) {
+            rep1Map.set(normalizeStr(docNum), {
               actividad: actividad || 'General',
-              responsable: responsable || 'Sin especificar'
+              responsable: responsable || 'Sin especificar',
+              fechaUltActividad: fechaUltActividad,
+              autorizante: autorizante
             });
           }
         });
         diagnostics.push(`Reporte Autorizaciones (${rawDetectedReport1.fileName}): Mapeadas ${rep1Map.size} órdenes con Actividad y Responsable.`);
       }
 
-      // 2. Procesar pedidos pendientes y fusionar con masterPCData
+      // 2. Procesar Reporte Pedidos Pendientes y AGRUPAR por Doc.-nro. interno
       const existingMap = new Map();
       window.masterPCData.forEach(p => existingMap.set(p.id, p));
 
       if (rawDetectedReport2) {
+        totalRawRows = rawDetectedReport2.rows.length;
+        
+        // Agrupar filas de Excel por número de comprobante único
+        const groupedRows = new Map();
+
         rawDetectedReport2.rows.forEach((row, index) => {
-          let pcNum = '';
-          let fechaPedido = '';
-          let descripcion = '';
-          let unidad = '';
+          let docNum = '';
+          let fComp = '';
+          let semanaFecha = '';
+          let descPrincipal = '';
+          let producto = '';
+          let descItem = '';
+          let pendienteDestino = '';
+          let empresa = '';
+          let solicitante = '';
+          let situacion = '';
 
           for (const [k, v] of Object.entries(row)) {
             const nk = normalizeStr(k);
-            if (!pcNum && (nk.includes('nropc') || nk.includes('pedido') || nk.includes('nro') || nk.includes('comprobante'))) pcNum = String(v).trim();
-            if (!fechaPedido && (nk.includes('fecha') || nk.includes('emision'))) fechaPedido = v;
-            if (!descripcion && (nk.includes('descripcion') || nk.includes('detalle') || nk.includes('articulo') || nk.includes('concepto'))) descripcion = String(v).trim();
-            if (!unidad && (nk.includes('unidad') || nk.includes('um') || nk.includes('medida'))) unidad = String(v).trim();
+            if (!docNum && (nk.includes('docnrointerno') || nk.includes('nrointerno') || nk.includes('doc') || nk.includes('comprobante'))) docNum = String(v).trim();
+            if (!fComp && (nk.includes('fcomp') || nk.includes('fechacomprobante') || nk.includes('fechaemision') || nk.includes('fecha'))) fComp = v;
+            if (!semanaFecha && (nk.includes('semanafecha') || nk.includes('semana'))) semanaFecha = String(v).trim();
+            if (!descPrincipal && nk === 'descripcion') descPrincipal = String(v).trim();
+            if (nk.includes('producto')) producto = String(v).trim();
+            if (nk.includes('descripcionitem') || nk.includes('item')) descItem = String(v).trim();
+            if (nk.includes('pendientedestino') || nk.includes('cantidad')) pendienteDestino = String(v).trim();
+            if (nk.includes('empresa')) empresa = String(v).trim();
+            if (nk.includes('solicitante') || nk.includes('usuarioalta')) solicitante = String(v).trim();
+            if (nk.includes('situacion') || nk.includes('estado')) situacion = String(v).trim();
           }
 
-          if (!pcNum) pcNum = `PC-${index + 1001}`;
-          const id = normalizeStr(pcNum);
+          if (!docNum) docNum = `OC-AUTOGEN-${index + 1000}`;
+          const id = normalizeStr(docNum);
+
+          if (!groupedRows.has(id)) {
+            groupedRows.set(id, {
+              docNum,
+              fComp,
+              semanaFecha,
+              descPrincipal: descPrincipal || descItem || 'Sin descripción',
+              empresa,
+              solicitante,
+              situacion,
+              items: []
+            });
+          }
+
+          // Agregar el renglón al listado de ítems de este comprobante
+          groupedRows.get(id).items.push({
+            producto: producto || '-',
+            descripcionItem: descItem || descPrincipal || 'Ítem sin detalle',
+            pendienteDestino: pendienteDestino || '1 UN',
+            empresa: empresa || '-'
+          });
+        });
+
+        // 3. Consolidar los comprobantes agrupados en masterPCData
+        groupedRows.forEach((grp, id) => {
           const rep1Data = rep1Map.get(id) || { actividad: 'No asignada', responsable: 'Sin asignar' };
-          const ymdFecha = formatDateToYMD(fechaPedido);
-          const semanaCalculada = calculateSemana(fechaPedido);
+          const ymdFecha = formatDateToYMD(grp.fComp);
+          const semanaCalculada = calculateSemana(grp.fComp);
+          const unidadPrincipal = grp.items[0]?.pendienteDestino?.split(' ')?.[1] || 'UN';
 
           if (existingMap.has(id)) {
-            // REGISTRO YA EXISTE: PRESERVAR TODAS LAS MODIFICACIONES MANUALES
+            // COMPROBANTE EXISTENTE: Conservar intactas todas las modificaciones manuales
             const existing = existingMap.get(id);
             existing.fechaPedido = ymdFecha || existing.fechaPedido;
             existing.semana = semanaCalculada !== '-' ? semanaCalculada : existing.semana;
-            existing.descripcion = descripcion || existing.descripcion;
-            existing.unidad = unidad || existing.unidad;
+            existing.descripcion = grp.descPrincipal;
+            existing.unidad = unidadPrincipal;
+            existing.items = grp.items;
+            existing.empresa = grp.empresa || existing.empresa;
+            existing.solicitante = grp.solicitante || existing.solicitante;
 
-            // Actualizar actividad y responsable si vienen del reporte 1
+            // Actualizar actividad y responsable si provienen del Reporte 1
             if (rep1Data.actividad !== 'No asignada') existing.actividad = rep1Data.actividad;
             if (rep1Data.responsable !== 'Sin asignar') existing.responsablePedido = rep1Data.responsable;
 
             updatedCount++;
             if (existing.comprador || existing.prioridad || existing.presupuestoUSD !== null) preservedManualCount++;
-            
-            if (window.syncOrderToCloud) window.syncOrderToCloud(existing);
 
           } else {
-            // NUEVO REGISTRO
+            // NUEVO COMPROBANTE ÚNICO
             const newRecord = {
               id: id,
-              nroPC: pcNum,
+              docNroInterno: grp.docNum,
+              nroPC: grp.docNum,
               semana: semanaCalculada,
               fechaPedido: ymdFecha,
-              descripcion: descripcion || 'Sin descripción',
-              unidad: unidad || 'UN',
+              descripcion: grp.descPrincipal,
+              unidad: unidadPrincipal,
+              items: grp.items,
+              empresa: grp.empresa,
+              solicitante: grp.solicitante,
               actividad: rep1Data.actividad,
               responsablePedido: rep1Data.responsable,
               // Campos manuales limpios
@@ -1150,17 +1178,17 @@
 
             existingMap.set(id, newRecord);
             newCount++;
-            if (window.syncOrderToCloud) window.syncOrderToCloud(newRecord);
           }
         });
       }
 
       window.masterPCData = Array.from(existingMap.values());
-      diagnostics.push(`Nuevos pedidos incorporados: ${newCount}`);
-      diagnostics.push(`Pedidos preexistentes actualizados manteniendo sus datos manuales: ${updatedCount} (${preservedManualCount} tenían comprador/presupuesto previo intacto)`);
-      diagnostics.push(`Total consolidado en la base de datos: ${window.masterPCData.length} pedidos.`);
 
-      // Visualización
+      diagnostics.push(`Total de filas leídas en el reporte de pedidos: ${totalRawRows}`);
+      diagnostics.push(`Comprobantes únicos consolidados: ${window.masterPCData.length} (se desduplicaron ${totalRawRows - window.masterPCData.length} renglones repetidos)`);
+      diagnostics.push(`Comprobantes nuevos incorporados: ${newCount}`);
+      diagnostics.push(`Comprobantes existentes actualizados resguardando datos manuales: ${updatedCount} (${preservedManualCount} tenían comprador/presupuesto previo intacto)`);
+
       document.getElementById('diagnosticsList').innerHTML = diagnostics.map(d => `<li>• ${d}</li>`).join('');
       document.getElementById('importDiagnostics').classList.remove('hidden');
 
@@ -1168,7 +1196,13 @@
       renderTable();
       updateKPIs();
       renderManualList();
-      showToast(`¡Integración completada! ${newCount} nuevos, ${updatedCount} actualizados sin perder cambios manuales.`);
+
+      showToast(`¡Consolidación exitosa! ${window.masterPCData.length} órdenes únicas.`);
+
+      // Sincronizar automáticamente con Google Sheets si está configurado
+      if (window.googleAppsScriptUrl) {
+        syncWithGoogleSheets(true);
+      }
 
       setTimeout(() => switchTab('dashboard'), 1200);
     }
@@ -1233,7 +1267,6 @@
         window.currentSortDir = 'asc';
       }
 
-      // Actualizar indicadores visuales de orden
       const allIcons = document.querySelectorAll('[id^="sortIcon_"]');
       allIcons.forEach(i => i.innerText = '↕');
 
@@ -1255,16 +1288,15 @@
       const dateTo = document.getElementById('filterDateTo')?.value || '';
 
       let filtered = window.masterPCData.filter(item => {
-        // Filtro de Fecha
         if (datePreset !== 'all' && item.fechaPedido) {
           const itemYMD = item.fechaPedido.slice(0, 10);
           if (dateFrom && itemYMD < dateFrom) return false;
           if (dateTo && itemYMD > dateTo) return false;
         }
 
-        // Búsqueda Global en todos los campos
         if (search) {
-          const hay = `${item.nroPC} ${item.descripcion} ${item.actividad} ${item.responsablePedido} ${item.comprador} ${item.estado} ${item.enReprogramacionCon} ${item.compras}`.toLowerCase();
+          const itemsText = (item.items || []).map(i => `${i.producto} ${i.descripcionItem}`).join(' ');
+          const hay = `${item.docNroInterno} ${item.nroPC} ${item.descripcion} ${itemsText} ${item.actividad} ${item.responsablePedido} ${item.comprador} ${item.estado} ${item.enReprogramacionCon} ${item.compras}`.toLowerCase();
           if (!hay.includes(search)) return false;
         }
 
@@ -1275,7 +1307,6 @@
         return true;
       });
 
-      // Ordenamiento
       filtered.sort((a, b) => {
         let valA = a[window.currentSortCol];
         let valB = b[window.currentSortCol];
@@ -1300,7 +1331,7 @@
         tbody.innerHTML = `
           <tr>
             <td colspan="16" class="p-8 text-center text-slate-400">
-              No se encontraron registros con los filtros o período seleccionados.
+              No se encontraron comprobantes con los filtros o período seleccionados.
             </td>
           </tr>`;
       } else {
@@ -1324,15 +1355,25 @@
             reprogDisplay = `<span class="text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded">En espera (${item.semanaReprogramada})</span>`;
           }
 
-          const cotizTooltip = item.cotizacionAplicada ? `Cotización fija: $${item.cotizacionAplicada} (${formatDisplayDate(item.fechaCotizacion)})` : 'Sin cotización';
+          const itemCount = (item.items || []).length;
+          const itemsButton = itemCount > 1 ? `
+            <button onclick="openItemsModal('${item.docNroInterno}')" class="mt-1 block text-[10px] bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-semibold px-2 py-0.5 rounded font-mono transition">
+              ${itemCount} renglones asociados &rarr;
+            </button>
+          ` : '';
+
+          const cotizTooltip = item.cotizacionAplicada ? `Cotización fijada: $${item.cotizacionAplicada} (${formatDisplayDate(item.fechaCotizacion)})` : 'Sin cotización asignada';
 
           return `
             <tr class="hover:bg-slate-50/80 transition border-b border-slate-100">
               <td class="p-3 font-mono font-bold text-slate-900 whitespace-nowrap">${item.semana}</td>
-              <td class="p-3 font-bold text-indigo-700 whitespace-nowrap font-mono">${item.nroPC}</td>
+              <td class="p-3 font-bold text-indigo-700 whitespace-nowrap font-mono">${item.docNroInterno}</td>
               <td class="p-3 whitespace-nowrap text-slate-600">${formatDisplayDate(item.fechaPedido)}</td>
               <td class="p-3 whitespace-nowrap text-slate-600">${item.enReprogramacionCon || '-'}</td>
-              <td class="p-3 text-slate-800 font-medium min-w-[200px]">${item.descripcion}</td>
+              <td class="p-3 text-slate-800 font-medium min-w-[220px]">
+                <div class="line-clamp-2" title="${item.descripcion}">${item.descripcion}</div>
+                ${itemsButton}
+              </td>
               <td class="p-3 whitespace-nowrap text-slate-500 font-mono">${item.unidad}</td>
               <td class="p-3 whitespace-nowrap bg-indigo-50/40 font-semibold text-slate-800 border-x border-indigo-50">${item.actividad}</td>
               <td class="p-3 whitespace-nowrap bg-indigo-50/40 text-slate-600 border-r border-indigo-50">${item.responsablePedido}</td>
@@ -1344,7 +1385,7 @@
               <td class="p-3 text-slate-600 max-w-[200px] truncate" title="${item.compras}">${item.compras || '-'}</td>
               <td class="p-3 whitespace-nowrap">${reprogDisplay}</td>
               <td class="p-3 whitespace-nowrap text-center">
-                <button onclick="openManualEditForPC('${item.nroPC}')" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-lg text-[11px] transition shadow-2xs">
+                <button onclick="openManualEditForPC('${item.docNroInterno}')" class="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 font-bold rounded-lg text-[11px] transition shadow-2xs">
                   Editar
                 </button>
               </td>
@@ -1353,7 +1394,7 @@
         }).join('');
       }
 
-      document.getElementById('tableSummary').innerText = `Mostrando ${filtered.length} de ${window.masterPCData.length} pedidos en total`;
+      document.getElementById('tableSummary').innerText = `Mostrando ${filtered.length} de ${window.masterPCData.length} comprobantes únicos`;
       document.getElementById('badgeTotalItems').innerText = window.masterPCData.length;
     }
 
@@ -1446,28 +1487,28 @@
       const search = (document.getElementById('manualListSearch')?.value || '').toLowerCase();
 
       let items = window.masterPCData.filter(item => {
-        const matchesSearch = !search || item.nroPC.toLowerCase().includes(search) || item.descripcion.toLowerCase().includes(search);
+        const matchesSearch = !search || item.docNroInterno.toLowerCase().includes(search) || item.descripcion.toLowerCase().includes(search);
         if (manualFilterMode === 'pending') {
           return matchesSearch && (!item.comprador || !item.prioridad || item.presupuestoUSD === null);
         }
         return matchesSearch;
       });
 
-      document.getElementById('manualCounterBadge').innerText = `${items.length} pedidos`;
+      document.getElementById('manualCounterBadge').innerText = `${items.length} comprobantes`;
 
       if (items.length === 0) {
-        container.innerHTML = `<p class="text-center text-xs text-slate-400 py-8">No se encontraron pedidos con ese criterio.</p>`;
+        container.innerHTML = `<p class="text-center text-xs text-slate-400 py-8">No se encontraron comprobantes con ese criterio.</p>`;
         return;
       }
 
       container.innerHTML = items.map(item => {
-        const isSelected = item.nroPC === selectedPCId;
+        const isSelected = item.docNroInterno === selectedPCId;
         const hasData = item.comprador && item.prioridad;
 
         return `
-          <div onclick="selectPCForManualEdit('${item.nroPC}')" class="p-2.5 rounded-xl cursor-pointer transition border ${isSelected ? 'bg-indigo-50/90 border-indigo-400 shadow-xs' : 'bg-white hover:bg-slate-50 border-slate-200'}">
+          <div onclick="selectPCForManualEdit('${item.docNroInterno}')" class="p-2.5 rounded-xl cursor-pointer transition border ${isSelected ? 'bg-indigo-50/90 border-indigo-400 shadow-xs' : 'bg-white hover:bg-slate-50 border-slate-200'}">
             <div class="flex items-center justify-between">
-              <span class="font-bold text-xs text-indigo-900 font-mono">${item.nroPC}</span>
+              <span class="font-bold text-xs text-indigo-900 font-mono">${item.docNroInterno}</span>
               <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">${item.semana}</span>
             </div>
             <p class="text-[11px] text-slate-600 truncate mt-1">${item.descripcion}</p>
@@ -1487,7 +1528,7 @@
 
     function selectPCForManualEdit(pcId) {
       selectedPCId = pcId;
-      const pc = window.masterPCData.find(p => p.nroPC === pcId);
+      const pc = window.masterPCData.find(p => p.docNroInterno === pcId);
       if (!pc) return;
 
       renderManualList();
@@ -1495,25 +1536,25 @@
       document.getElementById('manualEmptyState').classList.add('hidden');
       document.getElementById('manualEditForm').classList.remove('hidden');
 
-      document.getElementById('formPcNumber').innerText = pc.nroPC;
+      document.getElementById('formPcNumber').innerText = pc.docNroInterno;
       document.getElementById('formPcSemanaBadge').innerText = pc.semana;
       document.getElementById('formPcDescription').innerText = pc.descripcion;
       document.getElementById('formPcFecha').innerText = formatDisplayDate(pc.fechaPedido);
       document.getElementById('formPcActividad').innerText = pc.actividad;
       document.getElementById('formPcResponsable').innerText = pc.responsablePedido;
+      document.getElementById('formPcItemCount').innerText = `Renglones/Ítems asociados: ${(pc.items || []).length}`;
 
       document.getElementById('manualEnReprogramacionCon').value = pc.enReprogramacionCon || '';
       document.getElementById('manualPrioridad').value = pc.prioridad || '';
       document.getElementById('manualPresupuestoUSD').value = pc.presupuestoUSD !== null ? pc.presupuestoUSD : '';
       
-      // Fecha de Cotización: usar la ya congelada o la fecha del pedido
       const initialCotizDate = pc.fechaCotizacion || pc.fechaPedido || new Date().toISOString().slice(0, 10);
       document.getElementById('manualFechaCotizacion').value = initialCotizDate;
 
       if (pc.presupuestoARS !== null) {
         document.getElementById('manualPresupuestoARS').value = `$ ${Number(pc.presupuestoARS).toLocaleString('es-AR', {minimumFractionDigits: 2})}`;
         document.getElementById('manualCotizSnapshot').innerText = `Tasa fijada: $${pc.cotizacionAplicada}`;
-        document.getElementById('manualFechaCotizLabel').innerText = `Congelado con fecha: ${formatDisplayDate(pc.fechaCotizacion)}`;
+        document.getElementById('manualFechaCotizLabel').innerText = `Congelado con cotización del: ${formatDisplayDate(pc.fechaCotizacion)}`;
       } else {
         document.getElementById('manualPresupuestoARS').value = '';
         calculateARSOnInput();
@@ -1529,25 +1570,24 @@
     }
 
     function setCotizDateToOrderDate() {
-      const pc = window.masterPCData.find(p => p.nroPC === selectedPCId);
+      const pc = window.masterPCData.find(p => p.docNroInterno === selectedPCId);
       if (pc && pc.fechaPedido) {
         document.getElementById('manualFechaCotizacion').value = pc.fechaPedido.slice(0, 10);
         calculateARSOnInput();
-        showToast("Fecha establecida a la fecha del pedido.");
+        showToast("Fecha de cotización fijada a la fecha de la orden (F.comp).");
       }
     }
 
     function setCotizDateToToday() {
       document.getElementById('manualFechaCotizacion').value = new Date().toISOString().slice(0, 10);
       calculateARSOnInput();
-      showToast("Fecha establecida al día de hoy.");
+      showToast("Fecha de cotización fijada al día de hoy.");
     }
 
     function getRateForDate(dateStr) {
       if (window.dailyRatesMap[dateStr]) {
         return window.dailyRatesMap[dateStr].rate;
       }
-      // Buscar la cotización más cercana previa
       const allDates = Object.keys(window.dailyRatesMap).sort();
       let bestMatch = null;
       for (const d of allDates) {
@@ -1565,7 +1605,7 @@
         const arsVal = usdInput * rate;
         document.getElementById('manualPresupuestoARS').value = `$ ${arsVal.toLocaleString('es-AR', {minimumFractionDigits: 2})}`;
         document.getElementById('manualCotizSnapshot').innerText = `Tasa del ${formatDisplayDate(cotizDate)}: $${rate}`;
-        document.getElementById('manualFechaCotizLabel').innerText = `Conversión basada en la cotización del ${formatDisplayDate(cotizDate)} (Tasa: $${rate})`;
+        document.getElementById('manualFechaCotizLabel').innerText = `Conversión según cotización del ${formatDisplayDate(cotizDate)} (Tasa: $${rate})`;
       } else {
         document.getElementById('manualPresupuestoARS').value = '';
       }
@@ -1583,7 +1623,7 @@
 
     function saveManualData() {
       if (!selectedPCId) return;
-      const pc = window.masterPCData.find(p => p.nroPC === selectedPCId);
+      const pc = window.masterPCData.find(p => p.docNroInterno === selectedPCId);
       if (!pc) return;
 
       const usdVal = document.getElementById('manualPresupuestoUSD').value !== '' ? parseFloat(document.getElementById('manualPresupuestoUSD').value) : null;
@@ -1610,19 +1650,234 @@
       pc.reprogramacion = document.getElementById('manualReprogramacion').value;
       pc.semanaReprogramada = pc.reprogramacion === 'En espera' ? document.getElementById('manualSemanaReprogramada').value.trim() : '';
 
-      // Sincronizar a la nube para todos los usuarios
-      if (window.syncOrderToCloud) {
-        window.syncOrderToCloud(pc);
-      }
-
       renderManualList();
       renderTable();
       updateKPIs();
-      showToast(`Pedido ${pc.nroPC} actualizado y sincronizado en la nube.`);
+      showToast(`Comprobante ${pc.docNroInterno} actualizado.`);
+
+      if (window.googleAppsScriptUrl) {
+        syncSingleOrderToSheets(pc);
+      }
     }
 
     function cancelManualEdit() {
       if (selectedPCId) selectPCForManualEdit(selectedPCId);
+    }
+
+    function openItemsModal(docNro) {
+      const pc = window.masterPCData.find(p => p.docNroInterno === docNro);
+      if (!pc) return;
+
+      document.getElementById('modalItemsDocNro').innerText = pc.docNroInterno;
+      document.getElementById('modalItemsDocDesc').innerText = pc.descripcion;
+
+      const tbody = document.getElementById('modalItemsTableBody');
+      const items = pc.items || [];
+
+      if (items.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="4" class="p-4 text-center text-slate-400">No hay renglones detallados.</td></tr>`;
+      } else {
+        tbody.innerHTML = items.map(it => `
+          <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+            <td class="p-2.5 font-bold font-mono text-slate-800">${it.producto || '-'}</td>
+            <td class="p-2.5 text-slate-700">${it.descripcionItem || '-'}</td>
+            <td class="p-2.5 text-right font-mono font-semibold text-indigo-700">${it.pendienteDestino || '-'}</td>
+            <td class="p-2.5 text-slate-500">${it.empresa || '-'}</td>
+          </tr>
+        `).join('');
+      }
+
+      document.getElementById('itemsDetailModal').classList.remove('hidden');
+    }
+
+    function openItemsModalForSelected() {
+      if (selectedPCId) openItemsModal(selectedPCId);
+    }
+
+    function closeItemsModal() {
+      document.getElementById('itemsDetailModal').classList.add('hidden');
+    }
+
+    function openSheetsConfigModal() {
+      document.getElementById('sheetsConfigModal').classList.remove('hidden');
+    }
+
+    function closeSheetsConfigModal() {
+      document.getElementById('sheetsConfigModal').classList.add('hidden');
+    }
+
+    function setSheetsConnectionStatus(connected, text) {
+      const badge = document.getElementById('dbStatusBadge');
+      const dot = document.getElementById('dbStatusDot');
+      const txt = document.getElementById('dbStatusText');
+
+      if (connected) {
+        badge.className = "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] px-2 py-0.5 rounded-full font-mono font-medium flex items-center space-x-1 hover:bg-emerald-500/30 transition";
+        dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse";
+        txt.innerText = text || "Google Sheets: Conectado";
+      } else {
+        badge.className = "bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] px-2 py-0.5 rounded-full font-mono font-medium flex items-center space-x-1 hover:bg-amber-500/30 transition";
+        dot.className = "w-1.5 h-1.5 rounded-full bg-amber-400";
+        txt.innerText = text || "Google Sheets: No Conectado (Clic para configurar)";
+      }
+    }
+
+    function disconnectGoogleSheets() {
+      window.googleAppsScriptUrl = '';
+      try { localStorage.removeItem('finnegans_gas_url'); } catch(e){}
+      setSheetsConnectionStatus(false, "Modo Local");
+      document.getElementById('sheetsConnectionResult').className = "p-3 rounded-xl text-[11px] font-mono bg-slate-100 text-slate-700 mt-2";
+      document.getElementById('sheetsConnectionResult').innerText = "Desconectado de Google Sheets. Los datos se mantienen en la memoria del navegador.";
+      document.getElementById('sheetsConnectionResult').classList.remove('hidden');
+    }
+
+    async function testGoogleSheetsConnection() {
+      const url = document.getElementById('inputAppsScriptUrl').value.trim();
+      const resDiv = document.getElementById('sheetsConnectionResult');
+      resDiv.classList.remove('hidden');
+      resDiv.className = "p-3 rounded-xl text-[11px] font-mono bg-indigo-50 text-indigo-700 mt-2";
+      resDiv.innerText = "Conectando con Google Apps Script...";
+
+      if (!url.startsWith('https://script.google.com/')) {
+        resDiv.className = "p-3 rounded-xl text-[11px] font-mono bg-rose-50 text-rose-700 mt-2";
+        resDiv.innerText = "Error: La URL debe comenzar con https://script.google.com/macros/s/.../exec";
+        return;
+      }
+
+      try {
+        const response = await fetch(url + '?action=PING', { method: 'GET', mode: 'cors' });
+        if (response.ok) {
+          window.googleAppsScriptUrl = url;
+          try { localStorage.setItem('finnegans_gas_url', url); } catch(e){}
+          setSheetsConnectionStatus(true, "Google Sheets Conectado");
+          resDiv.className = "p-3 rounded-xl text-[11px] font-mono bg-emerald-50 text-emerald-800 mt-2";
+          resDiv.innerText = "✓ ¡Conexión exitosa! Sincronizando datos con Google Sheets...";
+          await syncWithGoogleSheets(false);
+        } else {
+          throw new Error(`Respuesta HTTP ${response.status}`);
+        }
+      } catch (err) {
+        // En algunos casos Apps Script redirige y CORS da tipo opaco; intentamos POST
+        try {
+          await syncWithGoogleSheets(false, url);
+          window.googleAppsScriptUrl = url;
+          try { localStorage.setItem('finnegans_gas_url', url); } catch(e){}
+          setSheetsConnectionStatus(true, "Google Sheets Conectado");
+          resDiv.className = "p-3 rounded-xl text-[11px] font-mono bg-emerald-50 text-emerald-800 mt-2";
+          resDiv.innerText = "✓ ¡Conectado correctamente con Google Sheets!";
+        } catch (postErr) {
+          resDiv.className = "p-3 rounded-xl text-[11px] font-mono bg-rose-50 text-rose-700 mt-2";
+          resDiv.innerText = "No se pudo comunicar con Google Apps Script. Asegúrate de implementar la aplicación web con acceso 'Cualquiera' (Anyone).";
+        }
+      }
+    }
+
+    async function syncWithGoogleSheets(silent = false, customUrl = null) {
+      const url = customUrl || window.googleAppsScriptUrl;
+      if (!url) {
+        if (!silent) openSheetsConfigModal();
+        return;
+      }
+
+      const btn = document.getElementById('btnSyncSheets');
+      if (btn) btn.classList.add('animate-pulse');
+
+      try {
+        // Enviar todos los pedidos locales para respaldar / fusionar
+        const payload = {
+          action: 'SYNC_ALL',
+          orders: window.masterPCData,
+          rates: window.dailyRatesMap
+        };
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          if (result.orders && Array.isArray(result.orders) && result.orders.length > 0) {
+            // Combinar registros asegurando persistencia de modificaciones
+            const remoteMap = new Map();
+            result.orders.forEach(o => remoteMap.set(o.id || normalizeStr(o.docNroInterno), o));
+
+            window.masterPCData.forEach(localItem => {
+              const remote = remoteMap.get(localItem.id);
+              if (remote) {
+                // Conservar campos manuales más recientes
+                remote.comprador = localItem.comprador || remote.comprador;
+                remote.prioridad = localItem.prioridad || remote.prioridad;
+                remote.presupuestoUSD = localItem.presupuestoUSD !== null ? localItem.presupuestoUSD : remote.presupuestoUSD;
+                remote.presupuestoARS = localItem.presupuestoARS !== null ? localItem.presupuestoARS : remote.presupuestoARS;
+                remote.cotizacionAplicada = localItem.cotizacionAplicada || remote.cotizacionAplicada;
+                remote.fechaCotizacion = localItem.fechaCotizacion || remote.fechaCotizacion;
+                remote.estado = localItem.estado || remote.estado;
+                remote.compras = localItem.compras || remote.compras;
+                remote.reprogramacion = localItem.reprogramacion || remote.reprogramacion;
+                remote.semanaReprogramada = localItem.semanaReprogramada || remote.semanaReprogramada;
+              } else {
+                remoteMap.set(localItem.id, localItem);
+              }
+            });
+
+            window.masterPCData = Array.from(remoteMap.values());
+            populateSemanaFilter();
+            renderTable();
+            updateKPIs();
+            renderManualList();
+          }
+
+          if (result.rates) {
+            Object.assign(window.dailyRatesMap, result.rates);
+            renderRatesTable();
+            updateLatestRateHeader();
+          }
+
+          setSheetsConnectionStatus(true, "Google Sheets Conectado");
+          if (!silent) showToast("✓ Sincronizado exitosamente con Google Sheets.");
+        }
+      } catch (err) {
+        console.warn("Fallo de sincronización:", err);
+        if (!silent) showToast("Error al sincronizar con Google Sheets. Revisa la consola o configuración.");
+      } finally {
+        if (btn) btn.classList.remove('animate-pulse');
+      }
+    }
+
+    async function syncSingleOrderToSheets(orderObj) {
+      if (!window.googleAppsScriptUrl) return;
+      try {
+        await fetch(window.googleAppsScriptUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'UPDATE_ORDER',
+            order: orderObj
+          })
+        });
+      } catch (e) {
+        console.warn("Fallo al guardar orden en Google Sheets:", e);
+      }
+    }
+
+    async function syncSingleRateToSheets(dateStr, rateVal) {
+      if (!window.googleAppsScriptUrl) return;
+      try {
+        await fetch(window.googleAppsScriptUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({
+            action: 'SAVE_RATE',
+            date: dateStr,
+            rate: rateVal,
+            source: 'Manual'
+          })
+        });
+      } catch (e) {
+        console.warn("Fallo al guardar cotización en Google Sheets:", e);
+      }
     }
 
     function exportToExcel() {
@@ -1633,10 +1888,11 @@
 
       const exportRows = window.masterPCData.map(item => ({
         "Semana": item.semana,
-        "Nro de PC": item.nroPC,
+        "Doc.-nro. interno": item.docNroInterno,
         "Fecha del Pedido": formatDisplayDate(item.fechaPedido),
         "En reprogramación con": item.enReprogramacionCon,
         "Descripcion": item.descripcion,
+        "Renglones/Items": (item.items || []).map(i => `${i.producto} (${i.descripcionItem}) [${i.pendienteDestino}]`).join(' | '),
         "Unidad": item.unidad,
         "Actividad": item.actividad,
         "Responsable pedido": item.responsablePedido,
@@ -1660,18 +1916,70 @@
 
       const dateStr = new Date().toISOString().slice(0, 10);
       XLSX.writeFile(workbook, `Programacion_PC_Finnegans_${dateStr}.xlsx`);
-      showToast("Archivo Excel descargado exitosamente.");
+      showToast("Archivo Excel descargado con los comprobantes únicos.");
     }
 
     function loadDemoSampleData() {
       const today = new Date();
       const mockOrders = [
-        { pc: 'PC-2024-00101', daysAgo: 10, desc: 'Rodamientos SKF 6204-2RSH de alta velocidad', un: 'UN', act: 'Mantenimiento Mecánico', resp: 'Gómez, Carlos' },
-        { pc: 'PC-2024-00102', daysAgo: 25, desc: 'Válvulas esféricas acero inoxidable 2"', un: 'UN', act: 'Planta Tratamiento', resp: 'Pérez, Martín' },
-        { pc: 'PC-2024-00103', daysAgo: 60, desc: 'Aceite sintético Mobil SHC 630 para reductores', un: 'L', act: 'Operaciones', resp: 'Sánchez, Laura' },
-        { pc: 'PC-2024-00104', daysAgo: 95, desc: 'Sensores inductivos Telemecanique M18 24V DC', un: 'UN', act: 'Automatización y Control', resp: 'Martínez, Diego' },
-        { pc: 'PC-2024-00105', daysAgo: 140, desc: 'Cinta transportadora corrugada 600mm x 15m', un: 'M', act: 'Logística', resp: 'Fernández, Lucía' },
-        { pc: 'PC-2024-00106', daysAgo: 210, desc: 'Filtros prensa hidráulicos de alta presión (Histórico >6m)', un: 'UN', act: 'Mantenimiento', resp: 'Gómez, Carlos' }
+        { 
+          doc: 'OC-2024-00101', 
+          daysAgo: 8, 
+          desc: 'Repuestos mecánicos para línea de envasado', 
+          un: 'UN', 
+          act: 'Mantenimiento Mecánico', 
+          resp: 'Gómez, Carlos',
+          items: [
+            { producto: 'ROD-SKF-6204', descripcionItem: 'Rodamientos SKF 6204-2RSH', pendienteDestino: '10 UN', empresa: 'Planta Principal' },
+            { producto: 'RET-NBR-45', descripcionItem: 'Retén NBR 45x65x10', pendienteDestino: '4 UN', empresa: 'Planta Principal' }
+          ]
+        },
+        { 
+          doc: 'OC-2024-00102', 
+          daysAgo: 22, 
+          desc: 'Válvulas esféricas acero inoxidable para circuito de vapor', 
+          un: 'UN', 
+          act: 'Planta Tratamiento', 
+          resp: 'Pérez, Martín',
+          items: [
+            { producto: 'VALV-ESF-2', descripcionItem: 'Válvulas esféricas 2" AISI 316', pendienteDestino: '2 UN', empresa: 'Planta Tratamiento' },
+            { producto: 'JUNT-TEFL-2', descripcionItem: 'Juntas teflón 2"', pendienteDestino: '6 UN', empresa: 'Planta Tratamiento' },
+            { producto: 'ESP-AC-INOX', descripcionItem: 'Espárragos roscados 5/8"', pendienteDestino: '16 UN', empresa: 'Planta Tratamiento' }
+          ]
+        },
+        { 
+          doc: 'OC-2024-00103', 
+          daysAgo: 55, 
+          desc: 'Lubricantes y aceites sintéticos para reductores pesados', 
+          un: 'L', 
+          act: 'Operaciones', 
+          resp: 'Sánchez, Laura',
+          items: [
+            { producto: 'LUB-MOBIL-630', descripcionItem: 'Mobil SHC 630 Tambor 208L', pendienteDestino: '208 L', empresa: 'Logística' }
+          ]
+        },
+        { 
+          doc: 'OC-2024-00104', 
+          daysAgo: 90, 
+          desc: 'Sensores de proximidad y fotocélulas de repuesto', 
+          un: 'UN', 
+          act: 'Automatización y Control', 
+          resp: 'Martínez, Diego',
+          items: [
+            { producto: 'SENS-M18-NPN', descripcionItem: 'Sensor inductivo M18 NPN 24V', pendienteDestino: '8 UN', empresa: 'Línea 2' }
+          ]
+        },
+        { 
+          doc: 'OC-2024-00105', 
+          daysAgo: 135, 
+          desc: 'Banda transportadora corrugada y grampas de unión', 
+          un: 'M', 
+          act: 'Logística', 
+          resp: 'Fernández, Lucía',
+          items: [
+            { producto: 'BANDA-CORR-600', descripcionItem: 'Banda de goma 600mm x 15m', pendienteDestino: '15 M', empresa: 'Silos' }
+          ]
+        }
       ];
 
       mockOrders.forEach((m, idx) => {
@@ -1679,16 +1987,18 @@
         d.setDate(today.getDate() - m.daysAgo);
         const ymd = d.toISOString().slice(0, 10);
         const sem = calculateSemana(d);
-        const usdVal = (idx + 1) * 850;
+        const usdVal = (idx + 1) * 920;
         const rate = getRateForDate(ymd);
 
         const orderObj = {
-          id: normalizeStr(m.pc),
-          nroPC: m.pc,
+          id: normalizeStr(m.doc),
+          docNroInterno: m.doc,
+          nroPC: m.doc,
           semana: sem,
           fechaPedido: ymd,
           descripcion: m.desc,
           unidad: m.un,
+          items: m.items,
           actividad: m.act,
           responsablePedido: m.resp,
           enReprogramacionCon: idx === 1 ? 'Proveedor Válvulas SA' : '',
@@ -1699,20 +2009,19 @@
           fechaCotizacion: ymd,
           comprador: idx % 2 === 0 ? 'Ramiro López' : 'Valeria Bianchi',
           estado: idx === 1 ? 'En espera' : idx === 0 ? 'En cotización' : 'Pendiente',
-          compras: idx === 1 ? 'Demora en cotización de importador' : 'En proceso normal',
+          compras: idx === 1 ? 'Esperando despacho del proveedor' : 'En trámite de cotización',
           reprogramacion: idx === 1 ? 'En espera' : 'No',
           semanaReprogramada: idx === 1 ? calculateSemana(new Date(today.getTime() + 14 * 86400000)) : ''
         };
 
         window.masterPCData.push(orderObj);
-        if (window.syncOrderToCloud) window.syncOrderToCloud(orderObj);
       });
 
       populateSemanaFilter();
       renderTable();
       updateKPIs();
       renderManualList();
-      showToast("Datos de prueba cargados y sincronizados.");
+      showToast("Datos demo cargados con éxito.");
       switchTab('dashboard');
     }
 
