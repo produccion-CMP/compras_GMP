@@ -647,17 +647,26 @@
         <!-- SUB-PESTAÑA B: GESTOR DE HOJA USUARIO (USUARIO -> UNIDAD) -->
         <div id="subTabUsersContainer" class="space-y-4 hidden">
           <div class="p-4 bg-indigo-50/70 border border-indigo-100 rounded-2xl text-xs text-indigo-950">
-            <h4 class="font-bold text-sm mb-1">Mapeo de la Hoja USUARIO</h4>
-            <p>El sistema busca el <code class="font-mono bg-white px-1.5 py-0.5 rounded">Nombreusuarioalta</code> o <code class="font-mono bg-white px-1.5 py-0.5 rounded">Usuarioaltaoc</code> aquí y asigna automáticamente la <b>Unidad</b> en la tabla general.</p>
+            <h4 class="font-bold text-sm mb-1">Mapeo de la Hoja USUARIO (Columna A: Nombreusuarioalta &rarr; Columna B: Unidad)</h4>
+            <p>El sistema busca el valor exacto de <code class="font-mono bg-white px-1.5 py-0.5 rounded font-bold">Nombreusuarioalta</code> (de Pedidos) o <code class="font-mono bg-white px-1.5 py-0.5 rounded font-bold">Usuario alta pc</code> (de Autorizaciones) en la <b>Columna A</b> y asigna la <b>Unidad</b> en la Columna B.</p>
+          </div>
+
+          <!-- Sugerencias de usuarios detectados sin asignar -->
+          <div id="unmappedUsersNotice" class="hidden p-3.5 bg-amber-50 border border-amber-200 rounded-2xl text-xs space-y-2">
+            <div class="flex items-center justify-between font-bold text-amber-800">
+              <span>⚠ Usuarios detectados en los reportes pendientes de asignar unidad:</span>
+              <span id="unmappedUsersCount" class="bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full text-[10px]">0</span>
+            </div>
+            <div id="unmappedUsersTags" class="flex flex-wrap gap-1.5 pt-1"></div>
           </div>
 
           <div class="p-4 bg-white border border-slate-200 rounded-2xl grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
             <div>
-              <label class="block text-[11px] font-semibold text-slate-700 mb-1">Usuario (ej: mgomez o Carlos Gomez)</label>
-              <input type="text" id="newInputUser" placeholder="usuario en Finnegans" class="w-full text-xs rounded-xl border border-slate-300 p-2 outline-none">
+              <label class="block text-[11px] font-semibold text-slate-700 mb-1">Nombreusuarioalta / Usuario alta pc</label>
+              <input type="text" id="newInputUser" placeholder="usuario exacto en Finnegans" class="w-full text-xs rounded-xl border border-slate-300 p-2 outline-none font-mono">
             </div>
             <div>
-              <label class="block text-[11px] font-semibold text-slate-700 mb-1">Unidad asignada</label>
+              <label class="block text-[11px] font-semibold text-slate-700 mb-1">Unidad asignada (Columna B)</label>
               <input type="text" id="newInputUnidad" placeholder="Ej: Planta Central / UN" class="w-full text-xs rounded-xl border border-slate-300 p-2 outline-none">
             </div>
             <button onclick="addUserMappingRow()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-2 px-4 rounded-xl transition">Agregar / Actualizar</button>
@@ -667,8 +676,8 @@
             <table class="w-full text-xs text-left">
               <thead class="bg-slate-100 text-slate-700 uppercase font-bold sticky top-0">
                 <tr>
-                  <th class="p-2.5">Usuario Finnegans</th>
-                  <th class="p-2.5">Unidad Asignada</th>
+                  <th class="p-2.5">Col A: Nombreusuarioalta</th>
+                  <th class="p-2.5">Col B: Unidad Asignada</th>
                   <th class="p-2.5 text-right">Acción</th>
                 </tr>
               </thead>
@@ -717,10 +726,17 @@
           <div class="p-4 bg-white border border-slate-200 rounded-2xl space-y-3">
             <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider">Conexión a Google Sheets (Apps Script Web App URL)</h4>
             <input type="url" id="inputAppsScriptUrl" placeholder="https://script.google.com/macros/s/.../exec" class="w-full text-xs font-mono p-2.5 rounded-xl border border-slate-300 outline-none">
-            <div class="flex items-center space-x-2">
+            
+            <div class="flex flex-wrap items-center gap-2">
               <button onclick="testGoogleSheetsConnection()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-2 px-4 rounded-xl transition">Probar & Sincronizar</button>
+              <button onclick="initBackendSheetsStructure()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-2 px-4 rounded-xl transition" title="Crea y estructura las 5 tablas si las páginas están en blanco">Auto-Crear Tablas en Sheets</button>
               <button onclick="disconnectGoogleSheets()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold py-2 px-3 rounded-xl transition">Modo Local</button>
             </div>
+            
+            <p class="text-[11px] text-slate-500">
+              💡 Si eliminaste todas las hojas de tu Google Sheets o están en blanco, pulsa <b>"Auto-Crear Tablas en Sheets"</b>. Creará automáticamente: <code class="font-mono font-bold text-slate-700">Programacion PC</code>, <code class="font-mono font-bold text-slate-700">master PC</code>, <code class="font-mono font-bold text-slate-700">master autorizaciones</code>, <code class="font-mono font-bold text-slate-700">USUARIO</code> y <code class="font-mono font-bold text-slate-700">Cotizaciones_Dolar</code>.
+            </p>
+            
             <div id="sheetsConnectionResult" class="p-3 rounded-xl text-[11px] font-mono hidden"></div>
           </div>
 
@@ -749,6 +765,8 @@
   <script>
     // ESTADO PRINCIPAL EN MEMORIA
     window.masterPCData = [];
+    window.rawMasterPCRows = [];
+    window.rawMasterAutorizRows = [];
     window.dailyRatesMap = {};
     window.userUnitMap = {
       'admin': 'Planta Central',
@@ -868,19 +886,15 @@
         .replace(/[^a-z0-9]/g, '');
     }
 
-    function initDefaultRates() {
-      const today = new Date();
-      for (let i = 0; i < 45; i++) {
-        const d = new Date(today);
-        d.setDate(today.getDate() - i);
-        const ymd = d.toISOString().slice(0, 10);
-        if (!window.dailyRatesMap[ymd]) {
-          window.dailyRatesMap[ymd] = {
-            date: ymd,
-            rate: 1250.00 - (i * 1.5),
-            source: 'Oficial'
-          };
-        }
+    function normalizeUserKey(str) {
+      if (!str) return '';
+      return String(str)
+        .toLowerCase()
+        .trim()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, ' ');
+    }
       }
       renderRatesTable();
       updateLatestRateHeader();
@@ -1112,23 +1126,28 @@
         let bestSheet = null;
         let rows = [];
 
-        // Comprobar si existe hoja USUARIO dentro del Excel
+        // 1. Extraer mapeo estricto de la hoja USUARIO (Col A: Nombreusuarioalta -> Col B: Unidad)
         for (const sheetName of workbook.SheetNames) {
           const normSheet = normalizeStr(sheetName);
           if (normSheet.includes('usuario')) {
-            const userSheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' });
-            userSheetData.forEach(row => {
-              let uName = '';
-              let uUnit = '';
-              for (const [k, v] of Object.entries(row)) {
-                const nk = normalizeStr(k);
-                if (nk.includes('usuario') || nk.includes('nombre')) uName = String(v).trim().toLowerCase();
-                if (nk.includes('unidad') || nk.includes('sector')) uUnit = String(v).trim();
+            const userSheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, defval: '' });
+            let importedCount = 0;
+            userSheetData.forEach((rowArr, rowIdx) => {
+              if (rowIdx === 0 && (String(rowArr[0]).toLowerCase().includes('usuario') || String(rowArr[0]).toLowerCase().includes('nombre'))) {
+                return; // Omitir fila de encabezados
               }
-              if (uName && uUnit) window.userUnitMap[uName] = uUnit;
+              const uName = String(rowArr[0] || '').trim();
+              const uUnit = String(rowArr[1] || '').trim();
+              if (uName && uUnit) {
+                window.userUnitMap[uName.toLowerCase()] = uUnit;
+                window.userUnitMap[normalizeUserKey(uName)] = uUnit;
+                importedCount++;
+              }
             });
             renderUsersTable();
-            showToast("Se incorporaron mapeos de la hoja USUARIO del archivo.");
+            if (importedCount > 0) {
+              showToast(`Se cargaron ${importedCount} mapeos directos desde la hoja USUARIO.`);
+            }
           }
 
           const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' });
@@ -1137,11 +1156,11 @@
           const headers = Object.keys(sheetData[0] || {}).map(h => normalizeStr(h));
 
           // Firmas de CMP - Autorizaciones:
-          // Fechaultactividad, Usuarioaltaoc, Responsable pedido, etc.
-          const hasAutorizCols = headers.some(h => h.includes('fechaultactividad') || h.includes('usuarioaltaoc') || h.includes('usuarioautorizante'));
+          // Fechaultactividad, Usuarioaltaoc, Usuario alta pc, etc.
+          const hasAutorizCols = headers.some(h => h.includes('fechaultactividad') || h.includes('usuarioaltaoc') || h.includes('usuarioaltapc') || h.includes('usuarioautorizante'));
 
           // Firmas de Pedidos Pendientes:
-          // Doc.-nro. interno, F.comp, Pendiente destino, etc.
+          // Doc.-nro. interno, F.comp, Pendiente destino, Nombreusuarioalta, etc.
           const hasPedidosCols = headers.some(h => h.includes('fcomp') || h.includes('pendientedestino') || h.includes('nombreusuarioalta'));
 
           if (normSheet.includes('masterautorizaciones') || hasAutorizCols) {
@@ -1149,7 +1168,7 @@
             bestSheet = sheetName;
             rows = sheetData;
             break;
-          } else if (normSheet.includes('programacionpc') || normSheet.includes('pedidospendientes') || hasPedidosCols) {
+          } else if (normSheet.includes('programacionpc') || normSheet.includes('pedidospendientes') || normSheet.includes('masterpc') || hasPedidosCols) {
             recognizedType = 'pedidos';
             bestSheet = sheetName;
             rows = sheetData;
@@ -1187,20 +1206,247 @@
       let newCount = 0;
       let updatedCount = 0;
 
+      window.rawMasterAutorizRows = [];
+      window.rawMasterPCRows = [];
+
       // 1. Mapeo de Autorizaciones (Reporte 1)
       const rep1Map = new Map();
       if (rawDetectedReport1) {
         rawDetectedReport1.rows.forEach(row => {
           let docNum = '';
           let fechaUltAct = '';
+          let usuarioAltaPC = '';
           let usuarioAltaOC = '';
+          let desc = '';
+          let descItem = '';
+          let cantPend = '';
+          let resp = '';
+          let act = '';
+          let cantAp = '';
+          let userAut = '';
 
           for (const [k, v] of Object.entries(row)) {
             const nk = normalizeStr(k);
             if (!docNum && (nk.includes('docnrointerno') || nk.includes('nrointerno') || nk.includes('comprobante'))) docNum = String(v).trim();
             if (nk.includes('fechaultactividad')) fechaUltAct = v;
-            if (nk.includes('usuarioaltaoc') || nk.includes('usuarioalta')) usuarioAltaOC = String(v).trim();
+            if (nk === 'usuarioaltapc' || nk.includes('altapc')) usuarioAltaPC = String(v).trim();
+            if (nk === 'usuarioaltaoc' || nk.includes('altaoc')) usuarioAltaOC = String(v).trim();
+            if (nk === 'descripcion') desc = String(v).trim();
+            if (nk.includes('descripcionitem')) descItem = String(v).trim();
+            if (nk.includes('cantidadpendiente')) cantPend = v;
+            if (nk.includes('responsablepedido') || nk.includes('responsable')) resp = String(v).trim();
+            if (nk === 'actividad') act = String(v).trim();
+            if (nk.includes('cantidadaplicadaoc')) cantAp = v;
+            if (nk.includes('usuarioautorizante')) userAut = String(v).trim();
           }
+
+          if (docNum) {
+            rep1Map.set(normalizeStr(docNum), {
+              fechaUltActividad: fechaUltAct,
+              usuarioAltaPC: usuarioAltaPC || usuarioAltaOC,
+              usuarioAltaOC: usuarioAltaOC
+            });
+
+            // Preparar renglón para master autorizaciones
+            window.rawMasterAutorizRows.push({
+              docNroInterno: docNum,
+              descripcion: desc,
+              descripcionItem: descItem,
+              cantidadPendiente: cantPend,
+              usuarioAltaPC: usuarioAltaPC || usuarioAltaOC,
+              responsablePedido: resp,
+              fechaultactividad: fechaUltAct,
+              actividad: act,
+              usuarioAltaOC: usuarioAltaOC,
+              cantidadAplicadaOC: cantAp,
+              usuarioAutorizante: userAut
+            });
+          }
+        });
+        diagnostics.push(`Reporte Autorizaciones: Mapeadas ${rep1Map.size} órdenes con Fechaultactividad / Usuario.`);
+      }
+
+      // 2. Procesar Pedidos Pendientes (Reporte 2) y consolidar renglones por Nro de PC
+      const existingMap = new Map();
+      window.masterPCData.forEach(p => existingMap.set(p.id, p));
+
+      if (rawDetectedReport2) {
+        totalRawRows = rawDetectedReport2.rows.length;
+        const groupedRows = new Map();
+
+        rawDetectedReport2.rows.forEach((row, index) => {
+          let docNum = '';
+          let fComp = '';
+          let semFecha = '';
+          let fProxPaso = '';
+          let descPrincipal = '';
+          let producto = '';
+          let descItem = '';
+          let pendDestino = '';
+          let empresa = '';
+          let estado = '';
+          let nombreUsuarioAlta = '';
+          let solicitante = '';
+          let situacion = '';
+
+          for (const [k, v] of Object.entries(row)) {
+            const nk = normalizeStr(k);
+            if (!docNum && (nk.includes('docnrointerno') || nk.includes('nrointerno') || nk.includes('doc'))) docNum = String(v).trim();
+            if (!fComp && (nk.includes('fcomp') || nk.includes('fechacomprobante') || nk.includes('fecha'))) fComp = v;
+            if (nk.includes('semanafecha')) semFecha = String(v).trim();
+            if (nk.includes('fproxpaso')) fProxPaso = v;
+            if (!descPrincipal && nk === 'descripcion') descPrincipal = String(v).trim();
+            if (nk === 'producto') producto = String(v).trim();
+            if (nk.includes('descripcionitem') || nk.includes('item')) descItem = String(v).trim();
+            if (nk.includes('pendientedestino')) pendDestino = v;
+            if (nk === 'empresa') empresa = String(v).trim();
+            if (nk === 'estado') estado = String(v).trim();
+            if (nk.includes('nombreusuarioalta') || nk.includes('usuarioalta') || nk.includes('solicitante')) nombreUsuarioAlta = String(v).trim();
+            if (nk === 'solicitante') solicitante = String(v).trim();
+            if (nk === 'situacion') situacion = String(v).trim();
+          }
+
+          if (!docNum) docNum = `OC-${index + 1000}`;
+          const id = normalizeStr(docNum);
+
+          // Guardar renglón íntegro para master PC
+          window.rawMasterPCRows.push({
+            semanaFecha: semFecha,
+            fComp: fComp,
+            fProxPaso: fProxPaso,
+            docNroInterno: docNum,
+            descripcion: descPrincipal,
+            producto: producto,
+            descripcionItem: descItem,
+            pendienteDestino: pendDestino,
+            empresa: empresa,
+            estado: estado,
+            nombreUsuarioAlta: nombreUsuarioAlta,
+            solicitante: solicitante,
+            situacion: situacion
+          });
+
+          if (!groupedRows.has(id)) {
+            groupedRows.set(id, {
+              docNum,
+              fComp,
+              // UNA SOLA DESCRIPCIÓN SUFICIENTE
+              descripcion: descPrincipal || descItem || 'Sin descripción',
+              nombreUsuarioAlta: nombreUsuarioAlta
+            });
+          }
+        });
+
+        // 3. Fusión en masterPCData con cruce estricto en la hoja USUARIO
+        groupedRows.forEach((grp, id) => {
+          const rep1Data = rep1Map.get(id) || {};
+          
+          // Fecha Pedido = Fechaultactividad o F.comp
+          const effectiveDateVal = rep1Data.fechaUltActividad || grp.fComp;
+          const ymdFecha = formatDateToYMD(effectiveDateVal);
+          const semanaCalculada = calculateSemana(effectiveDateVal);
+
+          // Búsqueda estricta en hoja USUARIO (Columna A: Nombreusuarioalta -> Columna B: Unidad)
+          const usuarioAltaFinal = grp.nombreUsuarioAlta || rep1Data.usuarioAltaPC || '';
+          const userKeyA = usuarioAltaFinal.toLowerCase().trim();
+          const userKeyNorm = normalizeUserKey(usuarioAltaFinal);
+          const userKeyAlt = normalizeUserKey(rep1Data.usuarioAltaPC || '');
+
+          const unidadResuelta = window.userUnitMap[userKeyA] || 
+                                 window.userUnitMap[userKeyNorm] || 
+                                 window.userUnitMap[userKeyAlt] || 
+                                 'Sin asignar';
+
+          if (existingMap.has(id)) {
+            // COMPROBANTE EXISTENTE: Preservar campos manuales intactos
+            const existing = existingMap.get(id);
+            existing.fechaPedido = ymdFecha || existing.fechaPedido;
+            existing.semana = semanaCalculada !== '-' ? semanaCalculada : existing.semana;
+            existing.descripcion = grp.descripcion;
+            existing.usuarioAlta = usuarioAltaFinal;
+            existing.unidad = unidadResuelta !== 'Sin asignar' ? unidadResuelta : (existing.unidad || 'Sin asignar');
+            updatedCount++;
+          } else {
+            // NUEVO COMPROBANTE ÚNICO
+            const newRecord = {
+              id: id,
+              semana: semanaCalculada,
+              nroPC: grp.docNum,
+              docNroInterno: grp.docNum,
+              fechaPedido: ymdFecha,
+              enReprogramacionCon: '',
+              descripcion: grp.descripcion,
+              unidad: unidadResuelta,
+              prioridad: '',
+              presupuestoUSD: null,
+              presupuestoARS: null,
+              comprador: '',
+              estado: 'Pendiente',
+              compras: '',
+              reprogramacion: 'No',
+              semanaReprogramada: '',
+              cotizacionAplicada: null,
+              fechaCotizacion: null,
+              modoPresupuestoARS: 'auto',
+              usuarioAlta: usuarioAltaFinal
+            };
+            existingMap.set(id, newRecord);
+            newCount++;
+          }
+        });
+      }
+
+      window.masterPCData = Array.from(existingMap.values());
+
+      diagnostics.push(`Filas procesadas para master PC: ${window.rawMasterPCRows.length}`);
+      diagnostics.push(`Filas procesadas para master autorizaciones: ${window.rawMasterAutorizRows.length}`);
+      diagnostics.push(`Comprobantes únicos consolidados: ${window.masterPCData.length} (desduplicados ${totalRawRows - window.masterPCData.length} renglones)`);
+      diagnostics.push(`Nuevos comprobantes ingresados: ${newCount}`);
+      diagnostics.push(`Comprobantes actualizados preservando datos manuales: ${updatedCount}`);
+
+      document.getElementById('diagnosticsList').innerHTML = diagnostics.map(d => `<li>• ${d}</li>`).join('');
+      document.getElementById('importDiagnostics').classList.remove('hidden');
+
+      detectUnmappedUsersInOrders();
+      populateSemanaFilter();
+      renderTable();
+      updateKPIs();
+      showToast(`¡Consolidación exitosa! ${window.masterPCData.length} órdenes únicas.`);
+
+      if (window.googleAppsScriptUrl) syncWithGoogleSheets(true);
+
+      setTimeout(() => switchMainTab('dashboard'), 1300);
+    }
+
+    function detectUnmappedUsersInOrders() {
+      const unmapped = new Set();
+      window.masterPCData.forEach(o => {
+        if (!o.unidad || o.unidad === 'Sin asignar' || o.unidad === 'UN') {
+          if (o.usuarioAlta) unmapped.add(o.usuarioAlta);
+        }
+      });
+
+      const notice = document.getElementById('unmappedUsersNotice');
+      const tags = document.getElementById('unmappedUsersTags');
+      const count = document.getElementById('unmappedUsersCount');
+
+      if (unmapped.size > 0) {
+        count.innerText = unmapped.size;
+        tags.innerHTML = Array.from(unmapped).map(u => `
+          <button onclick="fillUserMappingInput('${u}')" class="px-2 py-1 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg font-mono text-[10px] flex items-center space-x-1">
+            <span>+ ${u}</span>
+          </button>
+        `).join('');
+        notice.classList.remove('hidden');
+      } else {
+        notice.classList.add('hidden');
+      }
+    }
+
+    function fillUserMappingInput(userName) {
+      document.getElementById('newInputUser').value = userName;
+      document.getElementById('newInputUnidad').focus();
+    }
 
           if (docNum) {
             rep1Map.set(normalizeStr(docNum), {
@@ -1467,6 +1713,12 @@
 
           const cotizTooltip = item.cotizacionAplicada ? `Tasa: $${item.cotizacionAplicada} (${formatDisplayDate(item.fechaCotizacion)})` : 'Precio ingresado';
 
+          // Indicador visual claro para Unidad encontrada vs pendiente
+          let unidadDisplay = `<span class="font-mono font-semibold text-indigo-950">${item.unidad}</span>`;
+          if (!item.unidad || item.unidad === 'Sin asignar' || item.unidad === 'UN') {
+            unidadDisplay = `<span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-50 text-rose-700 border border-rose-200" title="Usuario en ERP: ${item.usuarioAlta || 'Desconocido'} - Asignar en Hoja USUARIO">Sin asignar ⚠</span>`;
+          }
+
           // Botón de acción: Si está autenticado abre directo el editor, si no pide contraseña
           const editBtn = `
             <button onclick="handleQuickEditClick('${item.nroPC}')" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg ${window.isAdminAuthenticated ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'} transition flex items-center space-x-1 mx-auto" title="${window.isAdminAuthenticated ? 'Editar comprobante' : 'Requiere contraseña de edición'}">
@@ -1489,8 +1741,8 @@
               <td class="p-3 text-slate-800 font-medium min-w-[260px]">
                 <div class="line-clamp-2" title="${item.descripcion}">${item.descripcion}</div>
               </td>
-              <!-- 6. Unidad (Cruce hoja USUARIO) -->
-              <td class="p-3 whitespace-nowrap bg-indigo-50/40 font-semibold text-indigo-950 font-mono">${item.unidad}</td>
+              <!-- 6. Unidad (Cruce hoja USUARIO Col A -> Col B) -->
+              <td class="p-3 whitespace-nowrap bg-indigo-50/40">${unidadDisplay}</td>
               <!-- 7. Prioridad -->
               <td class="p-3 whitespace-nowrap">${prioBadge}</td>
               <!-- 8. Presupuesto (usd) -->
@@ -1834,48 +2086,35 @@
     function disconnectGoogleSheets() {
       window.googleAppsScriptUrl = '';
       try { localStorage.removeItem('finnegans_gas_url'); } catch(e){}
-      setSheetsConnectionStatus(false, "Modo Local");
-      const res = document.getElementById('sheetsConnectionResult');
-      res.className = "p-3 rounded-xl text-[11px] font-mono bg-slate-100 text-slate-700 mt-2";
-      res.innerText = "Desconectado de Google Sheets. Datos en memoria local.";
-      res.classList.remove('hidden');
-    }
-
-    async function testGoogleSheetsConnection() {
-      const url = document.getElementById('inputAppsScriptUrl').value.trim();
+    async function initBackendSheetsStructure() {
+      const url = document.getElementById('inputAppsScriptUrl').value.trim() || window.googleAppsScriptUrl;
       const res = document.getElementById('sheetsConnectionResult');
       res.classList.remove('hidden');
       res.className = "p-3 rounded-xl text-[11px] font-mono bg-indigo-50 text-indigo-700 mt-2";
-      res.innerText = "Conectando con Google Apps Script...";
+      res.innerText = "Inicializando hojas y encabezados en Google Sheets...";
 
       if (!url.startsWith('https://script.google.com/')) {
         res.className = "p-3 rounded-xl text-[11px] font-mono bg-rose-50 text-rose-700 mt-2";
-        res.innerText = "Error: La URL debe comenzar con https://script.google.com/macros/s/.../exec";
+        res.innerText = "Error: Configure una URL válida de Apps Script.";
         return;
       }
 
       try {
-        const response = await fetch(url + '?action=PING', { method: 'GET', mode: 'cors' });
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'INIT_SHEETS' })
+        });
+
         if (response.ok) {
-          window.googleAppsScriptUrl = url;
-          try { localStorage.setItem('finnegans_gas_url', url); } catch(e){}
-          setSheetsConnectionStatus(true, "Google Sheets Conectado");
+          const data = await response.json();
           res.className = "p-3 rounded-xl text-[11px] font-mono bg-emerald-50 text-emerald-800 mt-2";
-          res.innerText = "✓ ¡Conexión exitosa! Sincronizando datos con Google Sheets...";
-          await syncWithGoogleSheets(false);
+          res.innerText = "✓ ¡Tablas creadas y estructuradas con éxito! Hojas listas: Programacion PC, master PC, master autorizaciones, USUARIO y Cotizaciones_Dolar.";
+          showToast("Tablas de Google Sheets estructuradas.");
         } else throw new Error(`HTTP ${response.status}`);
       } catch (err) {
-        try {
-          await syncWithGoogleSheets(false, url);
-          window.googleAppsScriptUrl = url;
-          try { localStorage.setItem('finnegans_gas_url', url); } catch(e){}
-          setSheetsConnectionStatus(true, "Google Sheets Conectado");
-          res.className = "p-3 rounded-xl text-[11px] font-mono bg-emerald-50 text-emerald-800 mt-2";
-          res.innerText = "✓ ¡Conectado correctamente con Google Sheets!";
-        } catch (postErr) {
-          res.className = "p-3 rounded-xl text-[11px] font-mono bg-rose-50 text-rose-700 mt-2";
-          res.innerText = "No se pudo comunicar con Apps Script. Asegúrate de implementar con acceso 'Cualquier usuario' (Anyone).";
-        }
+        res.className = "p-3 rounded-xl text-[11px] font-mono bg-rose-50 text-rose-700 mt-2";
+        res.innerText = "Error al inicializar tablas: " + err.message;
       }
     }
 
@@ -1893,6 +2132,8 @@
         const payload = {
           action: 'SYNC_ALL',
           orders: window.masterPCData,
+          masterPCRows: window.rawMasterPCRows || [],
+          masterAutorizRows: window.rawMasterAutorizRows || [],
           rates: window.dailyRatesMap,
           users: window.userUnitMap
         };
@@ -1905,6 +2146,12 @@
 
         if (response.ok) {
           const result = await response.json();
+
+          if (result.users) {
+            Object.assign(window.userUnitMap, result.users);
+            renderUsersTable();
+          }
+
           if (result.orders && Array.isArray(result.orders) && result.orders.length > 0) {
             const remoteMap = new Map();
             result.orders.forEach(o => remoteMap.set(o.id || normalizeStr(o.nroPC), o));
@@ -1923,6 +2170,9 @@
                 remote.compras = localItem.compras || remote.compras;
                 remote.reprogramacion = localItem.reprogramacion || remote.reprogramacion;
                 remote.semanaReprogramada = localItem.semanaReprogramada || remote.semanaReprogramada;
+                // Reevaluar unidad con el mapa remoto
+                const userKey = normalizeUserKey(remote.usuarioAlta);
+                if (window.userUnitMap[userKey]) remote.unidad = window.userUnitMap[userKey];
               } else {
                 remoteMap.set(localItem.id, localItem);
               }
@@ -1933,6 +2183,7 @@
             renderTable();
             updateKPIs();
             renderAdminOrdersList();
+            detectUnmappedUsersInOrders();
           }
 
           if (result.rates) {
@@ -1941,13 +2192,14 @@
             updateLatestRateHeader();
           }
 
-          if (result.users) {
-            Object.assign(window.userUnitMap, result.users);
-            renderUsersTable();
-          }
-
           setSheetsConnectionStatus(true, "Google Sheets Conectado");
-          if (!silent) showToast("✓ Sincronizado con Google Sheets.");
+          if (!silent) {
+            let msg = "✓ Sincronizado con Google Sheets.";
+            if (result.nuevosEnMasterPC !== undefined) {
+              msg += ` (Nuevos en master PC: ${result.nuevosEnMasterPC}, en master autoriz: ${result.nuevosEnMasterAutoriz})`;
+            }
+            showToast(msg);
+          }
         }
       } catch (err) {
         console.warn("Fallo de sincronización:", err);
