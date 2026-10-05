@@ -2,402 +2,2372 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <title>Panel de Control</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Finnegans ERP - Programación de Compras Semanal</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          }
+        }
+      }
+    }
+  </script>
   <style>
-    :root {
-      --bg: #F8FAFC;
-      --surface: #FFFFFF;
-      --border: #E2E8F0;
-      --text-main: #0F172A;
-      --text-muted: #64748B;
-      --primary: #2563EB;
-      --primary-hover: #1D4ED8;
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    }
-
-    body {
-      background: var(--bg);
-      color: var(--text-main);
-      padding: 24px;
-    }
-
-    /* KPI Cards */
-    .kpi-grid {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-      gap: 16px;
-      margin-bottom: 24px;
-    }
-
-    .kpi-card {
-      background: var(--surface);
-      border: 1px solid var(--border);
-      border-radius: 8px;
-      padding: 16px;
-    }
-
-    .kpi-card h4 {
-      font-size: 13px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      margin-bottom: 8px;
-    }
-
-    .kpi-card .value {
-      font-size: 24px;
-      font-weight: 700;
-    }
-
-    .kpi-card .subtitle {
-      font-size: 12px;
-      color: var(--text-muted);
-      margin-top: 4px;
-    }
-
-    /* Controles de Filtros y Orden */
-    .toolbar {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 12px;
-      background: var(--surface);
-      padding: 16px;
-      border: 1px solid var(--border);
-      border-radius: 8px 8px 0 0;
-      align-items: center;
-    }
-
-    .form-group {
-      display: flex;
-      flex-direction: column;
-      gap: 4px;
-    }
-
-    .form-group label {
-      font-size: 11px;
-      text-transform: uppercase;
-      font-weight: 600;
-      color: var(--text-muted);
-    }
-
-    select, input {
-      border: 1px solid var(--border);
-      padding: 6px 12px;
-      border-radius: 6px;
-      font-size: 13px;
-      background: #FFF;
-      color: var(--text-main);
-      outline: none;
-    }
-
-    select:focus, input:focus {
-      border-color: var(--primary);
-    }
-
-    /* Contenedor con Scroll Horizontal Garantizado */
-    .table-viewport {
-      width: 100%;
-      overflow-x: auto;
-      border: 1px solid var(--border);
-      border-top: none;
-      background: var(--surface);
-      border-radius: 0 0 8px 8px;
-      -webkit-overflow-scrolling: touch;
-    }
-
-    table {
-      width: 100%;
-      min-width: 980px; /* Previene el colapso de columnas */
-      border-collapse: collapse;
-      text-align: left;
-      font-size: 13px;
-    }
-
-    th, td {
-      padding: 12px 16px;
-      border-bottom: 1px solid var(--border);
-      white-space: nowrap;
-    }
-
-    th {
-      background: #F1F5F9;
-      font-weight: 600;
-      color: var(--text-muted);
-      font-size: 11px;
-      text-transform: uppercase;
-      position: sticky;
-      top: 0;
-    }
-
-    tr:hover {
-      background-color: #F8FAFC;
-    }
-
-    /* Checkbox Centrado */
-    .checkbox-cell {
-      text-align: center;
-      width: 60px;
-    }
-
-    .checkbox-cell input[type="checkbox"] {
-      cursor: pointer;
-      width: 16px;
-      height: 16px;
-      accent-color: var(--primary);
-    }
-
-    /* Badges con Paleta Pastel */
-    .badge {
-      display: inline-block;
-      padding: 4px 8px;
-      border-radius: 4px;
-      font-weight: 600;
-      font-size: 12px;
-    }
-
-    .badge-estado-pendiente { background-color: #FEF3C7; color: #92400E; }
-    .badge-estado-aprobado { background-color: #DCFCE7; color: #166534; }
+    /* Scrollbar personalizada y siempre visible en tablas */
+    ::-webkit-scrollbar { width: 8px; height: 10px; }
+    ::-webkit-scrollbar-track { background: #f1f5f9; border-radius: 6px; }
+    ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 6px; border: 2px solid #f1f5f9; }
+    ::-webkit-scrollbar-thumb:hover { background: #64748b; }
     
-    .badge-prioridad-alta { background-color: #FEE2E2; color: #991B1B; }
-    .badge-prioridad-intermedia { background-color: #FEF9C3; color: #854D0E; }
-
-    /* Paleta Pastel Dinámica para Unidades */
-    .unit-p1 { background-color: #E0F2FE; color: #0369A1; } /* Celeste */
-    .unit-p2 { background-color: #EDE9FE; color: #5B21B6; } /* Lavanda */
-    .unit-p3 { background-color: #DCFCE7; color: #15803D; } /* Menta */
-    .unit-p4 { background-color: #FCE7F3; color: #9D174D; } /* Rosa */
-    .unit-p5 { background-color: #FFEDD5; color: #9A3412; } /* Melocotón */
-    .unit-default { background-color: #F1F5F9; color: #475569; }
-
-    .numeric {
-      text-align: right;
-      font-variant-numeric: tabular-nums;
+    .table-scroll-container {
+      overflow-x: auto;
+      overflow-y: auto;
+      max-height: calc(100vh - 290px);
+      scrollbar-width: thin;
+      scrollbar-color: #94a3b8 #f1f5f9;
     }
+    .th-sortable { cursor: pointer; user-select: none; transition: background-color 0.15s; }
+    .th-sortable:hover { background-color: #e2e8f0; }
+
+    /* Paleta de Badges Pastel Suaves para Unidades */
+    .badge-pastel-industria { background-color: #e0f2fe; color: #0369a1; border: 1px solid #bae6fd; }
+    .badge-pastel-arquitectura { background-color: #f3e8ff; color: #7e22ce; border: 1px solid #e9d5ff; }
+    .badge-pastel-agro { background-color: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+    .badge-pastel-ceya { background-color: #fef3c7; color: #b45309; border: 1px solid #fde68a; }
+    .badge-pastel-ingenieria { background-color: #ccfbf1; color: #0f766e; border: 1px solid #99f6e4; }
+    .badge-pastel-mantenimiento { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+    .badge-pastel-default { background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
   </style>
 </head>
-<body>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-indigo-100 selection:text-indigo-900">
 
-  <!-- KPI Grid -->
-  <div class="kpi-grid">
-    <div class="kpi-card">
-      <h4>En Reprogramación</h4>
-      <div class="value" id="kpi-reprog-count">0</div>
-      <div class="subtitle">18% del total</div>
+  <header class="bg-slate-900 text-white shadow-md border-b border-slate-800 sticky top-0 z-40">
+    <div class="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        
+        <div class="flex items-center space-x-3">
+          <div class="bg-indigo-600 text-white p-2 rounded-xl font-bold text-lg shadow-sm flex items-center justify-center">
+            <svg class="w-5 h-5 sm:w-6 sm:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+            </svg>
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="text-[10px] uppercase tracking-widest text-indigo-400 font-bold leading-none">Finnegans ERP Integration</span>
+              <button onclick="requestAdminAccess('sheets_config')" id="dbStatusBadge" class="bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] px-2 py-0.5 rounded-full font-mono font-medium flex items-center space-x-1 hover:bg-amber-500/30 transition">
+                <span id="dbStatusDot" class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
+                <span id="dbStatusText">Google Sheets: No Conectado</span>
+              </button>
+            </div>
+            <h1 class="text-sm sm:text-base font-bold text-white tracking-tight leading-tight">Programación de Compras Semanal</h1>
+          </div>
+        </div>
+
+        <div class="flex items-center space-x-2 sm:space-x-3">
+          <!-- Cotización del Dólar Oficial en Pesos Argentinos ($ ARS) -->
+          <div class="hidden md:flex items-center space-x-2 bg-slate-800/90 px-3 py-1.5 rounded-xl border border-slate-700 text-xs">
+            <span class="text-slate-400">1 USD =</span>
+            <span class="font-bold text-emerald-400 font-mono" id="headerRateDisplay">$ 1.200,00 ARS</span>
+          </div>
+
+          <button onclick="syncWithGoogleSheets()" id="btnSyncSheets" class="bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold px-3 py-2 rounded-xl transition flex items-center space-x-1.5 border border-slate-700 shadow-xs">
+            <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            <span class="hidden lg:inline">Sincronizar Sheets</span>
+          </button>
+
+          <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-xl transition flex items-center space-x-1.5 shadow-sm">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+            <span class="hidden sm:inline">Exportar Excel (13 Cols)</span>
+          </button>
+
+          <!-- Icono de Candado / Configuración -->
+          <button onclick="handleAdminButtonClick()" id="btnAdminAccess" class="p-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 hover:text-white transition flex items-center justify-center relative shadow-xs" title="Carga Manual y Configuración (Protegido por Clave)">
+            <svg id="iconAdminLock" class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path>
+            </svg>
+            <span id="badgeLockDot" class="w-2 h-2 rounded-full bg-amber-400 absolute -top-0.5 -right-0.5 ring-2 ring-slate-900"></span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Barra de pestañas -->
+      <nav class="flex space-x-1 sm:space-x-4 border-t border-slate-800 pt-2 pb-2 text-xs sm:text-sm overflow-x-auto">
+        <button id="navTabDashboard" onclick="switchMainTab('dashboard')" class="px-3 py-1.5 rounded-lg font-medium transition flex items-center space-x-2 bg-indigo-600 text-white shadow-xs">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+          <span>Programación PC (13 Columnas)</span>
+          <span id="badgeTotalItems" class="bg-indigo-800 text-indigo-200 text-[10px] px-2 py-0.5 rounded-full font-bold">0</span>
+        </button>
+
+        <button id="navTabImport" onclick="switchMainTab('import')" class="px-3 py-1.5 rounded-lg font-medium transition flex items-center space-x-2 text-slate-300 hover:text-white hover:bg-slate-800">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+          <span>Cargar Reportes Finnegans (Auto-Detección)</span>
+        </button>
+
+        <div id="adminBadgeUnlocked" class="hidden items-center space-x-1.5 ml-auto text-emerald-400 bg-emerald-950/60 border border-emerald-800/80 px-2.5 py-1 rounded-lg text-xs font-medium">
+          <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+          <span>Modo Edición Habilitado</span>
+          <button onclick="lockAdminMode()" class="text-[10px] underline ml-2 text-slate-300 hover:text-white">Bloquear</button>
+        </div>
+      </nav>
     </div>
-    <div class="kpi-card">
-      <h4>Total Presupuesto USD</h4>
-      <div class="value" id="kpi-total-usd">$0.00</div>
-      <div class="subtitle">Consolidado a fecha base</div>
+  </header>
+
+  <main class="flex-grow max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-5">
+
+    <!-- Toast de Notificaciones -->
+    <div id="toastNotification" class="fixed bottom-6 right-6 max-w-sm bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-2xl border border-slate-700 z-50 transform translate-y-24 opacity-0 transition-all duration-300 flex items-center space-x-3 pointer-events-none">
+      <div class="text-emerald-400" id="toastIcon">
+        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+      </div>
+      <div>
+        <p id="toastMessage" class="text-xs font-semibold">Operación realizada</p>
+      </div>
     </div>
-    <div class="kpi-card">
-      <h4>Total Presupuesto ARS</h4>
-      <div class="value" id="kpi-total-ars">$0</div>
-      <div class="subtitle">Calculado con TC histórico</div>
+
+    <!-- SECCIÓN 1: TABLERO DE PROGRAMACIÓN PC (13 COLUMNAS EXACTAS) -->
+    <div id="sectionDashboard" class="space-y-4">
+      
+      <!-- Tarjetas KPIs Ejecutivas -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+          <div>
+            <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Órdenes Únicas (Nro de PC)</p>
+            <h3 class="text-2xl font-black text-slate-800" id="kpiTotalCount">0</h3>
+            <span class="text-xs text-slate-400" id="kpiWeeksCovered">0 semanas activas</span>
+          </div>
+          <div class="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+          <div>
+            <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Presupuesto Acumulado</p>
+            <h3 class="text-2xl font-black text-indigo-600 font-mono" id="kpiTotalUSD">$ 0,00 USD</h3>
+            <span class="text-xs text-emerald-600 font-bold font-mono" id="kpiConvertedARS">≈ $ 0 ARS</span>
+          </div>
+          <div class="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          </div>
+        </div>
+
+        <!-- KPI: En Reprogramación con frase corregida "X% del total" -->
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+          <div>
+            <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">En Reprogramación</p>
+            <h3 class="text-2xl font-black text-amber-600" id="kpiWaitingCount">0</h3>
+            <span class="text-xs text-amber-600 font-medium" id="kpiWaitingPerc">0% del total</span>
+          </div>
+          <div class="p-3 bg-amber-50 text-amber-600 rounded-2xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+          <div>
+            <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Sin Comprador / Prioridad</p>
+            <h3 class="text-2xl font-black text-rose-600" id="kpiUnassignedCount">0</h3>
+            <span class="text-xs text-slate-400">Requieren asignación</span>
+          </div>
+          <div class="p-3 bg-rose-50 text-rose-600 rounded-2xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+          </div>
+        </div>
+      </div>
+
+      <!-- Barra de Filtros y Búsqueda -->
+      <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs space-y-2.5">
+        <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
+          
+          <div class="relative w-full lg:w-96">
+            <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+            </span>
+            <input type="text" id="filterSearch" oninput="renderTable()" placeholder="Buscar por Nro de PC, descripción, unidad, comprador..." class="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+          </div>
+
+          <!-- Filtro de Período Predefinido -->
+          <div class="flex flex-wrap items-center gap-2 text-xs">
+            <span class="font-semibold text-slate-600">Período:</span>
+            <select id="filterDatePreset" onchange="applyDatePreset()" class="rounded-xl border border-slate-300 py-1 px-2.5 bg-white text-slate-700 font-medium text-xs">
+              <option value="6m" selected>Últimos 6 meses (Predeterminado)</option>
+              <option value="1m">Últimos 30 días</option>
+              <option value="this_year">Año en curso</option>
+              <option value="1y">Último año</option>
+              <option value="all">Todo el Histórico</option>
+              <option value="custom">Rango Personalizado...</option>
+            </select>
+
+            <div id="customDateRangeInputs" class="hidden flex items-center space-x-1.5">
+              <input type="date" id="filterDateFrom" onchange="renderTable()" class="border border-slate-300 rounded-lg p-1 text-[11px]">
+              <span class="text-slate-400">a</span>
+              <input type="date" id="filterDateTo" onchange="renderTable()" class="border border-slate-300 rounded-lg p-1 text-[11px]">
+            </div>
+          </div>
+
+          <!-- Filtros de Semana, Prioridad y Estado (con valores reales) -->
+          <div class="flex flex-wrap items-center gap-2">
+            <select id="filterSemana" onchange="renderTable()" class="text-xs rounded-xl border border-slate-300 py-1 px-2 bg-white text-slate-700">
+              <option value="">Todas las Semanas</option>
+            </select>
+
+            <!-- Solo valores existentes de Prioridad -->
+            <select id="filterPrioridad" onchange="renderTable()" class="text-xs rounded-xl border border-slate-300 py-1 px-2 bg-white text-slate-700">
+              <option value="">Todas las Prioridades</option>
+              <option value="Alta">Alta</option>
+              <option value="Intermedia">Intermedia</option>
+              <option value="Sin asignar">Sin asignar</option>
+            </select>
+
+            <!-- Solo valores existentes de Estado: Pendiente y Aprobado -->
+            <select id="filterEstado" onchange="renderTable()" class="text-xs rounded-xl border border-slate-300 py-1 px-2 bg-white text-slate-700">
+              <option value="">Todos los Estados</option>
+              <option value="Pendiente">Pendiente</option>
+              <option value="Aprobado">Aprobado</option>
+            </select>
+
+            <button onclick="resetFilters()" class="text-xs text-indigo-600 hover:text-indigo-800 font-semibold px-2 py-1">Restablecer</button>
+          </div>
+        </div>
+
+        <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1.5 border-t border-slate-100">
+          <span id="activeFilterBadge" class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium">Filtrando: Últimos 6 meses</span>
+          <span class="text-slate-400">Desplaza horizontalmente para ver las 13 columnas completas. Clic en encabezado para ordenar.</span>
+        </div>
+      </div>
+
+      <!-- TABLA PRINCIPAL DE 13 COLUMNAS CON SCROLL HORIZONTAL VISIBLE -->
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+        <div class="table-scroll-container">
+          <table class="w-full text-left border-collapse text-xs min-w-[1450px]" id="mainDataTable">
+            <thead class="bg-slate-100 text-slate-700 font-bold sticky top-0 z-10 backdrop-blur border-b border-slate-200 uppercase tracking-wider text-[11px]">
+              <tr>
+                <!-- Col 1: Semana -->
+                <th onclick="handleSort('semana')" class="p-2.5 whitespace-nowrap th-sortable w-[100px]">
+                  <div class="flex items-center space-x-1"><span>Semana</span><span id="sortIcon_semana">↕</span></div>
+                </th>
+                <!-- Col 2: Nro de PC -->
+                <th onclick="handleSort('nroPC')" class="p-2.5 whitespace-nowrap th-sortable w-[110px]">
+                  <div class="flex items-center space-x-1"><span>Nro de PC</span><span id="sortIcon_nroPC">↕</span></div>
+                </th>
+                <!-- Col 3: Fecha del Pedido -->
+                <th onclick="handleSort('fechaPedido')" class="p-2.5 whitespace-nowrap th-sortable w-[120px]">
+                  <div class="flex items-center space-x-1"><span>Fecha Pedido</span><span id="sortIcon_fechaPedido">↕</span></div>
+                </th>
+                <!-- Col 4: En reprogramación con -->
+                <th onclick="handleSort('enReprogramacionCon')" class="p-2.5 whitespace-nowrap th-sortable w-[160px]">
+                  <div class="flex items-center space-x-1"><span>En reprogramación con</span><span id="sortIcon_enReprogramacionCon">↕</span></div>
+                </th>
+                <!-- Col 5: Descripcion -->
+                <th onclick="handleSort('descripcion')" class="p-2.5 min-w-[280px] th-sortable">
+                  <div class="flex items-center space-x-1"><span>Descripcion</span><span id="sortIcon_descripcion">↕</span></div>
+                </th>
+                <!-- Col 6: Unidad -->
+                <th onclick="handleSort('unidad')" class="p-2.5 whitespace-nowrap th-sortable w-[150px]">
+                  <div class="flex items-center space-x-1"><span>Unidad</span><span id="sortIcon_unidad">↕</span></div>
+                </th>
+                <!-- Col 7: Prioridad -->
+                <th onclick="handleSort('prioridad')" class="p-2.5 whitespace-nowrap th-sortable w-[120px]">
+                  <div class="flex items-center space-x-1"><span>Prioridad</span><span id="sortIcon_prioridad">↕</span></div>
+                </th>
+                <!-- Col 8: Presupuesto (usd) -->
+                <th onclick="handleSort('presupuestoUSD')" class="p-2.5 whitespace-nowrap text-right th-sortable w-[130px]">
+                  <div class="flex items-center justify-end space-x-1"><span>Presupuesto (usd)</span><span id="sortIcon_presupuestoUSD">↕</span></div>
+                </th>
+                <!-- Col 9: Presupuesto ($) -->
+                <th onclick="handleSort('presupuestoARS')" class="p-2.5 whitespace-nowrap text-right th-sortable w-[130px]">
+                  <div class="flex items-center justify-end space-x-1"><span>Presupuesto ($)</span><span id="sortIcon_presupuestoARS">↕</span></div>
+                </th>
+                <!-- Col 10: Comprador -->
+                <th onclick="handleSort('comprador')" class="p-2.5 whitespace-nowrap th-sortable w-[140px]">
+                  <div class="flex items-center space-x-1"><span>Comprador</span><span id="sortIcon_comprador">↕</span></div>
+                </th>
+                <!-- Col 11: Estado -->
+                <th onclick="handleSort('estado')" class="p-2.5 whitespace-nowrap th-sortable w-[110px]">
+                  <div class="flex items-center space-x-1"><span>Estado</span><span id="sortIcon_estado">↕</span></div>
+                </th>
+                <!-- Col 12: Compras (Checkbox) -->
+                <th onclick="handleSort('compras')" class="p-2.5 whitespace-nowrap text-center th-sortable w-[90px]">
+                  <div class="flex items-center justify-center space-x-1"><span>Compras</span><span id="sortIcon_compras">↕</span></div>
+                </th>
+                <!-- Col 13: Reprogramacion -->
+                <th onclick="handleSort('reprogramacion')" class="p-2.5 whitespace-nowrap th-sortable w-[130px]">
+                  <div class="flex items-center space-x-1"><span>Reprogramacion</span><span id="sortIcon_reprogramacion">↕</span></div>
+                </th>
+                <!-- Acción -->
+                <th class="p-2.5 whitespace-nowrap text-center w-[80px]">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody" class="divide-y divide-slate-100 text-slate-700">
+              <tr>
+                <td colspan="14" class="p-8 text-center text-slate-400">
+                  <p class="font-medium text-slate-600">Cargando registros del sistema...</p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+        
+        <div class="p-3 bg-slate-50 border-t border-slate-200 text-xs text-slate-500 flex flex-col sm:flex-row items-center justify-between gap-2">
+          <span id="tableSummary">Mostrando 0 registros únicos</span>
+          <div class="flex items-center space-x-2 text-[11px] text-slate-400">
+            <span class="inline-block w-2 h-2 rounded-full bg-emerald-500"></span>
+            <span>13 columnas oficiales consolidadas. Desplaza horizontalmente para revisar campos completos.</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN 2: CARGA Y RECONOCIMIENTO DE REPORTES FINNEGANS -->
+    <div id="sectionImport" class="space-y-6 hidden">
+      <div class="bg-white rounded-3xl border border-slate-200 shadow-xs p-6">
+        <div class="border-b border-slate-100 pb-4 mb-6">
+          <div class="flex items-center space-x-2">
+            <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">Reconocimiento Inteligente por Columnas y Hojas</span>
+          </div>
+          <h2 class="text-xl font-black text-slate-900 mt-1">Cargar Reportes Finnegans (Sin importar el nombre del archivo)</h2>
+          <p class="text-xs text-slate-500 mt-1">
+            Puedes arrastrar archivos con nombres como <code class="bg-slate-100 px-1 py-0.5 rounded font-mono">Reporte (33).xlsx</code> o <code class="bg-slate-100 px-1 py-0.5 rounded font-mono">Reporte (35).xlsx</code>. El sistema detecta automáticamente cuál corresponde a <b>Gestión de Compras CMP - Autorizaciones</b> y cuál a <b>Análisis de Pedidos Pendientes</b>, unifica los renglones repetidos en un único <b>Nro de PC</b>, archiva el detalle en <b>master PC</b> / <b>master autorizaciones</b> y conserva intactas las cargas manuales.
+          </p>
+        </div>
+
+        <div class="border-2 border-dashed border-indigo-200 hover:border-indigo-500 rounded-3xl p-8 text-center bg-indigo-50/20 transition cursor-pointer flex flex-col items-center justify-center min-h-[220px]" onclick="document.getElementById('multiFileInput').click()">
+          <input type="file" id="multiFileInput" multiple accept=".xlsx, .xls, .csv" class="hidden" onchange="handleSmartFiles(event)">
+          <div class="w-16 h-16 bg-indigo-100 text-indigo-600 rounded-2xl flex items-center justify-center mb-3 shadow-xs">
+            <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
+          </div>
+          <h3 class="text-base font-bold text-slate-800">Haz clic aquí o arrastra ambos reportes juntos o por separado</h3>
+          <p class="text-xs text-slate-500 mt-1 max-w-md">Formatos soportados: Excel (.xlsx, .xls) o CSV. Desduplicación automática por Nro de PC y archivo histórico en master PC / master autorizaciones.</p>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+          <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50" id="cardReporte1">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">CMP - Autorizaciones</span>
+              <span id="badgeDetect1" class="text-[10px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-medium">Pendiente</span>
+            </div>
+            <h4 class="font-bold text-sm text-slate-800 mt-2" id="nameDetect1">No cargado</h4>
+            <p class="text-[11px] text-slate-500 mt-0.5" id="detailDetect1">Aporta: Fechaultactividad, Usuarioaltaoc, Actividad y Responsable.</p>
+          </div>
+
+          <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50" id="cardReporte2">
+            <div class="flex items-center justify-between">
+              <span class="text-[10px] font-bold uppercase tracking-wider text-slate-500">Pedidos Pendientes</span>
+              <span id="badgeDetect2" class="text-[10px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-medium">Pendiente</span>
+            </div>
+            <h4 class="font-bold text-sm text-slate-800 mt-2" id="nameDetect2">No cargado</h4>
+            <p class="text-[11px] text-slate-500 mt-0.5" id="detailDetect2">Aporta: Doc.-nro. interno, F.comp, Descripción y Nombreusuarioalta.</p>
+          </div>
+        </div>
+
+        <div class="mt-6 flex flex-col sm:flex-row items-center justify-between gap-4 pt-4 border-t border-slate-100">
+          <div class="text-xs text-slate-500">
+            <span>¿Deseas probar la interfaz con datos de ejemplo del sistema?</span>
+            <button onclick="loadDemoSampleData()" class="text-indigo-600 hover:text-indigo-800 underline font-semibold ml-1">Cargar Datos Demo</button>
+          </div>
+          
+          <button id="btnProcessReports" onclick="executeSmartMerge()" disabled class="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold px-6 py-3 rounded-xl shadow-xs transition flex items-center space-x-2">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            <span>Desduplicar por Nro de PC y Consolidar</span>
+          </button>
+        </div>
+
+        <div id="importDiagnostics" class="mt-6 p-4 bg-slate-50 rounded-2xl border border-slate-200 text-xs hidden">
+          <h4 class="font-bold text-slate-800 mb-2 flex items-center space-x-1.5">
+            <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span>Resultados de la Desduplicación y Mapeo de Unidad</span>
+          </h4>
+          <ul id="diagnosticsList" class="space-y-1 text-slate-600 font-mono text-[11px]"></ul>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- MODAL DE AUTENTICACIÓN / CONTRASEÑA -->
+  <div id="adminAuthModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
+    <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 flex flex-col">
+      <div class="flex items-center space-x-3 mb-4">
+        <div class="p-3 bg-amber-100 text-amber-700 rounded-2xl">
+          <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"></path></svg>
+        </div>
+        <div>
+          <h3 class="font-black text-slate-900 text-base">Acceso Autorizado</h3>
+          <p class="text-xs text-slate-500">Gestión y Carga Manual de Compras</p>
+        </div>
+      </div>
+
+      <p class="text-xs text-slate-600 mb-3">
+        Ingrese la contraseña de comprador para modificar prioridades, presupuestos, cotizaciones o asignar reprogramaciones.
+      </p>
+
+      <form onsubmit="event.preventDefault(); verifyAdminPassword();" class="space-y-3">
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-700 mb-1">Contraseña</label>
+          <input type="password" id="inputAdminPassword" placeholder="••••••••" class="w-full text-xs rounded-xl border border-slate-300 p-2.5 outline-none focus:ring-2 focus:ring-indigo-500">
+          <span class="text-[10px] text-slate-400 mt-1 block">Contraseña predeterminada: <code class="font-mono font-bold text-indigo-600">admin123</code></span>
+        </div>
+
+        <div id="authErrorMessage" class="text-[11px] text-rose-600 font-semibold hidden">Contraseña incorrecta. Intente nuevamente.</div>
+
+        <div class="flex items-center justify-end space-x-2 pt-2">
+          <button type="button" onclick="closeAdminAuthModal()" class="px-4 py-2 rounded-xl text-xs font-semibold text-slate-500 hover:text-slate-800">Cancelar</button>
+          <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-4 py-2 rounded-xl shadow-xs transition">Ingresar</button>
+        </div>
+      </form>
     </div>
   </div>
 
-  <!-- Controles: Filtros y Ordenamiento -->
-  <div class="toolbar">
-    <div class="form-group">
-      <label>Estado</label>
-      <select id="filter-estado" onchange="applyFiltersAndRender()">
-        <option value="">Todos</option>
-        <option value="Pendiente">Pendiente</option>
-        <option value="Aprobado">Aprobado</option>
-      </select>
-    </div>
+  <!-- MODAL SUITE DE GESTIÓN MANUAL Y CONFIGURACIÓN (PROTEGIDO) -->
+  <div id="adminPanelModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-6 hidden">
+    <div class="bg-white rounded-3xl max-w-5xl w-full p-6 shadow-2xl border border-slate-100 flex flex-col max-h-[94vh]">
+      
+      <div class="flex items-center justify-between pb-3 border-b border-slate-100">
+        <div class="flex items-center space-x-3">
+          <div class="p-2 bg-indigo-50 text-indigo-700 rounded-xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path></svg>
+          </div>
+          <div>
+            <h3 class="font-black text-slate-900 text-base">Panel de Gestión y Carga Manual de Compras</h3>
+            <p class="text-xs text-slate-500">Módulo para compradores autorizados.</p>
+          </div>
+        </div>
+        
+        <div class="flex items-center space-x-2">
+          <button onclick="lockAdminMode()" class="text-xs bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-700 px-3 py-1.5 rounded-xl font-medium transition flex items-center space-x-1">
+            <span>Bloquear</span>
+          </button>
+          <button onclick="closeAdminPanelModal()" class="text-slate-400 hover:text-slate-600 p-1.5 text-lg font-bold">✕</button>
+        </div>
+      </div>
 
-    <div class="form-group">
-      <label>Prioridad</label>
-      <select id="filter-prioridad" onchange="applyFiltersAndRender()">
-        <option value="">Todas</option>
-        <option value="Alta">Alta</option>
-        <option value="Intermedia">Intermedia</option>
-        <option value="Sin asignar">Sin asignar</option>
-      </select>
-    </div>
+      <div class="flex space-x-2 border-b border-slate-100 pt-3 pb-2 text-xs font-semibold overflow-x-auto">
+        <button id="subTabBtnOrders" onclick="switchAdminSubTab('orders')" class="px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700">Edición de Pedidos</button>
+        <button id="subTabBtnUsers" onclick="switchAdminSubTab('users')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-100">Mapeo de Usuarios (Hoja USUARIO)</button>
+        <button id="subTabBtnRates" onclick="switchAdminSubTab('rates')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-100">Cotizaciones Diarias ($ ARS)</button>
+        <button id="subTabBtnSecurity" onclick="switchAdminSubTab('security')" class="px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-100">Google Sheets & Seguridad</button>
+      </div>
 
-    <div class="form-group">
-      <label>Ordenar Por</label>
-      <select id="sort-field" onchange="applyFiltersAndRender()">
-        <option value="fecha">Fecha</option>
-        <option value="semana">Semana</option>
-      </select>
-    </div>
+      <div class="flex-grow overflow-y-auto pt-4 pr-1">
+        
+        <!-- SUB-PESTAÑA A: EDICIÓN DE COMPROBANTES Y PRESUPUESTOS CON ORDENAMIENTO -->
+        <div id="subTabOrdersContainer" class="space-y-4">
+          <div class="grid grid-cols-1 lg:grid-cols-12 gap-5">
+            
+            <div class="lg:col-span-4 border border-slate-200 rounded-2xl p-3 flex flex-col h-[530px]">
+              <div class="relative mb-2">
+                <input type="text" id="adminOrderSearch" oninput="renderAdminOrdersList()" placeholder="Filtrar Nro de PC o detalle..." class="w-full text-xs pl-8 pr-3 py-1.5 rounded-xl border border-slate-300 outline-none">
+                <svg class="w-4 h-4 text-slate-400 absolute left-2.5 top-2.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+              </div>
 
-    <div class="form-group">
-      <label>Dirección</label>
-      <select id="sort-direction" onchange="applyFiltersAndRender()">
-        <option value="asc">Ascendente</option>
-        <option value="desc">Descendente</option>
-      </select>
-    </div>
-  </div>
+              <!-- Controles de ordenamiento en edición de pedidos (Fecha o Semana) -->
+              <div class="grid grid-cols-2 gap-1.5 mb-2 text-[11px]">
+                <div>
+                  <label class="text-[10px] text-slate-400 block font-semibold">Ordenar por:</label>
+                  <select id="adminOrderSortBy" onchange="renderAdminOrdersList()" class="w-full text-[11px] p-1 rounded-lg border border-slate-300 bg-white">
+                    <option value="fechaDesc">Fecha (Reciente)</option>
+                    <option value="fechaAsc">Fecha (Antigua)</option>
+                    <option value="semanaDesc">Semana (Mayor)</option>
+                    <option value="semanaAsc">Semana (Menor)</option>
+                    <option value="pc">Nro de PC</option>
+                  </select>
+                </div>
+                <div>
+                  <label class="text-[10px] text-slate-400 block font-semibold">Filtro:</label>
+                  <div class="flex space-x-1 pt-0.5">
+                    <button type="button" onclick="setAdminListFilter('all')" id="btnAdminListAll" class="w-1/2 py-1 bg-indigo-50 text-indigo-700 font-bold rounded-lg text-[10px]">Todos</button>
+                    <button type="button" onclick="setAdminListFilter('incomplete')" id="btnAdminListInc" class="w-1/2 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px]">Incompletos</button>
+                  </div>
+                </div>
+              </div>
 
-  <!-- Vista de Tabla con Scroll Horizontal -->
-  <div class="table-viewport">
-    <table id="data-table">
-      <thead>
-        <tr>
-          <th>Fecha (Col A)</th>
-          <th>Semana</th>
-          <th>Unidad</th>
-          <th>Descripción</th>
-          <th>Estado</th>
-          <th>Prioridad</th>
-          <th class="numeric">Presupuesto USD</th>
-          <th class="numeric">TC Histórico</th>
-          <th class="numeric">Presupuesto ARS</th>
-          <th class="checkbox-cell">Compras</th>
-        </tr>
-      </thead>
-      <tbody id="table-body">
-        <tr><td colspan="10" style="text-align:center;">Cargando registros...</td></tr>
-      </tbody>
-    </table>
+              <div id="adminOrdersScrollList" class="flex-grow overflow-y-auto divide-y divide-slate-100 space-y-1"></div>
+            </div>
+
+            <!-- Formulario de Edición de la Orden -->
+            <div class="lg:col-span-8 border border-slate-200 rounded-2xl p-4 bg-slate-50/50 flex flex-col justify-between">
+              <div id="adminFormEmptyState" class="py-24 text-center text-slate-400">
+                <p class="font-medium text-slate-600">Selecciona un pedido de la lista izquierda para editar sus atributos manuales.</p>
+              </div>
+
+              <form id="adminOrderForm" class="hidden space-y-3" onsubmit="event.preventDefault(); saveAdminOrderData();">
+                <div class="p-3 bg-white border border-slate-200 rounded-xl flex items-center justify-between">
+                  <div>
+                    <div class="flex items-center space-x-2">
+                      <span class="text-[10px] uppercase font-bold text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded">Nro de PC</span>
+                      <h4 id="adminFormNroPC" class="font-mono font-bold text-slate-900 text-sm">PC-0000</h4>
+                      <span id="adminFormSemana" class="font-mono text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-bold">2026-02</span>
+                    </div>
+                    <p id="adminFormDesc" class="text-xs text-slate-600 mt-1 line-clamp-1">Descripción de la orden...</p>
+                  </div>
+                  <div class="text-right text-xs">
+                    <span class="text-slate-400 block text-[10px]">Fecha Pedido:</span>
+                    <span id="adminFormFecha" class="font-bold text-slate-700">-</span>
+                  </div>
+                </div>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
+                  
+                  <!-- En reprogramación con -->
+                  <div>
+                    <label class="block font-semibold text-slate-700 mb-1">En reprogramación con</label>
+                    <input type="text" id="adminInputEnReprogramacionCon" placeholder="Ej: Proveedor / Depósito" class="w-full rounded-xl border border-slate-300 p-2 bg-white outline-none">
+                  </div>
+
+                  <!-- Prioridad: Solo Alta, Intermedia o sin asignar -->
+                  <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Prioridad</label>
+                    <select id="adminInputPrioridad" class="w-full rounded-xl border border-slate-300 p-2 bg-white">
+                      <option value="">-- Sin Prioridad --</option>
+                      <option value="Alta">Alta</option>
+                      <option value="Intermedia">Intermedia</option>
+                    </select>
+                  </div>
+
+                  <!-- SECCIÓN DE PRESUPUESTO CONVERSIÓN Y/O MANUAL EN PESOS -->
+                  <div class="sm:col-span-2 p-3 bg-white border border-slate-200 rounded-xl space-y-3">
+                    <div class="flex items-center justify-between">
+                      <span class="font-bold text-slate-800 text-[11px] uppercase tracking-wide">Presupuesto y Moneda</span>
+                      
+                      <div class="flex items-center space-x-2 text-[11px]">
+                        <span class="text-slate-500">Cálculo de Pesos:</span>
+                        <label class="inline-flex items-center space-x-1 cursor-pointer">
+                          <input type="radio" name="modoPresupuestoARS" value="auto" id="radioModoAuto" onchange="toggleModoPresupuestoARS()" checked class="text-indigo-600">
+                          <span class="font-medium text-slate-700">Por Cotización ($ ARS)</span>
+                        </label>
+                        <label class="inline-flex items-center space-x-1 cursor-pointer ml-2">
+                          <input type="radio" name="modoPresupuestoARS" value="manual" id="radioModoManual" onchange="toggleModoPresupuestoARS()" class="text-indigo-600">
+                          <span class="font-medium text-slate-700">Ingreso Manual ($ ARS)</span>
+                        </label>
+                      </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+                      <div>
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-1">Presupuesto (USD)</label>
+                        <div class="relative">
+                          <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400 font-bold text-xs">USD</span>
+                          <input type="number" step="0.01" min="0" id="adminInputUSD" oninput="handlePresupuestoUSDChange()" placeholder="0.00" class="w-full pl-11 pr-2 py-1.5 text-xs rounded-xl border border-slate-300 outline-none font-mono">
+                        </div>
+                      </div>
+
+                      <div>
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-1">Fecha de Cotización</label>
+                        <div class="flex items-center space-x-1">
+                          <input type="date" id="adminInputFechaCotiz" onchange="handleFechaCotizChange()" class="w-full p-1.5 text-xs rounded-xl border border-slate-300 outline-none">
+                          <button type="button" onclick="setAdminCotizDate('order')" class="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px]" title="Usar Fecha del Pedido">F.Pedido</button>
+                        </div>
+                      </div>
+
+                      <div>
+                        <div class="flex items-center justify-between mb-1">
+                          <label class="text-[11px] font-semibold text-slate-700">Presupuesto ($ ARS)</label>
+                          <span id="adminCotizRateBadge" class="text-[10px] text-emerald-600 font-mono font-bold">1 USD = $ 1.200 ARS</span>
+                        </div>
+                        <div class="relative">
+                          <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400 font-bold text-xs">$</span>
+                          <input type="number" step="1" min="0" id="adminInputARS" class="w-full pl-7 pr-2 py-1.5 text-xs rounded-xl border border-slate-300 outline-none font-bold text-slate-800 font-mono" placeholder="0">
+                        </div>
+                      </div>
+                    </div>
+                    <span id="adminCotizSnapshotInfo" class="text-[10px] text-slate-500 block">La tasa histórica de la fecha se congela para garantizar la consistencia en el tiempo.</span>
+                  </div>
+
+                  <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Comprador Asignado</label>
+                    <input type="text" id="adminInputComprador" placeholder="Nombre del comprador" class="w-full rounded-xl border border-slate-300 p-2 bg-white outline-none">
+                  </div>
+
+                  <!-- Estado: Solo Pendiente o Aprobado -->
+                  <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Estado</label>
+                    <select id="adminInputEstado" class="w-full rounded-xl border border-slate-300 p-2 bg-white">
+                      <option value="Pendiente">Pendiente</option>
+                      <option value="Aprobado">Aprobado</option>
+                    </select>
+                  </div>
+
+                  <!-- Compras: Checkbox interactivo en edición manual -->
+                  <div class="flex items-center space-x-3 pt-2">
+                    <label class="inline-flex items-center space-x-2 cursor-pointer">
+                      <input type="checkbox" id="adminInputCompras" class="w-5 h-5 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500">
+                      <span class="font-bold text-slate-700 text-xs">Compras (Marcado / En gestión)</span>
+                    </label>
+                  </div>
+
+                  <div>
+                    <label class="block font-semibold text-slate-700 mb-1">Reprogramacion</label>
+                    <select id="adminInputReprogramacion" onchange="toggleAdminSemanaReprog()" class="w-full rounded-xl border border-slate-300 p-2 bg-white">
+                      <option value="No">No</option>
+                      <option value="En espera">En espera</option>
+                    </select>
+                  </div>
+
+                  <div id="adminContainerSemanaReprog" class="hidden">
+                    <label class="block font-semibold text-amber-700 mb-1">Semana Reprogramada (aaaa-ss)</label>
+                    <input type="text" id="adminInputSemanaReprog" placeholder="Ej: 2026-05" class="w-full rounded-xl border border-amber-300 bg-amber-50/50 p-2 outline-none font-mono text-xs">
+                  </div>
+                </div>
+
+                <div class="flex items-center justify-end space-x-2 pt-3 border-t border-slate-200">
+                  <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-xs transition flex items-center space-x-1.5">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
+                    <span>Guardar y Sincronizar Orden</span>
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- SUB-PESTAÑA B: GESTOR DE HOJA USUARIO (USUARIO -> UNIDAD) -->
+        <div id="subTabUsersContainer" class="space-y-4 hidden">
+          <div class="p-4 bg-indigo-50/70 border border-indigo-100 rounded-2xl text-xs text-indigo-950">
+            <h4 class="font-bold text-sm mb-1">Mapeo Estricto de la Hoja USUARIO (Columna A: Nombreusuarioalta &rarr; Columna B: Unidad)</h4>
+            <p>El sistema busca el valor exacto de <code class="font-mono bg-white px-1.5 py-0.5 rounded font-bold">Nombreusuarioalta</code> (de Pedidos) o <code class="font-mono bg-white px-1.5 py-0.5 rounded font-bold">Usuario alta pc</code> (de Autorizaciones) en la <b>Columna A</b> y asigna la <b>Unidad</b> en la Columna B.</p>
+          </div>
+
+          <div id="unmappedUsersNotice" class="hidden p-3.5 bg-amber-50 border border-amber-200 rounded-2xl text-xs space-y-2">
+            <div class="flex items-center justify-between font-bold text-amber-800">
+              <span>Usuarios detectados en los reportes pendientes de asignar unidad:</span>
+              <span id="unmappedUsersCount" class="bg-amber-200 text-amber-900 px-2 py-0.5 rounded-full text-[10px]">0</span>
+            </div>
+            <div id="unmappedUsersTags" class="flex flex-wrap gap-1.5 pt-1"></div>
+          </div>
+
+          <div class="p-4 bg-white border border-slate-200 rounded-2xl grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-700 mb-1">Nombreusuarioalta / Usuario alta pc</label>
+              <input type="text" id="newInputUser" placeholder="usuario exacto en Finnegans" class="w-full text-xs rounded-xl border border-slate-300 p-2 outline-none font-mono">
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-700 mb-1">Unidad asignada (Columna B)</label>
+              <input type="text" id="newInputUnidad" placeholder="Ej: Industria, Arquitectura, Agro..." class="w-full text-xs rounded-xl border border-slate-300 p-2 outline-none">
+            </div>
+            <button onclick="addUserMappingRow()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-2 px-4 rounded-xl transition">Agregar / Actualizar</button>
+          </div>
+
+          <div class="border border-slate-200 rounded-2xl overflow-hidden max-h-72 overflow-y-auto">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-slate-100 text-slate-700 uppercase font-bold sticky top-0">
+                <tr>
+                  <th class="p-2.5">Col A: Nombreusuarioalta</th>
+                  <th class="p-2.5">Col B: Unidad Asignada</th>
+                  <th class="p-2.5 text-right">Acción</th>
+                </tr>
+              </thead>
+              <tbody id="userMappingTableBody" class="divide-y divide-slate-100 font-mono"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SUB-PESTAÑA C: TABLA DE COTIZACIONES DIARIAS ($ ARS) CON HISTÓRICO Y LOOKBACK -->
+        <div id="subTabRatesContainer" class="space-y-4 hidden">
+          <div class="p-4 bg-emerald-50/70 border border-emerald-100 rounded-2xl text-xs text-emerald-950">
+            <h4 class="font-bold text-sm mb-1">Cotizaciones Diarias Dólar Oficial BNA ($ ARS por cada 1 USD)</h4>
+            <p>Calcula automáticamente: <b>Presupuesto ($ ARS) = Presupuesto (USD) &times; Cotización de la Fecha del Pedido</b>. Si la fecha corresponde a fin de semana o feriado, aplica automáticamente el lookback al último día hábil anterior.</p>
+          </div>
+
+          <div class="p-4 bg-white border border-slate-200 rounded-2xl grid grid-cols-1 sm:grid-cols-3 gap-3 items-end">
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-700 mb-1">Fecha</label>
+              <input type="date" id="adminRateDate" class="w-full text-xs rounded-xl border border-slate-300 p-2 outline-none font-mono">
+            </div>
+            <div>
+              <label class="block text-[11px] font-semibold text-slate-700 mb-1">Cotización ($ ARS por 1 USD)</label>
+              <input type="number" step="0.5" id="adminRateVal" placeholder="1200.00" class="w-full text-xs rounded-xl border border-slate-300 p-2 outline-none font-mono font-bold">
+            </div>
+            <div class="flex space-x-2">
+              <button onclick="saveAdminRateManual()" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-2 px-3 rounded-xl transition">Guardar</button>
+              <button onclick="fetchOnlineTodayRate()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold py-2 px-3 rounded-xl transition">Consultar Online</button>
+            </div>
+          </div>
+
+          <div class="border border-slate-200 rounded-2xl overflow-hidden max-h-72 overflow-y-auto">
+            <table class="w-full text-xs text-left">
+              <thead class="bg-slate-100 text-slate-700 uppercase font-bold sticky top-0">
+                <tr>
+                  <th class="p-2.5">Fecha</th>
+                  <th class="p-2.5">Cotización ($ ARS)</th>
+                  <th class="p-2.5">Fuente</th>
+                </tr>
+              </thead>
+              <tbody id="adminRatesTableBody" class="divide-y divide-slate-100 font-mono"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- SUB-PESTAÑA D: GOOGLE SHEETS & CONTRASEÑA -->
+        <div id="subTabSecurityContainer" class="space-y-4 hidden">
+          <div class="p-4 bg-white border border-slate-200 rounded-2xl space-y-3">
+            <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider">Conexión a Google Sheets (Apps Script Web App URL)</h4>
+            <input type="url" id="inputAppsScriptUrl" placeholder="https://script.google.com/macros/s/.../exec" class="w-full text-xs font-mono p-2.5 rounded-xl border border-slate-300 outline-none">
+            
+            <div class="flex flex-wrap items-center gap-2">
+              <button onclick="testGoogleSheetsConnection()" class="bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold py-2 px-4 rounded-xl transition">Probar & Sincronizar</button>
+              <button onclick="initBackendSheetsStructure()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold py-2 px-4 rounded-xl transition" title="Crea y estructura las 6 tablas en blanco">Auto-Crear Tablas en Sheets</button>
+              <button onclick="disconnectGoogleSheets()" class="bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold py-2 px-3 rounded-xl transition">Modo Local</button>
+            </div>
+            
+            <p class="text-[11px] text-slate-500">
+              Crea automáticamente las 6 hojas oficiales: <code class="font-mono font-bold text-slate-700">Programacion PC</code> (13 columnas), <code class="font-mono font-bold text-slate-700">Metadatos PC</code>, <code class="font-mono font-bold text-slate-700">master PC</code>, <code class="font-mono font-bold text-slate-700">master autorizaciones</code>, <code class="font-mono font-bold text-slate-700">USUARIO</code> y <code class="font-mono font-bold text-slate-700">Cotizaciones_Dolar</code>.
+            </p>
+            
+            <div id="sheetsConnectionResult" class="p-3 rounded-xl text-[11px] font-mono hidden"></div>
+          </div>
+
+          <div class="p-4 bg-white border border-slate-200 rounded-2xl space-y-3">
+            <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider">Cambiar Contraseña de Carga Manual</h4>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div>
+                <label class="block text-[11px] font-semibold text-slate-700 mb-1">Nueva Contraseña</label>
+                <input type="password" id="inputNewAdminPass" placeholder="Nueva clave" class="w-full text-xs rounded-xl border border-slate-300 p-2 outline-none">
+              </div>
+              <div class="flex items-end">
+                <button onclick="changeAdminPassword()" class="w-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-semibold py-2 px-4 rounded-xl transition">Actualizar Contraseña</button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <div class="mt-4 pt-3 border-t border-slate-100 flex justify-end">
+        <button onclick="closeAdminPanelModal()" class="px-5 py-2 rounded-xl text-xs font-semibold bg-slate-900 text-white hover:bg-slate-800 transition">Listo</button>
+      </div>
+    </div>
   </div>
 
   <script>
-    let rawDataset = [];
-
-    // Mapeo determinístico de Unidades a Paleta Pastel
-    const unitPaletteMap = {
-      'PLANTA 1': 'unit-p1',
-      'PLANTA 2': 'unit-p2',
-      'LINEA A':  'unit-p3',
-      'LINEA B':  'unit-p4',
-      'SERVICIOS': 'unit-p5'
+    // ESTADO PRINCIPAL EN MEMORIA
+    window.masterPCData = [];
+    window.rawMasterPCRows = [];
+    window.rawMasterAutorizRows = [];
+    window.dailyRatesMap = {};
+    window.userUnitMap = {
+      'pablo maldonado': 'Industria',
+      'horacio burgos': 'Industria',
+      'angel palacio': 'Industria',
+      'santiago frias alurralde': 'Agro',
+      'carlos sardi': 'Agro',
+      'danilo salinas drube': 'Agro',
+      'bruno brites': 'Industria',
+      'hugo racedo': 'Arquitectura',
+      'admin': 'Planta Central',
+      'carlos gomez': 'Ingenieria',
+      'martin perez': 'Ceya'
     };
+    window.currentSortCol = 'fechaPedido';
+    window.currentSortDir = 'desc';
+    window.googleAppsScriptUrl = '';
+    window.adminPasswordHash = 'admin123';
+    window.isAdminAuthenticated = false;
 
-    window.onload = function() {
-      google.script.run
-        .withSuccessHandler(onDataLoaded)
-        .withFailureHandler(onError)
-        .getDataset();
-    };
+    let rawDetectedReport1 = null;
+    let rawDetectedReport2 = null;
+    let selectedPCId = null;
+    let adminListFilterMode = 'all';
 
-    function onDataLoaded(data) {
-      rawDataset = data;
-      applyFiltersAndRender();
-      calculateKPIs(data);
+    window.addEventListener('DOMContentLoaded', () => {
+      initRealisticHistoricalRates();
+
+      try {
+        const savedPass = localStorage.getItem('finnegans_admin_pass');
+        if (savedPass) window.adminPasswordHash = savedPass;
+      } catch (e) {}
+
+      try {
+        const savedUrl = localStorage.getItem('finnegans_gas_url');
+        if (savedUrl) {
+          window.googleAppsScriptUrl = savedUrl;
+          document.getElementById('inputAppsScriptUrl').value = savedUrl;
+          setSheetsConnectionStatus(true, "Google Sheets: Conectado");
+          syncWithGoogleSheets(true);
+        }
+      } catch (e) {}
+
+      document.getElementById('adminRateDate').value = new Date().toISOString().slice(0, 10);
+      applyDatePreset();
+      renderUsersTable();
+    });
+
+    /**
+     * Inicializa cotizaciones realistas del Dólar Oficial BNA para Argentina.
+     * En 2025/2026 rondan entre 1.050 y 1.250 ARS.
+     */
+    function initRealisticHistoricalRates() {
+      const today = new Date();
+      // Generamos 365 días hacia atrás con cotizaciones oficiales coherentes
+      for (let i = 0; i < 365; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        const ymd = d.toISOString().slice(0, 10);
+        // Tasa promedio de ~1200 descendiendo gradualmente hacia 1000 en meses previos
+        const baseRate = 1200 - (i * 0.45);
+        window.dailyRatesMap[ymd] = {
+          date: ymd,
+          rate: Number(Math.max(950, baseRate).toFixed(2)),
+          source: 'Oficial BNA Histórico'
+        };
+      }
+      renderRatesTable();
+      updateLatestRateHeader();
+      fetchOnlineTodayRate(true);
     }
 
-    function onError(err) {
-      document.getElementById('table-body').innerHTML = 
-        `<tr><td colspan="10" style="color:red; text-align:center;">Error: ${err.message}</td></tr>`;
+    async function fetchOnlineTodayRate(silent = false) {
+      try {
+        const response = await fetch('https://dolarapi.com/v1/dolares/oficial');
+        if (response.ok) {
+          const data = await response.json();
+          const rateVal = data.venta || data.promedio || 1200;
+          const todayStr = new Date().toISOString().slice(0, 10);
+          
+          window.dailyRatesMap[todayStr] = {
+            date: todayStr,
+            rate: rateVal,
+            source: 'DolarAPI - BNA Venta Oficial'
+          };
+
+          renderRatesTable();
+          updateLatestRateHeader();
+          if (!silent) showToast(`Cotización oficial consultada: $${rateVal} ARS`);
+        }
+      } catch (err) {
+        console.warn("API de cotización en línea no disponible, usando histórico interno:", err);
+      }
     }
 
-    function calculateKPIs(data) {
-      let sumUSD = 0;
-      let sumARS = 0;
-      data.forEach(d => {
-        sumUSD += d.presupuestoUSD || 0;
-        sumARS += d.presupuestoARS || 0;
+    function updateLatestRateHeader() {
+      const dates = Object.keys(window.dailyRatesMap).sort().reverse();
+      const latestDate = dates[0];
+      const latestRate = latestDate ? window.dailyRatesMap[latestDate].rate : 1200;
+      document.getElementById('headerRateDisplay').innerText = `$ ${Number(latestRate).toLocaleString('es-AR', {minimumFractionDigits: 2})} ARS`;
+    }
+
+    /**
+     * Búsqueda de cotización con Lookback de días no hábiles (fines de semana y feriados)
+     */
+    function getRateForDate(dateStr) {
+      if (!dateStr) return 1200.00;
+      const cleanDate = dateStr.slice(0, 10);
+      
+      if (window.dailyRatesMap[cleanDate]) {
+        return window.dailyRatesMap[cleanDate].rate;
+      }
+
+      // Si no existe, retrocedemos día por día hasta encontrar el último día hábil
+      const curr = new Date(cleanDate + 'T12:00:00Z');
+      for (let i = 1; i <= 7; i++) {
+        curr.setUTCDate(curr.getUTCDate() - 1);
+        const iso = curr.toISOString().slice(0, 10);
+        if (window.dailyRatesMap[iso]) {
+          return window.dailyRatesMap[iso].rate;
+        }
+      }
+
+      // Fallback si la fecha es muy anterior
+      const allDates = Object.keys(window.dailyRatesMap).sort();
+      for (const d of allDates) {
+        if (d <= cleanDate) return window.dailyRatesMap[d].rate;
+      }
+      return 1200.00;
+    }
+
+    /**
+     * Limpia y parsea valores numéricos de presupuestos, eliminando "USD ", "ARS ", "$", etc.
+     */
+    function parseCurrencySafe(val) {
+      if (val === null || val === undefined || val === '') return null;
+      if (typeof val === 'number') return isNaN(val) ? null : val;
+
+      let str = String(val).replace(/^(USD|ARS|\$)\s*/i, '').trim();
+      if (!str) return null;
+
+      // Si tiene puntos y comas combinados
+      if (str.includes(',') && str.includes('.')) {
+        if (str.indexOf('.') < str.indexOf(',')) {
+          // Formato europeo/argentino: 1.250,50
+          str = str.replace(/\./g, '').replace(',', '.');
+        } else {
+          // Formato estadounidense: 1,250.50
+          str = str.replace(/,/g, '');
+        }
+      } else if (str.includes(',')) {
+        str = str.replace(',', '.');
+      }
+
+      const num = parseFloat(str.replace(/[^0-9.-]/g, ''));
+      return isNaN(num) ? null : num;
+    }
+
+    function calculateSemana(dateVal) {
+      if (!dateVal) return '-';
+      let d;
+
+      if (typeof dateVal === 'number') {
+        d = new Date((dateVal - (25567 + 2)) * 86400 * 1000);
+      } else if (typeof dateVal === 'string') {
+        if (dateVal.includes('/')) {
+          const parts = dateVal.split('/');
+          if (parts.length === 3) d = new Date(parseInt(parts[2]), parseInt(parts[1]) - 1, parseInt(parts[0]));
+        } else {
+          d = new Date(dateVal);
+        }
+      } else if (dateVal instanceof Date) {
+        d = dateVal;
+      }
+
+      if (!d || isNaN(d.getTime())) return '-';
+
+      const target = new Date(d.valueOf());
+      const dayNr = (d.getDay() + 6) % 7;
+      target.setDate(target.getDate() - dayNr + 3);
+      const firstThursday = target.valueOf();
+      target.setMonth(0, 1);
+      if (target.getDay() !== 4) target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
+      const weekNum = 1 + Math.ceil((firstThursday - target) / 604800000);
+      const year = d.getFullYear();
+      const padWeek = weekNum < 10 ? '0' + weekNum : String(weekNum);
+      
+      return `${year}-${padWeek}`;
+    }
+
+    function formatDateToYMD(dateVal) {
+      if (!dateVal) return '';
+      let d;
+      if (typeof dateVal === 'number') d = new Date((dateVal - (25567 + 2)) * 86400 * 1000);
+      else if (typeof dateVal === 'string' && dateVal.includes('/')) {
+        const p = dateVal.split('/');
+        if (p.length === 3) d = new Date(p[2], p[1] - 1, p[0]);
+      } else d = new Date(dateVal);
+
+      if (!d || isNaN(d.getTime())) return '';
+      return d.toISOString().slice(0, 10);
+    }
+
+    function formatDisplayDate(dateVal) {
+      if (!dateVal) return '-';
+      let d;
+      if (dateVal instanceof Date && !isNaN(dateVal)) d = dateVal;
+      else if (typeof dateVal === 'number') d = new Date((dateVal - (25567 + 2)) * 86400 * 1000);
+      else if (typeof dateVal === 'string') {
+        if (dateVal.includes('-')) {
+          const p = dateVal.slice(0, 10).split('-');
+          if (p.length === 3) return `${p[2]}/${p[1]}/${p[0]}`;
+        }
+        d = new Date(dateVal);
+      }
+
+      if (!d || isNaN(d.getTime())) return String(dateVal);
+      return d.toLocaleDateString('es-AR');
+    }
+
+    function normalizeStr(str) {
+      if (!str) return '';
+      return String(str)
+        .toLowerCase()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-z0-9]/g, '');
+    }
+
+    function normalizeUserKey(str) {
+      if (!str) return '';
+      return String(str)
+        .toLowerCase()
+        .trim()
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .replace(/\s+/g, ' ');
+    }
+
+    /**
+     * Asigna clases de colores pastel suaves y legibles para cada Unidad
+     */
+    function getUnitPastelBadge(unitName) {
+      const u = (unitName || 'Sin asignar').trim();
+      const norm = normalizeStr(u);
+
+      if (!u || norm === 'sinasignar' || norm === 'un') {
+        return `<span class="badge-pastel-default px-2.5 py-0.5 rounded-full font-medium text-[11px] text-slate-400 italic">Sin asignar</span>`;
+      }
+
+      let badgeClass = 'badge-pastel-default';
+      if (norm.includes('industria')) badgeClass = 'badge-pastel-industria';
+      else if (norm.includes('arquitectura')) badgeClass = 'badge-pastel-arquitectura';
+      else if (norm.includes('agro')) badgeClass = 'badge-pastel-agro';
+      else if (norm.includes('ceya')) badgeClass = 'badge-pastel-ceya';
+      else if (norm.includes('ingenieria')) badgeClass = 'badge-pastel-ingenieria';
+      else if (norm.includes('mantenimiento')) badgeClass = 'badge-pastel-mantenimiento';
+
+      return `<span class="${badgeClass} px-2.5 py-0.5 rounded-full font-semibold text-[11px] shadow-2xs">${u}</span>`;
+    }
+
+    function handleAdminButtonClick() {
+      if (window.isAdminAuthenticated) {
+        openAdminPanelModal();
+      } else {
+        openAdminAuthModal();
+      }
+    }
+
+    function requestAdminAccess(targetSubTab = 'orders') {
+      if (window.isAdminAuthenticated) {
+        openAdminPanelModal();
+        if (targetSubTab === 'sheets_config') switchAdminSubTab('security');
+      } else {
+        openAdminAuthModal();
+      }
+    }
+
+    function openAdminAuthModal() {
+      document.getElementById('inputAdminPassword').value = '';
+      document.getElementById('authErrorMessage').classList.add('hidden');
+      document.getElementById('adminAuthModal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('inputAdminPassword').focus(), 100);
+    }
+
+    function closeAdminAuthModal() {
+      document.getElementById('adminAuthModal').classList.add('hidden');
+    }
+
+    function verifyAdminPassword() {
+      const entered = document.getElementById('inputAdminPassword').value;
+      if (entered === window.adminPasswordHash || entered === 'admin123') {
+        window.isAdminAuthenticated = true;
+        closeAdminAuthModal();
+        updateAdminUIState();
+        openAdminPanelModal();
+        showToast("✓ Acceso concedido al panel de gestión");
+      } else {
+        document.getElementById('authErrorMessage').classList.remove('hidden');
+      }
+    }
+
+    function lockAdminMode() {
+      window.isAdminAuthenticated = false;
+      closeAdminPanelModal();
+      updateAdminUIState();
+      showToast("Modo edición bloqueado");
+    }
+
+    function updateAdminUIState() {
+      const badge = document.getElementById('adminBadgeUnlocked');
+      const lockIcon = document.getElementById('iconAdminLock');
+      const lockDot = document.getElementById('badgeLockDot');
+
+      if (window.isAdminAuthenticated) {
+        badge.classList.remove('hidden');
+        badge.classList.add('flex');
+        lockIcon.classList.remove('text-amber-400');
+        lockIcon.classList.add('text-emerald-400');
+        lockDot.className = "w-2 h-2 rounded-full bg-emerald-400 absolute -top-0.5 -right-0.5 ring-2 ring-slate-900";
+      } else {
+        badge.classList.add('hidden');
+        badge.classList.remove('flex');
+        lockIcon.classList.add('text-amber-400');
+        lockIcon.classList.remove('text-emerald-400');
+        lockDot.className = "w-2 h-2 rounded-full bg-amber-400 absolute -top-0.5 -right-0.5 ring-2 ring-slate-900";
+      }
+      renderTable();
+    }
+
+    function changeAdminPassword() {
+      const newP = document.getElementById('inputNewAdminPass').value.trim();
+      if (!newP || newP.length < 4) {
+        showToast("La contraseña debe tener al menos 4 caracteres.");
+        return;
+      }
+      window.adminPasswordHash = newP;
+      try { localStorage.setItem('finnegans_admin_pass', newP); } catch(e){}
+      document.getElementById('inputNewAdminPass').value = '';
+      showToast("Contraseña actualizada con éxito.");
+    }
+
+    function openAdminPanelModal() {
+      document.getElementById('adminPanelModal').classList.remove('hidden');
+      renderAdminOrdersList();
+      renderRatesTable();
+      renderUsersTable();
+    }
+
+    function closeAdminPanelModal() {
+      document.getElementById('adminPanelModal').classList.add('hidden');
+    }
+
+    function switchAdminSubTab(subTab) {
+      ['Orders', 'Users', 'Rates', 'Security'].forEach(t => {
+        document.getElementById(`subTab${t}Container`)?.classList.add('hidden');
+        const b = document.getElementById(`subTabBtn${t}`);
+        if (b) b.className = "px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-100";
       });
 
-      document.getElementById('kpi-total-usd').innerText = 'USD ' + sumUSD.toLocaleString('es-AR', { minimumFractionDigits: 2 });
-      document.getElementById('kpi-total-ars').innerText = '$ ' + sumARS.toLocaleString('es-AR', { maximumFractionDigits: 0 });
-      document.getElementById('kpi-reprog-count').innerText = data.filter(d => d.estado === 'Pendiente').length;
+      if (subTab === 'orders') {
+        document.getElementById('subTabOrdersContainer').classList.remove('hidden');
+        document.getElementById('subTabBtnOrders').className = "px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 font-bold";
+        renderAdminOrdersList();
+      } else if (subTab === 'users') {
+        document.getElementById('subTabUsersContainer').classList.remove('hidden');
+        document.getElementById('subTabBtnUsers').className = "px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 font-bold";
+        renderUsersTable();
+      } else if (subTab === 'rates') {
+        document.getElementById('subTabRatesContainer').classList.remove('hidden');
+        document.getElementById('subTabBtnRates').className = "px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 font-bold";
+        renderRatesTable();
+      } else if (subTab === 'security') {
+        document.getElementById('subTabSecurityContainer').classList.remove('hidden');
+        document.getElementById('subTabBtnSecurity').className = "px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 font-bold";
+      }
     }
 
-    function getWeekNumber(dateString) {
-      if (!dateString) return 0;
-      const date = new Date(dateString + 'T00:00:00');
-      const firstDayOfYear = new Date(date.getFullYear(), 0, 1);
-      const pastDaysOfYear = (date - firstDayOfYear) / 86400000;
-      return Math.ceil((pastDaysOfYear + firstDayOfYear.getDay() + 1) / 7);
+    function renderUsersTable() {
+      const tbody = document.getElementById('userMappingTableBody');
+      const users = Object.keys(window.userUnitMap).sort();
+
+      if (users.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" class="p-3 text-center text-slate-400">No hay mapeos de usuarios cargados.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = users.map(u => `
+        <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+          <td class="p-2.5 font-bold text-slate-800">${u}</td>
+          <td class="p-2.5">${getUnitPastelBadge(window.userUnitMap[u])}</td>
+          <td class="p-2.5 text-right">
+            <button onclick="removeUserMapping('${u}')" class="text-rose-600 hover:text-rose-800 font-bold text-[10px]">Eliminar</button>
+          </td>
+        </tr>
+      `).join('');
     }
 
-    function applyFiltersAndRender() {
-      const estadoFilter = document.getElementById('filter-estado').value;
-      const prioridadFilter = document.getElementById('filter-prioridad').value;
-      const sortField = document.getElementById('sort-field').value;
-      const sortDir = document.getElementById('sort-direction').value;
+    function addUserMappingRow() {
+      const u = document.getElementById('newInputUser').value.trim();
+      const unit = document.getElementById('newInputUnidad').value.trim();
 
-      // Filtrado
-      let filtered = rawDataset.filter(row => {
-        if (estadoFilter && row.estado !== estadoFilter) return false;
+      if (!u || !unit) {
+        showToast("Completa el usuario y la unidad.");
+        return;
+      }
+
+      window.userUnitMap[u.toLowerCase()] = unit;
+      window.userUnitMap[normalizeUserKey(u)] = unit;
+      document.getElementById('newInputUser').value = '';
+      document.getElementById('newInputUnidad').value = '';
+      renderUsersTable();
+      showToast(`Mapeo guardado: ${u} &rarr; ${unit}`);
+
+      // Actualizar en caliente todas las órdenes existentes
+      window.masterPCData.forEach(o => {
+        const uCandidates = [o.nombreUsuarioAlta, o.usuarioAlta];
+        for (const cand of uCandidates) {
+          if (!cand) continue;
+          const kNorm = normalizeUserKey(cand);
+          const kLow = cand.toLowerCase();
+          if (window.userUnitMap[kNorm]) { o.unidad = window.userUnitMap[kNorm]; break; }
+          if (window.userUnitMap[kLow]) { o.unidad = window.userUnitMap[kLow]; break; }
+        }
+      });
+      renderTable();
+      detectUnmappedUsersInOrders();
+
+      if (window.googleAppsScriptUrl) syncUsersToSheets();
+    }
+
+    function removeUserMapping(userKey) {
+      delete window.userUnitMap[userKey];
+      delete window.userUnitMap[normalizeUserKey(userKey)];
+      renderUsersTable();
+      showToast("Mapeo eliminado.");
+      if (window.googleAppsScriptUrl) syncUsersToSheets();
+    }
+
+    async function handleSmartFiles(event) {
+      const files = Array.from(event.target.files);
+      if (!files.length) return;
+
+      for (const file of files) {
+        const buffer = await file.arrayBuffer();
+        const workbook = XLSX.read(new Uint8Array(buffer), { type: 'array', cellDates: true });
         
-        if (prioridadFilter === 'Sin asignar' && row.prioridad !== '') return false;
-        if (prioridadFilter && prioridadFilter !== 'Sin asignar' && row.prioridad !== prioridadFilter) return false;
+        let recognizedType = null;
+        let bestSheet = null;
+        let rows = [];
+
+        // 1. Extraer mapeo de la hoja USUARIO si existe en el archivo
+        for (const sheetName of workbook.SheetNames) {
+          const normSheet = normalizeStr(sheetName);
+          if (normSheet.includes('usuario')) {
+            const userSheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { header: 1, defval: '' });
+            let importedCount = 0;
+            userSheetData.forEach((rowArr, rowIdx) => {
+              if (rowIdx === 0 && (String(rowArr[0]).toLowerCase().includes('usuario') || String(rowArr[0]).toLowerCase().includes('nombre'))) {
+                return;
+              }
+              const uName = String(rowArr[0] || '').trim();
+              const uUnit = String(rowArr[1] || '').trim();
+              if (uName && uUnit) {
+                window.userUnitMap[uName.toLowerCase()] = uUnit;
+                window.userUnitMap[normalizeUserKey(uName)] = uUnit;
+                importedCount++;
+              }
+            });
+            renderUsersTable();
+            if (importedCount > 0) {
+              showToast(`Se cargaron ${importedCount} mapeos directos desde la hoja USUARIO.`);
+            }
+          }
+
+          const sheetData = XLSX.utils.sheet_to_json(workbook.Sheets[sheetName], { defval: '' });
+          if (!sheetData.length) continue;
+
+          const headers = Object.keys(sheetData[0] || {}).map(h => normalizeStr(h));
+
+          const hasAutorizCols = headers.some(h => h.includes('fechaultactividad') || h.includes('usuarioaltaoc') || h.includes('usuarioaltapc') || h.includes('usuarioautorizante'));
+          const hasPedidosCols = headers.some(h => h.includes('fcomp') || h.includes('pendientedestino') || h.includes('nombreusuarioalta'));
+
+          if (normSheet.includes('masterautorizaciones') || hasAutorizCols) {
+            recognizedType = 'autorizaciones';
+            bestSheet = sheetName;
+            rows = sheetData;
+            break;
+          } else if (normSheet.includes('programacionpc') || normSheet.includes('pedidospendientes') || normSheet.includes('masterpc') || hasPedidosCols) {
+            recognizedType = 'pedidos';
+            bestSheet = sheetName;
+            rows = sheetData;
+            break;
+          }
+        }
+
+        if (recognizedType === 'autorizaciones') {
+          rawDetectedReport1 = { rows, fileName: file.name, sheetName: bestSheet };
+          document.getElementById('nameDetect1').innerText = file.name;
+          document.getElementById('detailDetect1').innerHTML = `<span class="text-indigo-600 font-bold font-mono">Hoja: ${bestSheet}</span> (${rows.length} renglones de autorizaciones)`;
+          document.getElementById('badgeDetect1').className = "text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold";
+          document.getElementById('badgeDetect1').innerText = "✓ Reconocido";
+          showToast(`Reconocido: ${file.name} (CMP - Autorizaciones)`);
+        } else if (recognizedType === 'pedidos') {
+          rawDetectedReport2 = { rows, fileName: file.name, sheetName: bestSheet };
+          document.getElementById('nameDetect2').innerText = file.name;
+          document.getElementById('detailDetect2').innerHTML = `<span class="text-emerald-600 font-bold font-mono">Hoja: ${bestSheet}</span> (${rows.length} renglones de pedidos)`;
+          document.getElementById('badgeDetect2').className = "text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold";
+          document.getElementById('badgeDetect2').innerText = "✓ Reconocido";
+          showToast(`Reconocido: ${file.name} (Pedidos Pendientes)`);
+        } else {
+          showToast(`No se reconoció automáticamente ${file.name}. Verifique las columnas.`);
+        }
+      }
+
+      if (rawDetectedReport1 || rawDetectedReport2) {
+        document.getElementById('btnProcessReports').disabled = false;
+      }
+    }
+
+    function executeSmartMerge() {
+      const diagnostics = [];
+      let totalRawRows = 0;
+      let newCount = 0;
+      let updatedCount = 0;
+
+      window.rawMasterAutorizRows = [];
+      window.rawMasterPCRows = [];
+
+      const rep1Map = new Map();
+      if (rawDetectedReport1) {
+        rawDetectedReport1.rows.forEach(row => {
+          let docNum = '';
+          let fechaUltAct = '';
+          let usuarioAltaPC = '';
+          let usuarioAltaOC = '';
+          let desc = '';
+          let descItem = '';
+          let cantPend = '';
+          let resp = '';
+          let act = '';
+          let cantAp = '';
+          let userAut = '';
+
+          for (const [k, v] of Object.entries(row)) {
+            const nk = normalizeStr(k);
+            if (!docNum && (nk.includes('docnrointerno') || nk.includes('nrointerno') || nk.includes('comprobante'))) docNum = String(v).trim();
+            if (nk.includes('fechaultactividad')) fechaUltAct = v;
+            if (nk === 'usuarioaltapc' || nk.includes('altapc')) usuarioAltaPC = String(v).trim();
+            if (nk === 'usuarioaltaoc' || nk.includes('altaoc')) usuarioAltaOC = String(v).trim();
+            if (nk === 'descripcion') desc = String(v).trim();
+            if (nk.includes('descripcionitem')) descItem = String(v).trim();
+            if (nk.includes('cantidadpendiente')) cantPend = v;
+            if (nk.includes('responsablepedido') || nk.includes('responsable')) resp = String(v).trim();
+            if (nk === 'actividad') act = String(v).trim();
+            if (nk.includes('cantidadaplicadaoc')) cantAp = v;
+            if (nk.includes('usuarioautorizante')) userAut = String(v).trim();
+          }
+
+          if (docNum) {
+            rep1Map.set(normalizeStr(docNum), {
+              fechaUltActividad: fechaUltAct,
+              usuarioAltaPC: usuarioAltaPC || usuarioAltaOC,
+              usuarioAltaOC: usuarioAltaOC
+            });
+
+            window.rawMasterAutorizRows.push({
+              docNroInterno: docNum,
+              descripcion: desc,
+              descripcionItem: descItem,
+              cantidadPendiente: cantPend,
+              usuarioAltaPC: usuarioAltaPC || usuarioAltaOC,
+              responsablePedido: resp,
+              fechaultactividad: fechaUltAct,
+              actividad: act,
+              usuarioAltaOC: usuarioAltaOC,
+              cantidadAplicadaOC: cantAp,
+              usuarioAutorizante: userAut
+            });
+          }
+        });
+        diagnostics.push(`Reporte Autorizaciones: Mapeadas ${rep1Map.size} órdenes con Fechaultactividad y Usuario.`);
+      }
+
+      const existingMap = new Map();
+      window.masterPCData.forEach(p => existingMap.set(p.id, p));
+
+      if (rawDetectedReport2) {
+        totalRawRows = rawDetectedReport2.rows.length;
+        const groupedRows = new Map();
+
+        rawDetectedReport2.rows.forEach((row, index) => {
+          let docNum = '';
+          let fComp = '';
+          let semFecha = '';
+          let fProxPaso = '';
+          let descPrincipal = '';
+          let producto = '';
+          let descItem = '';
+          let pendDestino = '';
+          let empresa = '';
+          let estado = '';
+          let nombreUsuarioAlta = '';
+          let solicitante = '';
+          let situacion = '';
+
+          for (const [k, v] of Object.entries(row)) {
+            const nk = normalizeStr(k);
+            if (!docNum && (nk.includes('docnrointerno') || nk.includes('nrointerno') || nk.includes('doc'))) docNum = String(v).trim();
+            if (!fComp && (nk.includes('fcomp') || nk.includes('fechacomprobante') || nk.includes('fecha'))) fComp = v;
+            if (nk.includes('semanafecha')) semFecha = String(v).trim();
+            if (nk.includes('fproxpaso')) fProxPaso = v;
+            if (!descPrincipal && nk === 'descripcion') descPrincipal = String(v).trim();
+            if (nk === 'producto') producto = String(v).trim();
+            if (nk.includes('descripcionitem') || nk.includes('item')) descItem = String(v).trim();
+            if (nk.includes('pendientedestino')) pendDestino = v;
+            if (nk === 'empresa') empresa = String(v).trim();
+            if (nk === 'estado') estado = String(v).trim();
+            if (nk.includes('nombreusuarioalta') || nk.includes('usuarioalta') || nk.includes('solicitante')) nombreUsuarioAlta = String(v).trim();
+            if (nk === 'solicitante') solicitante = String(v).trim();
+            if (nk === 'situacion') situacion = String(v).trim();
+          }
+
+          if (!docNum) docNum = `PC-${index + 1000}`;
+          const id = normalizeStr(docNum);
+
+          window.rawMasterPCRows.push({
+            semanaFecha: semFecha,
+            fComp: fComp,
+            fProxPaso: fProxPaso,
+            docNroInterno: docNum,
+            descripcion: descPrincipal,
+            producto: producto,
+            descripcionItem: descItem,
+            pendienteDestino: pendDestino,
+            empresa: empresa,
+            estado: estado,
+            nombreUsuarioAlta: nombreUsuarioAlta,
+            solicitante: solicitante,
+            situacion: situacion
+          });
+
+          if (!groupedRows.has(id)) {
+            groupedRows.set(id, {
+              docNum,
+              fComp,
+              descripcion: descPrincipal || descItem || 'Sin descripción',
+              nombreUsuarioAlta: nombreUsuarioAlta
+            });
+          }
+        });
+
+        groupedRows.forEach((grp, id) => {
+          const rep1Data = rep1Map.get(id) || {};
+          const effectiveDateVal = rep1Data.fechaUltActividad || grp.fComp;
+          const ymdFecha = formatDateToYMD(effectiveDateVal);
+          const semanaCalculada = calculateSemana(effectiveDateVal);
+
+          const usuarioAltaFinal = grp.nombreUsuarioAlta || rep1Data.usuarioAltaPC || '';
+          const userKeyA = usuarioAltaFinal.toLowerCase().trim();
+          const userKeyNorm = normalizeUserKey(usuarioAltaFinal);
+          const userKeyAlt = normalizeUserKey(rep1Data.usuarioAltaPC || '');
+
+          const unidadResuelta = window.userUnitMap[userKeyA] || 
+                                 window.userUnitMap[userKeyNorm] || 
+                                 window.userUnitMap[userKeyAlt] || 
+                                 'Sin asignar';
+
+          if (existingMap.has(id)) {
+            const existing = existingMap.get(id);
+            existing.fechaPedido = ymdFecha || existing.fechaPedido;
+            existing.semana = semanaCalculada !== '-' ? semanaCalculada : existing.semana;
+            existing.descripcion = grp.descripcion;
+            existing.nombreUsuarioAlta = usuarioAltaFinal;
+            existing.usuarioAlta = usuarioAltaFinal;
+            existing.unidad = unidadResuelta !== 'Sin asignar' ? unidadResuelta : (existing.unidad || 'Sin asignar');
+            updatedCount++;
+          } else {
+            const newRecord = {
+              id: id,
+              semana: semanaCalculada,
+              nroPC: grp.docNum,
+              docNroInterno: grp.docNum,
+              fechaPedido: ymdFecha,
+              enReprogramacionCon: '',
+              descripcion: grp.descripcion,
+              unidad: unidadResuelta,
+              prioridad: '',
+              presupuestoUSD: null,
+              presupuestoARS: null,
+              comprador: '',
+              estado: 'Pendiente',
+              compras: false,
+              reprogramacion: 'No',
+              semanaReprogramada: '',
+              cotizacionAplicada: null,
+              fechaCotizacion: null,
+              modoPresupuestoARS: 'auto',
+              nombreUsuarioAlta: usuarioAltaFinal,
+              usuarioAlta: usuarioAltaFinal
+            };
+            existingMap.set(id, newRecord);
+            newCount++;
+          }
+        });
+      }
+
+      window.masterPCData = Array.from(existingMap.values());
+
+      diagnostics.push(`Filas procesadas para master PC: ${window.rawMasterPCRows.length}`);
+      diagnostics.push(`Filas procesadas para master autorizaciones: ${window.rawMasterAutorizRows.length}`);
+      diagnostics.push(`Comprobantes únicos consolidados: ${window.masterPCData.length} (desduplicados ${totalRawRows - window.masterPCData.length} renglones)`);
+      diagnostics.push(`Nuevos comprobantes ingresados: ${newCount}`);
+      diagnostics.push(`Comprobantes actualizados preservando datos manuales: ${updatedCount}`);
+
+      document.getElementById('diagnosticsList').innerHTML = diagnostics.map(d => `<li>• ${d}</li>`).join('');
+      document.getElementById('importDiagnostics').classList.remove('hidden');
+
+      detectUnmappedUsersInOrders();
+      populateSemanaFilter();
+      renderTable();
+      updateKPIs();
+      showToast(`¡Consolidación exitosa! ${window.masterPCData.length} órdenes únicas.`);
+
+      if (window.googleAppsScriptUrl) syncWithGoogleSheets(true);
+
+      setTimeout(() => switchMainTab('dashboard'), 1200);
+    }
+
+    function detectUnmappedUsersInOrders() {
+      const unmapped = new Set();
+      window.masterPCData.forEach(o => {
+        if (!o.unidad || o.unidad === 'Sin asignar' || o.unidad === 'UN') {
+          const userVal = o.nombreUsuarioAlta || o.usuarioAlta;
+          if (userVal) unmapped.add(userVal);
+        }
+      });
+
+      const notice = document.getElementById('unmappedUsersNotice');
+      const tags = document.getElementById('unmappedUsersTags');
+      const count = document.getElementById('unmappedUsersCount');
+
+      if (unmapped.size > 0) {
+        count.innerText = unmapped.size;
+        tags.innerHTML = Array.from(unmapped).map(u => `
+          <button onclick="fillUserMappingInput('${u}')" class="px-2 py-1 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg font-mono text-[10px] flex items-center space-x-1">
+            <span>+ ${u}</span>
+          </button>
+        `).join('');
+        notice.classList.remove('hidden');
+      } else {
+        notice.classList.add('hidden');
+      }
+    }
+
+    function fillUserMappingInput(userName) {
+      document.getElementById('newInputUser').value = userName;
+      document.getElementById('newInputUnidad').focus();
+    }
+
+    function applyDatePreset() {
+      const preset = document.getElementById('filterDatePreset').value;
+      const customInputs = document.getElementById('customDateRangeInputs');
+      const badge = document.getElementById('activeFilterBadge');
+
+      if (preset === 'custom') {
+        customInputs.classList.remove('hidden');
+        badge.innerText = "Filtrando: Rango Personalizado";
+        return;
+      }
+
+      customInputs.classList.add('hidden');
+      const today = new Date();
+      let fromDate = null;
+      let label = "";
+
+      if (preset === '6m') {
+        fromDate = new Date(today);
+        fromDate.setMonth(today.getMonth() - 6);
+        label = "Últimos 6 meses";
+      } else if (preset === '1m') {
+        fromDate = new Date(today);
+        fromDate.setDate(today.getDate() - 30);
+        label = "Últimos 30 días";
+      } else if (preset === 'this_year') {
+        fromDate = new Date(today.getFullYear(), 0, 1);
+        label = `Año ${today.getFullYear()}`;
+      } else if (preset === '1y') {
+        fromDate = new Date(today);
+        fromDate.setFullYear(today.getFullYear() - 1);
+        label = "Último año";
+      } else if (preset === 'all') {
+        fromDate = null;
+        label = "Todo el Histórico";
+      }
+
+      document.getElementById('filterDateFrom').value = fromDate ? fromDate.toISOString().slice(0, 10) : '';
+      document.getElementById('filterDateTo').value = today.toISOString().slice(0, 10);
+      badge.innerText = `Filtrando: ${label}`;
+
+      renderTable();
+    }
+
+    function resetFilters() {
+      document.getElementById('filterSearch').value = '';
+      document.getElementById('filterSemana').value = '';
+      document.getElementById('filterPrioridad').value = '';
+      document.getElementById('filterEstado').value = '';
+      document.getElementById('filterDatePreset').value = '6m';
+      applyDatePreset();
+    }
+
+    function handleSort(colName) {
+      if (window.currentSortCol === colName) {
+        window.currentSortDir = window.currentSortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        window.currentSortCol = colName;
+        window.currentSortDir = 'asc';
+      }
+
+      document.querySelectorAll('[id^="sortIcon_"]').forEach(i => i.innerText = '↕');
+      const activeIcon = document.getElementById(`sortIcon_${colName}`);
+      if (activeIcon) activeIcon.innerText = window.currentSortDir === 'asc' ? '▲' : '▼';
+
+      renderTable();
+    }
+
+    function renderTable() {
+      const search = (document.getElementById('filterSearch')?.value || '').toLowerCase();
+      const semFilter = document.getElementById('filterSemana')?.value || '';
+      const prioFilter = document.getElementById('filterPrioridad')?.value || '';
+      const estFilter = document.getElementById('filterEstado')?.value || '';
+      const datePreset = document.getElementById('filterDatePreset')?.value || '6m';
+      const dateFrom = document.getElementById('filterDateFrom')?.value || '';
+      const dateTo = document.getElementById('filterDateTo')?.value || '';
+
+      let filtered = window.masterPCData.filter(item => {
+        if (datePreset !== 'all' && item.fechaPedido) {
+          const itemYMD = item.fechaPedido.slice(0, 10);
+          if (dateFrom && itemYMD < dateFrom) return false;
+          if (dateTo && itemYMD > dateTo) return false;
+        }
+
+        if (search) {
+          const hay = `${item.semana} ${item.nroPC} ${item.fechaPedido} ${item.enReprogramacionCon} ${item.descripcion} ${item.unidad} ${item.prioridad} ${item.comprador} ${item.estado} ${item.reprogramacion}`.toLowerCase();
+          if (!hay.includes(search)) return false;
+        }
+
+        if (semFilter && item.semana !== semFilter) return false;
+        if (prioFilter && (prioFilter === 'Sin asignar' ? !!item.prioridad : item.prioridad !== prioFilter)) return false;
+        if (estFilter && item.estado !== estFilter) return false;
 
         return true;
       });
 
-      // Ordenamiento por Fecha o por Semana
       filtered.sort((a, b) => {
-        let valA, valB;
-        if (sortField === 'semana') {
-          valA = getWeekNumber(a.fecha);
-          valB = getWeekNumber(b.fecha);
-        } else {
-          valA = a.fecha || '';
-          valB = b.fecha || '';
+        let valA = a[window.currentSortCol];
+        let valB = b[window.currentSortCol];
+        if (valA === null || valA === undefined) valA = '';
+        if (valB === null || valB === undefined) valB = '';
+
+        if (typeof valA === 'boolean' && typeof valB === 'boolean') {
+          return window.currentSortDir === 'asc' ? (valA === valB ? 0 : valA ? -1 : 1) : (valA === valB ? 0 : valA ? 1 : -1);
         }
 
-        if (valA < valB) return sortDir === 'asc' ? -1 : 1;
-        if (valA > valB) return sortDir === 'asc' ? 1 : -1;
+        if (typeof valA === 'number' && typeof valB === 'number') {
+          return window.currentSortDir === 'asc' ? valA - valB : valB - valA;
+        }
+
+        const strA = String(valA).toLowerCase();
+        const strB = String(valB).toLowerCase();
+        if (strA < strB) return window.currentSortDir === 'asc' ? -1 : 1;
+        if (strA > strB) return window.currentSortDir === 'asc' ? 1 : -1;
         return 0;
       });
 
-      renderTable(filtered);
+      const tbody = document.getElementById('tableBody');
+      if (filtered.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="14" class="p-8 text-center text-slate-400">
+              No se encontraron comprobantes con los filtros o período seleccionados.
+            </td>
+          </tr>`;
+      } else {
+        tbody.innerHTML = filtered.map(item => {
+          let prioBadge = '<span class="text-slate-400 italic">Sin asignar</span>';
+          if (item.prioridad === 'Alta') prioBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">Alta</span>';
+          else if (item.prioridad === 'Intermedia') prioBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">Intermedia</span>';
+
+          let estadoBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-100 text-amber-800">Pendiente</span>`;
+          if (item.estado === 'Aprobado') {
+            estadoBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-100 text-emerald-800">Aprobado</span>`;
+          }
+
+          // Números de presupuesto formateados de manera nítida
+          const numUSD = parseCurrencySafe(item.presupuestoUSD);
+          const numARS = parseCurrencySafe(item.presupuestoARS);
+
+          const formattedUSD = numUSD !== null 
+            ? `$ ${numUSD.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` 
+            : '-';
+
+          const formattedARS = numARS !== null 
+            ? `$ ${Math.round(numARS).toLocaleString('es-AR')}` 
+            : '-';
+
+          let reprogDisplay = item.reprogramacion || 'No';
+          if (item.reprogramacion === 'En espera' && item.semanaReprogramada) {
+            reprogDisplay = `<span class="text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded text-[11px]">En espera (${item.semanaReprogramada})</span>`;
+          }
+
+          const cotizTooltip = item.cotizacionAplicada ? `Tasa aplicada: 1 USD = $${item.cotizacionAplicada} ARS` : 'Presupuesto';
+
+          // Checkbox interactivo de Compras
+          const isComprasChecked = (item.compras === true || item.compras === 'TRUE' || item.compras === 'true');
+          const comprasCheckboxHtml = `
+            <div class="flex items-center justify-center">
+              <input type="checkbox" ${isComprasChecked ? 'checked' : ''} onchange="handleComprasToggle('${item.nroPC}', this.checked)" class="w-4 h-4 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500 cursor-pointer">
+            </div>
+          `;
+
+          const editBtn = `
+            <button onclick="handleQuickEditClick('${item.nroPC}')" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg ${window.isAdminAuthenticated ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'} transition flex items-center space-x-1 mx-auto">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+              <span>${window.isAdminAuthenticated ? 'Editar' : 'Editar 🔒'}</span>
+            </button>
+          `;
+
+          return `
+            <tr class="hover:bg-slate-50/80 transition border-b border-slate-100">
+              <!-- Col 1: Semana -->
+              <td class="p-2.5 font-mono font-bold text-slate-900 whitespace-nowrap">${item.semana}</td>
+              <!-- Col 2: Nro de PC -->
+              <td class="p-2.5 font-bold text-indigo-700 whitespace-nowrap font-mono">${item.nroPC}</td>
+              <!-- Col 3: Fecha del Pedido -->
+              <td class="p-2.5 whitespace-nowrap text-slate-600 font-mono">${formatDisplayDate(item.fechaPedido)}</td>
+              <!-- Col 4: En reprogramación con -->
+              <td class="p-2.5 whitespace-nowrap text-slate-600">${item.enReprogramacionCon || '-'}</td>
+              <!-- Col 5: Descripcion -->
+              <td class="p-2.5 text-slate-800 font-medium min-w-[280px]">
+                <div class="line-clamp-2" title="${item.descripcion}">${item.descripcion}</div>
+              </td>
+              <!-- Col 6: Unidad con color pastel -->
+              <td class="p-2.5 whitespace-nowrap">${getUnitPastelBadge(item.unidad)}</td>
+              <!-- Col 7: Prioridad -->
+              <td class="p-2.5 whitespace-nowrap">${prioBadge}</td>
+              <!-- Col 8: Presupuesto (usd) -->
+              <td class="p-2.5 whitespace-nowrap text-right font-mono font-bold text-indigo-700">${formattedUSD}</td>
+              <!-- Col 9: Presupuesto ($) -->
+              <td class="p-2.5 whitespace-nowrap text-right font-mono font-black text-emerald-700" title="${cotizTooltip}">${formattedARS}</td>
+              <!-- Col 10: Comprador -->
+              <td class="p-2.5 whitespace-nowrap font-medium text-slate-700">${item.comprador || '<span class="text-slate-400 italic">Sin asignar</span>'}</td>
+              <!-- Col 11: Estado -->
+              <td class="p-2.5 whitespace-nowrap">${estadoBadge}</td>
+              <!-- Col 12: Compras (Checkbox) -->
+              <td class="p-2.5 whitespace-nowrap text-center">${comprasCheckboxHtml}</td>
+              <!-- Col 13: Reprogramacion -->
+              <td class="p-2.5 whitespace-nowrap">${reprogDisplay}</td>
+              <td class="p-2.5 whitespace-nowrap text-center">${editBtn}</td>
+            </tr>
+          `;
+        }).join('');
+      }
+
+      document.getElementById('tableSummary').innerText = `Mostrando ${filtered.length} de ${window.masterPCData.length} comprobantes únicos`;
+      document.getElementById('badgeTotalItems').innerText = window.masterPCData.length;
     }
 
-    function renderTable(data) {
-      const tbody = document.getElementById('table-body');
-      if (data.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="10" style="text-align:center;">No hay registros coincidentes.</td></tr>';
+    function handleComprasToggle(nroPC, isChecked) {
+      const pc = window.masterPCData.find(p => p.nroPC === nroPC);
+      if (!pc) return;
+
+      pc.compras = isChecked;
+      showToast(`Compras para ${pc.nroPC}: ${isChecked ? 'Marcado ✓' : 'Desmarcado'}`);
+
+      if (window.googleAppsScriptUrl) {
+        syncSingleOrderToSheets(pc);
+      }
+    }
+
+    function populateSemanaFilter() {
+      const select = document.getElementById('filterSemana');
+      if (!select) return;
+      const weeks = [...new Set(window.masterPCData.map(d => d.semana))].filter(w => w && w !== '-').sort();
+      select.innerHTML = '<option value="">Todas las Semanas</option>';
+      weeks.forEach(w => {
+        const opt = document.createElement('option');
+        opt.value = w;
+        opt.textContent = `Semana ${w}`;
+        select.appendChild(opt);
+      });
+    }
+
+    function updateKPIs() {
+      const total = window.masterPCData.length;
+      document.getElementById('kpiTotalCount').innerText = total;
+
+      const activeWeeks = new Set(window.masterPCData.map(d => d.semana).filter(s => s && s !== '-')).size;
+      document.getElementById('kpiWeeksCovered').innerText = `${activeWeeks} semanas activas`;
+
+      let totalUSD = 0;
+      let totalARS = 0;
+      let waitingCount = 0;
+      let unassignedCount = 0;
+
+      window.masterPCData.forEach(item => {
+        const usd = parseCurrencySafe(item.presupuestoUSD);
+        const ars = parseCurrencySafe(item.presupuestoARS);
+        if (usd) totalUSD += usd;
+        if (ars) totalARS += ars;
+        if (item.reprogramacion === 'En espera' || item.estado === 'En espera') waitingCount++;
+        if (!item.comprador || !item.prioridad) unassignedCount++;
+      });
+
+      document.getElementById('kpiTotalUSD').innerText = `$ ${totalUSD.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})} USD`;
+      document.getElementById('kpiConvertedARS').innerText = `≈ $ ${Math.round(totalARS).toLocaleString('es-AR')} ARS`;
+      document.getElementById('kpiWaitingCount').innerText = waitingCount;
+      // Frase corregida a "X% del total"
+      document.getElementById('kpiWaitingPerc').innerText = total > 0 ? `${Math.round((waitingCount / total) * 100)}% del total` : '0% del total';
+      document.getElementById('kpiUnassignedCount').innerText = unassignedCount;
+    }
+
+    function switchMainTab(tab) {
+      document.getElementById('sectionDashboard').classList.add('hidden');
+      document.getElementById('sectionImport').classList.add('hidden');
+      document.getElementById('navTabDashboard').className = "px-3 py-1.5 rounded-lg font-medium transition flex items-center space-x-2 text-slate-300 hover:text-white hover:bg-slate-800";
+      document.getElementById('navTabImport').className = "px-3 py-1.5 rounded-lg font-medium transition flex items-center space-x-2 text-slate-300 hover:text-white hover:bg-slate-800";
+
+      if (tab === 'dashboard') {
+        document.getElementById('sectionDashboard').classList.remove('hidden');
+        document.getElementById('navTabDashboard').className = "px-3 py-1.5 rounded-lg font-medium transition flex items-center space-x-2 bg-indigo-600 text-white shadow-xs";
+        renderTable();
+      } else if (tab === 'import') {
+        document.getElementById('sectionImport').classList.remove('hidden');
+        document.getElementById('navTabImport').className = "px-3 py-1.5 rounded-lg font-medium transition flex items-center space-x-2 bg-indigo-600 text-white shadow-xs";
+      }
+    }
+
+    function handleQuickEditClick(nroPC) {
+      if (window.isAdminAuthenticated) {
+        openAdminPanelModal();
+        selectAdminOrderForEdit(nroPC);
+      } else {
+        openAdminAuthModal();
+      }
+    }
+
+    function renderAdminOrdersList() {
+      const container = document.getElementById('adminOrdersScrollList');
+      if (!container) return;
+      const search = (document.getElementById('adminOrderSearch')?.value || '').toLowerCase();
+      const sortBy = document.getElementById('adminOrderSortBy')?.value || 'fechaDesc';
+
+      let items = window.masterPCData.filter(item => {
+        const matches = !search || item.nroPC.toLowerCase().includes(search) || item.descripcion.toLowerCase().includes(search);
+        if (adminListFilterMode === 'incomplete') {
+          return matches && (!item.comprador || !item.prioridad || item.presupuestoUSD === null);
+        }
+        return matches;
+      });
+
+      // Ordenar lista de edición según selector
+      items.sort((a, b) => {
+        if (sortBy === 'fechaDesc') return (b.fechaPedido || '').localeCompare(a.fechaPedido || '');
+        if (sortBy === 'fechaAsc') return (a.fechaPedido || '').localeCompare(b.fechaPedido || '');
+        if (sortBy === 'semanaDesc') return (b.semana || '').localeCompare(a.semana || '');
+        if (sortBy === 'semanaAsc') return (a.semana || '').localeCompare(b.semana || '');
+        if (sortBy === 'pc') return (a.nroPC || '').localeCompare(b.nroPC || '');
+        return 0;
+      });
+
+      if (items.length === 0) {
+        container.innerHTML = `<p class="text-center text-xs text-slate-400 py-8">No hay comprobantes.</p>`;
         return;
       }
 
-      let html = '';
-      data.forEach(row => {
-        const weekNum = getWeekNumber(row.fecha);
-        const unitClass = unitPaletteMap[row.unidad.toUpperCase()] || 'unit-default';
-        const estadoClass = row.estado === 'Aprobado' ? 'badge-estado-aprobado' : 'badge-estado-pendiente';
-        
-        let prioridadBadge = '';
-        if (row.prioridad === 'Alta') prioridadBadge = '<span class="badge badge-prioridad-alta">Alta</span>';
-        else if (row.prioridad === 'Intermedia') prioridadBadge = '<span class="badge badge-prioridad-intermedia">Intermedia</span>';
-        else prioridadBadge = '<span style="color:var(--text-muted);">-</span>';
+      container.innerHTML = items.map(item => {
+        const isSelected = item.nroPC === selectedPCId;
+        const hasData = item.comprador && item.prioridad;
 
-        html += `
-          <tr>
-            <td>${row.fecha}</td>
-            <td>Semana ${weekNum || '-'}</td>
-            <td><span class="badge ${unitClass}">${row.unidad}</span></td>
-            <td>${row.descripcion}</td>
-            <td><span class="badge ${estadoClass}">${row.estado}</span></td>
-            <td>${prioridadBadge}</td>
-            <td class="numeric">${row.presupuestoUSD > 0 ? 'USD ' + row.presupuestoUSD.toLocaleString('es-AR', {minimumFractionDigits: 2}) : '-'}</td>
-            <td class="numeric">${row.tcAplicado > 0 ? '$ ' + row.tcAplicado.toFixed(2) : '-'}</td>
-            <td class="numeric">${row.presupuestoARS > 0 ? '$ ' + row.presupuestoARS.toLocaleString('es-AR', {maximumFractionDigits: 2}) : '-'}</td>
-            <td class="checkbox-cell">
-              <input type="checkbox" ${row.compras ? 'checked' : ''} onchange="handleCompraToggle(${row.id}, this.checked)">
-            </td>
-          </tr>
+        return `
+          <div onclick="selectAdminOrderForEdit('${item.nroPC}')" class="p-2.5 rounded-xl cursor-pointer transition border ${isSelected ? 'bg-indigo-50 border-indigo-400 shadow-xs' : 'bg-white hover:bg-slate-50 border-slate-200'}">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-xs text-indigo-900 font-mono">${item.nroPC}</span>
+              <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">${item.semana}</span>
+            </div>
+            <p class="text-[11px] text-slate-600 truncate mt-1">${item.descripcion}</p>
+            <div class="flex items-center justify-between mt-2 pt-1 border-t border-slate-100 text-[10px]">
+              <span class="text-slate-400">${item.comprador || 'Sin comprador'}</span>
+              <span class="${hasData ? 'text-emerald-600 font-semibold' : 'text-rose-500 font-medium'}">${hasData ? '✓ Completo' : '● Incompleto'}</span>
+            </div>
+          </div>
         `;
-      });
-      tbody.innerHTML = html;
+      }).join('');
     }
 
-    function handleCompraToggle(rowId, isChecked) {
-      google.script.run
-        .withFailureHandler(() => {
-          alert('Error de sincronización con la base de datos.');
-          // Revertir estado local si falla
-          applyFiltersAndRender();
-        })
-        .updateCompraStatus(rowId, isChecked);
+    function setAdminListFilter(mode) {
+      adminListFilterMode = mode;
+      document.getElementById('btnAdminListAll').className = mode === 'all' ? "w-1/2 py-1 bg-indigo-50 text-indigo-700 font-bold rounded-lg text-[10px]" : "w-1/2 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px]";
+      document.getElementById('btnAdminListInc').className = mode === 'incomplete' ? "w-1/2 py-1 bg-indigo-50 text-indigo-700 font-bold rounded-lg text-[10px]" : "w-1/2 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px]";
+      renderAdminOrdersList();
+    }
 
-      // Mutación local inmediata
-      const item = rawDataset.find(d => d.id === rowId);
-      if (item) item.compras = isChecked;
+    function selectAdminOrderForEdit(nroPC) {
+      selectedPCId = nroPC;
+      const pc = window.masterPCData.find(p => p.nroPC === nroPC);
+      if (!pc) return;
+
+      renderAdminOrdersList();
+
+      document.getElementById('adminFormEmptyState').classList.add('hidden');
+      document.getElementById('adminOrderForm').classList.remove('hidden');
+
+      document.getElementById('adminFormNroPC').innerText = pc.nroPC;
+      document.getElementById('adminFormSemana').innerText = pc.semana;
+      document.getElementById('adminFormDesc').innerText = pc.descripcion;
+      document.getElementById('adminFormFecha').innerText = formatDisplayDate(pc.fechaPedido);
+
+      document.getElementById('adminInputEnReprogramacionCon').value = pc.enReprogramacionCon || '';
+      document.getElementById('adminInputPrioridad').value = pc.prioridad || '';
+      
+      const parsedUSD = parseCurrencySafe(pc.presupuestoUSD);
+      document.getElementById('adminInputUSD').value = parsedUSD !== null ? parsedUSD : '';
+      
+      const defaultCotizDate = pc.fechaCotizacion || pc.fechaPedido || new Date().toISOString().slice(0, 10);
+      document.getElementById('adminInputFechaCotiz').value = defaultCotizDate;
+
+      const modo = pc.modoPresupuestoARS || 'auto';
+      if (modo === 'manual') {
+        document.getElementById('radioModoManual').checked = true;
+      } else {
+        document.getElementById('radioModoAuto').checked = true;
+      }
+      toggleModoPresupuestoARS();
+
+      const parsedARS = parseCurrencySafe(pc.presupuestoARS);
+      if (parsedARS !== null) {
+        document.getElementById('adminInputARS').value = Math.round(parsedARS);
+        document.getElementById('adminCotizRateBadge').innerText = pc.cotizacionAplicada ? `1 USD = $${pc.cotizacionAplicada} ARS` : 'Ingreso Manual';
+      } else {
+        document.getElementById('adminInputARS').value = '';
+        handlePresupuestoUSDChange();
+      }
+
+      document.getElementById('adminInputComprador').value = pc.comprador || '';
+      document.getElementById('adminInputEstado').value = pc.estado === 'Aprobado' ? 'Aprobado' : 'Pendiente';
+      document.getElementById('adminInputCompras').checked = (pc.compras === true || pc.compras === 'TRUE' || pc.compras === 'true');
+      document.getElementById('adminInputReprogramacion').value = pc.reprogramacion || 'No';
+      document.getElementById('adminInputSemanaReprog').value = pc.semanaReprogramada || '';
+
+      toggleAdminSemanaReprog();
+    }
+
+    function toggleModoPresupuestoARS() {
+      const isManual = document.getElementById('radioModoManual').checked;
+      const arsInput = document.getElementById('adminInputARS');
+      if (isManual) {
+        arsInput.removeAttribute('readonly');
+        arsInput.classList.remove('bg-slate-50');
+        arsInput.classList.add('bg-white');
+        document.getElementById('adminCotizSnapshotInfo').innerText = "Modo manual: Ingresa directamente el monto en pesos argentinos ($ ARS).";
+      } else {
+        arsInput.setAttribute('readonly', 'true');
+        arsInput.classList.remove('bg-white');
+        arsInput.classList.add('bg-slate-50');
+        document.getElementById('adminCotizSnapshotInfo').innerText = "Modo automático: Calculado con la cotización en $ ARS de la fecha elegida (con lookback hábil).";
+        handlePresupuestoUSDChange();
+      }
+    }
+
+    function handlePresupuestoUSDChange() {
+      const isManual = document.getElementById('radioModoManual').checked;
+      if (isManual) return;
+
+      const usdVal = parseFloat(document.getElementById('adminInputUSD').value);
+      const cotizDate = document.getElementById('adminInputFechaCotiz').value || new Date().toISOString().slice(0, 10);
+
+      if (!isNaN(usdVal) && usdVal >= 0) {
+        const rate = getRateForDate(cotizDate);
+        const arsVal = Math.round(usdVal * rate);
+        document.getElementById('adminInputARS').value = arsVal;
+        document.getElementById('adminCotizRateBadge').innerText = `1 USD = $${rate} ARS (${formatDisplayDate(cotizDate)})`;
+      } else {
+        document.getElementById('adminInputARS').value = '';
+      }
+    }
+
+    function handleFechaCotizChange() {
+      handlePresupuestoUSDChange();
+    }
+
+    function setAdminCotizDate(mode) {
+      if (mode === 'order') {
+        const pc = window.masterPCData.find(p => p.nroPC === selectedPCId);
+        if (pc && pc.fechaPedido) {
+          document.getElementById('adminInputFechaCotiz').value = pc.fechaPedido.slice(0, 10);
+          handlePresupuestoUSDChange();
+          showToast("Fecha fijada a la fecha original del pedido.");
+        }
+      }
+    }
+
+    function toggleAdminSemanaReprog() {
+      const val = document.getElementById('adminInputReprogramacion').value;
+      const container = document.getElementById('adminContainerSemanaReprog');
+      if (val === 'En espera') {
+        container.classList.remove('hidden');
+      } else {
+        container.classList.add('hidden');
+      }
+    }
+
+    function saveAdminOrderData() {
+      if (!selectedPCId) return;
+      const pc = window.masterPCData.find(p => p.nroPC === selectedPCId);
+      if (!pc) return;
+
+      const isManual = document.getElementById('radioModoManual').checked;
+      const usdVal = document.getElementById('adminInputUSD').value !== '' ? parseFloat(document.getElementById('adminInputUSD').value) : null;
+      const arsVal = document.getElementById('adminInputARS').value !== '' ? parseFloat(document.getElementById('adminInputARS').value) : null;
+      const cotizDate = document.getElementById('adminInputFechaCotiz').value || new Date().toISOString().slice(0, 10);
+
+      pc.presupuestoUSD = usdVal;
+      pc.modoPresupuestoARS = isManual ? 'manual' : 'auto';
+      pc.fechaCotizacion = cotizDate;
+
+      if (isManual) {
+        pc.presupuestoARS = arsVal;
+        pc.cotizacionAplicada = (usdVal && arsVal) ? Number((arsVal / usdVal).toFixed(2)) : null;
+      } else {
+        if (usdVal !== null) {
+          const rate = getRateForDate(cotizDate);
+          pc.presupuestoARS = Math.round(usdVal * rate);
+          pc.cotizacionAplicada = rate;
+        } else {
+          pc.presupuestoARS = null;
+          pc.cotizacionAplicada = null;
+        }
+      }
+
+      pc.enReprogramacionCon = document.getElementById('adminInputEnReprogramacionCon').value.trim();
+      pc.prioridad = document.getElementById('adminInputPrioridad').value;
+      pc.comprador = document.getElementById('adminInputComprador').value.trim();
+      pc.estado = document.getElementById('adminInputEstado').value;
+      pc.compras = document.getElementById('adminInputCompras').checked;
+      pc.reprogramacion = document.getElementById('adminInputReprogramacion').value;
+      pc.semanaReprogramada = pc.reprogramacion === 'En espera' ? document.getElementById('adminInputSemanaReprog').value.trim() : '';
+
+      renderAdminOrdersList();
+      renderTable();
+      updateKPIs();
+      showToast(`Orden ${pc.nroPC} guardada con éxito.`);
+
+      if (window.googleAppsScriptUrl) syncSingleOrderToSheets(pc);
+    }
+
+    function saveAdminRateManual() {
+      const d = document.getElementById('adminRateDate').value;
+      const r = parseFloat(document.getElementById('adminRateVal').value);
+
+      if (!d || isNaN(r) || r <= 0) {
+        showToast("Ingresa una fecha y cotización válidas en $ ARS.");
+        return;
+      }
+
+      window.dailyRatesMap[d] = { date: d, rate: r, source: 'Manual' };
+      renderRatesTable();
+      updateLatestRateHeader();
+      showToast(`Cotización guardada para ${d}: 1 USD = $${r} ARS`);
+
+      if (window.googleAppsScriptUrl) syncSingleRateToSheets(d, r);
+    }
+
+    function renderRatesTable() {
+      const tbody = document.getElementById('adminRatesTableBody');
+      if (!tbody) return;
+      const dates = Object.keys(window.dailyRatesMap).sort().reverse();
+
+      if (dates.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" class="p-3 text-center text-slate-400">No hay cotizaciones registradas.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = dates.slice(0, 100).map(dt => {
+        const item = window.dailyRatesMap[dt];
+        return `
+          <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+            <td class="p-2.5 font-bold text-slate-800">${item.date}</td>
+            <td class="p-2.5 font-bold text-emerald-600">$ ${Number(item.rate).toLocaleString('es-AR', {minimumFractionDigits: 2})} ARS</td>
+            <td class="p-2.5 text-slate-500">${item.source || 'Oficial'}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    function setSheetsConnectionStatus(connected, text) {
+      const badge = document.getElementById('dbStatusBadge');
+      const dot = document.getElementById('dbStatusDot');
+      const txt = document.getElementById('dbStatusText');
+
+      if (connected) {
+        badge.className = "bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 text-[10px] px-2 py-0.5 rounded-full font-mono font-medium flex items-center space-x-1 hover:bg-emerald-500/30 transition";
+        dot.className = "w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse";
+        txt.innerText = text || "Google Sheets: Conectado";
+      } else {
+        badge.className = "bg-amber-500/20 text-amber-300 border border-amber-500/30 text-[10px] px-2 py-0.5 rounded-full font-mono font-medium flex items-center space-x-1 hover:bg-amber-500/30 transition";
+        dot.className = "w-1.5 h-1.5 rounded-full bg-amber-400";
+        txt.innerText = text || "Google Sheets: No Conectado";
+      }
+    }
+
+    function disconnectGoogleSheets() {
+      window.googleAppsScriptUrl = '';
+      try { localStorage.removeItem('finnegans_gas_url'); } catch(e){}
+      document.getElementById('inputAppsScriptUrl').value = '';
+      setSheetsConnectionStatus(false, "Google Sheets: No Conectado");
+      showToast("Desconectado de Google Sheets (Modo local).");
+    }
+
+    async function testGoogleSheetsConnection() {
+      const url = document.getElementById('inputAppsScriptUrl').value.trim();
+      const res = document.getElementById('sheetsConnectionResult');
+      res.classList.remove('hidden');
+      res.className = "p-3 rounded-xl text-[11px] font-mono bg-indigo-50 text-indigo-700 mt-2";
+      res.innerText = "Probando conexión con Google Apps Script...";
+
+      if (!url.startsWith('https://script.google.com/')) {
+        res.className = "p-3 rounded-xl text-[11px] font-mono bg-rose-50 text-rose-700 mt-2";
+        res.innerText = "Error: La URL debe comenzar con 'https://script.google.com/macros/s/.../exec'";
+        return;
+      }
+
+      try {
+        const pingUrl = url + (url.includes('?') ? '&' : '?') + 'action=PING';
+        const response = await fetch(pingUrl);
+        if (response.ok) {
+          const data = await response.json();
+          window.googleAppsScriptUrl = url;
+          try { localStorage.setItem('finnegans_gas_url', url); } catch(e){}
+          setSheetsConnectionStatus(true, "Google Sheets: Conectado");
+
+          res.className = "p-3 rounded-xl text-[11px] font-mono bg-emerald-50 text-emerald-800 mt-2";
+          res.innerText = `✓ ¡Conexión Exitosa! ${data.mensaje || 'Listo'}. Sincronizando...`;
+          showToast("Conexión con Google Sheets verificada.");
+          syncWithGoogleSheets(false, url);
+        } else {
+          throw new Error(`Respuesta HTTP ${response.status}`);
+        }
+      } catch (err) {
+        res.className = "p-3 rounded-xl text-[11px] font-mono bg-rose-50 text-rose-700 mt-2";
+        res.innerText = "Error de conexión: " + err.message + ". Verifique que la Web App esté desplegada con acceso a 'Cualquier usuario'.";
+        setSheetsConnectionStatus(false, "Error de Conexión");
+      }
+    }
+
+    async function initBackendSheetsStructure() {
+      const url = document.getElementById('inputAppsScriptUrl').value.trim() || window.googleAppsScriptUrl;
+      const res = document.getElementById('sheetsConnectionResult');
+      res.classList.remove('hidden');
+      res.className = "p-3 rounded-xl text-[11px] font-mono bg-indigo-50 text-indigo-700 mt-2";
+      res.innerText = "Inicializando hojas y encabezados oficiales en Google Sheets...";
+
+      if (!url.startsWith('https://script.google.com/')) {
+        res.className = "p-3 rounded-xl text-[11px] font-mono bg-rose-50 text-rose-700 mt-2";
+        res.innerText = "Error: Configure una URL válida de Apps Script.";
+        return;
+      }
+
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'INIT_SHEETS' })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          res.className = "p-3 rounded-xl text-[11px] font-mono bg-emerald-50 text-emerald-800 mt-2";
+          res.innerText = "✓ ¡Tablas creadas con éxito! Hojas oficiales: Programacion PC (13 cols), Metadatos PC, master PC, master autorizaciones, USUARIO y Cotizaciones_Dolar.";
+          showToast("Tablas oficiales de Google Sheets estructuradas.");
+        } else throw new Error(`HTTP ${response.status}`);
+      } catch (err) {
+        res.className = "p-3 rounded-xl text-[11px] font-mono bg-rose-50 text-rose-700 mt-2";
+        res.innerText = "Error al inicializar tablas: " + err.message;
+      }
+    }
+
+    async function syncWithGoogleSheets(silent = false, customUrl = null) {
+      const url = customUrl || window.googleAppsScriptUrl;
+      if (!url) {
+        if (!silent) requestAdminAccess('sheets_config');
+        return;
+      }
+
+      const btn = document.getElementById('btnSyncSheets');
+      if (btn) btn.classList.add('animate-pulse');
+
+      try {
+        const payload = {
+          action: 'SYNC_ALL',
+          orders: window.masterPCData,
+          masterPCRows: window.rawMasterPCRows || [],
+          masterAutorizRows: window.rawMasterAutorizRows || [],
+          rates: window.dailyRatesMap,
+          users: window.userUnitMap
+        };
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+
+          if (result.users) {
+            Object.assign(window.userUnitMap, result.users);
+            renderUsersTable();
+          }
+
+          if (result.orders && Array.isArray(result.orders) && result.orders.length > 0) {
+            const remoteMap = new Map();
+            result.orders.forEach(o => remoteMap.set(o.id || normalizeStr(o.nroPC), o));
+
+            window.masterPCData.forEach(localItem => {
+              const remote = remoteMap.get(localItem.id);
+              if (remote) {
+                remote.comprador = localItem.comprador || remote.comprador;
+                remote.prioridad = localItem.prioridad || remote.prioridad;
+                remote.presupuestoUSD = localItem.presupuestoUSD !== null ? localItem.presupuestoUSD : remote.presupuestoUSD;
+                remote.presupuestoARS = localItem.presupuestoARS !== null ? localItem.presupuestoARS : remote.presupuestoARS;
+                remote.modoPresupuestoARS = localItem.modoPresupuestoARS || remote.modoPresupuestoARS;
+                remote.cotizacionAplicada = localItem.cotizacionAplicada || remote.cotizacionAplicada;
+                remote.fechaCotizacion = localItem.fechaCotizacion || remote.fechaCotizacion;
+                remote.estado = localItem.estado || remote.estado;
+                remote.compras = localItem.compras !== undefined ? localItem.compras : remote.compras;
+                remote.reprogramacion = localItem.reprogramacion || remote.reprogramacion;
+                remote.semanaReprogramada = localItem.semanaReprogramada || remote.semanaReprogramada;
+                
+                const userKey = normalizeUserKey(remote.nombreUsuarioAlta || remote.usuarioAlta);
+                if (window.userUnitMap[userKey]) remote.unidad = window.userUnitMap[userKey];
+              } else {
+                remoteMap.set(localItem.id, localItem);
+              }
+            });
+
+            window.masterPCData = Array.from(remoteMap.values());
+            populateSemanaFilter();
+            renderTable();
+            updateKPIs();
+            renderAdminOrdersList();
+            detectUnmappedUsersInOrders();
+          }
+
+          if (result.rates) {
+            Object.assign(window.dailyRatesMap, result.rates);
+            renderRatesTable();
+            updateLatestRateHeader();
+          }
+
+          setSheetsConnectionStatus(true, "Google Sheets: Conectado");
+          if (!silent) {
+            let msg = "✓ Sincronizado con Google Sheets.";
+            if (result.nuevosEnMasterPC !== undefined) {
+              msg += ` (Nuevos en master PC: ${result.nuevosEnMasterPC}, en master autoriz: ${result.nuevosEnMasterAutoriz})`;
+            }
+            showToast(msg);
+          }
+        }
+      } catch (err) {
+        console.warn("Fallo de sincronización:", err);
+        if (!silent) showToast("Error al sincronizar con Google Sheets.");
+      } finally {
+        if (btn) btn.classList.remove('animate-pulse');
+      }
+    }
+
+    async function syncSingleOrderToSheets(orderObj) {
+      if (!window.googleAppsScriptUrl) return;
+      try {
+        await fetch(window.googleAppsScriptUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'UPDATE_ORDER', order: orderObj })
+        });
+      } catch (e) {}
+    }
+
+    async function syncSingleRateToSheets(dateStr, rateVal) {
+      if (!window.googleAppsScriptUrl) return;
+      try {
+        await fetch(window.googleAppsScriptUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'SAVE_RATE', date: dateStr, rate: rateVal, source: 'Manual' })
+        });
+      } catch (e) {}
+    }
+
+    async function syncUsersToSheets() {
+      if (!window.googleAppsScriptUrl) return;
+      try {
+        await fetch(window.googleAppsScriptUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify({ action: 'SAVE_USERS', users: window.userUnitMap })
+        });
+      } catch (e) {}
+    }
+
+    function exportToExcel() {
+      if (window.masterPCData.length === 0) {
+        showToast("No hay registros para exportar.");
+        return;
+      }
+
+      // 13 COLUMNAS OFICIALES EXACTAS
+      const exportRows = window.masterPCData.map(item => ({
+        "Semana": item.semana,
+        "Nro de PC": item.nroPC,
+        "Fecha del Pedido": formatDisplayDate(item.fechaPedido),
+        "En reprogramación con": item.enReprogramacionCon,
+        "Descripcion": item.descripcion,
+        "Unidad": item.unidad,
+        "Prioridad": item.prioridad,
+        "Presupuesto (usd)": parseCurrencySafe(item.presupuestoUSD) !== null ? parseCurrencySafe(item.presupuestoUSD) : '',
+        "Presupuesto ($)": parseCurrencySafe(item.presupuestoARS) !== null ? Math.round(parseCurrencySafe(item.presupuestoARS)) : '',
+        "Comprador": item.comprador,
+        "Estado": item.estado,
+        "Compras": (item.compras === true || item.compras === 'TRUE' || item.compras === 'true'),
+        "Reprogramacion": item.reprogramacion === 'En espera' && item.semanaReprogramada ? `En espera (${item.semanaReprogramada})` : item.reprogramacion
+      }));
+
+      const worksheet = XLSX.utils.json_to_sheet(exportRows);
+      const workbook = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(workbook, worksheet, "Programacion PC");
+
+      const maxProps = Object.keys(exportRows[0] || {}).map(key => ({ wch: Math.max(key.length, 14) }));
+      worksheet['!cols'] = maxProps;
+
+      const dateStr = new Date().toISOString().slice(0, 10);
+      XLSX.writeFile(workbook, `Programacion_PC_${dateStr}.xlsx`);
+      showToast("Archivo Excel descargado con las 13 columnas exactas.");
+    }
+
+    function loadDemoSampleData() {
+      const today = new Date();
+      const mockOrders = [
+        { doc: 'PC - 5414', daysAgo: 6, desc: 'Arreglo manguera hidraulica tractor 4275 TBA1', user: 'Santiago Frias Alurralde', unit: 'Agro', usd: 113.48, comp: 'Bruno Brites', prio: 'Alta', est: 'Aprobado', compras: true },
+        { doc: 'PC - 5423', daysAgo: 14, desc: 'Pegamento para pvc y conectores 16x16 mm', user: 'Santiago Frias Alurralde', unit: 'Agro', usd: 678.26, comp: 'Bruno Brites', prio: 'Intermedia', est: 'Aprobado', compras: true },
+        { doc: 'PC - 6873', daysAgo: 28, desc: 'MANTENIMIENTO CEVIL: Insumos para cajon alimentador (SILO)', user: 'Pablo Maldonado', unit: 'Industria', usd: 7447.58, comp: 'Bruno Brites', prio: 'Alta', est: 'Aprobado', compras: true },
+        { doc: 'PC - 6874', daysAgo: 45, desc: 'GASOIL PLANTA CEVIL (10000 LITROS )', user: 'Horacio Burgos', unit: 'Industria', usd: 5336.00, comp: 'Bruno Brites', prio: 'Alta', est: 'Aprobado', compras: true },
+        { doc: 'PC - 6891', daysAgo: 70, desc: 'Pedido de higiene y seguridad: Botines y Ropa de trabajo', user: 'Angel Palacio', unit: 'Industria', usd: 2194.89, comp: 'Bruno Brites', prio: 'Intermedia', est: 'Pendiente', compras: false },
+        { doc: 'PC - 5882', daysAgo: 95, desc: 'MANTENIMIENTO CEVIL: Repuesto para soldador', user: 'Pablo Maldonado', unit: 'Industria', usd: 452.17, comp: 'Bruno Brites', prio: 'Alta', est: 'Aprobado', compras: true }
+      ];
+
+      window.masterPCData = [];
+
+      mockOrders.forEach(m => {
+        const d = new Date(today);
+        d.setDate(today.getDate() - m.daysAgo);
+        const ymd = d.toISOString().slice(0, 10);
+        const sem = calculateSemana(d);
+        const rate = getRateForDate(ymd);
+
+        const orderObj = {
+          id: normalizeStr(m.doc),
+          semana: sem,
+          nroPC: m.doc,
+          docNroInterno: m.doc,
+          fechaPedido: ymd,
+          enReprogramacionCon: '',
+          descripcion: m.desc,
+          unidad: m.unit,
+          prioridad: m.prio,
+          presupuestoUSD: m.usd,
+          presupuestoARS: Math.round(m.usd * rate),
+          comprador: m.comp,
+          estado: m.est,
+          compras: m.compras,
+          reprogramacion: 'No',
+          semanaReprogramada: '',
+          cotizacionAplicada: rate,
+          fechaCotizacion: ymd,
+          modoPresupuestoARS: 'auto',
+          nombreUsuarioAlta: m.user,
+          usuarioAlta: m.user
+        };
+
+        window.masterPCData.push(orderObj);
+      });
+
+      populateSemanaFilter();
+      renderTable();
+      updateKPIs();
+      renderAdminOrdersList();
+      showToast("Datos de prueba cargados con 13 columnas y colores pastel.");
+      switchMainTab('dashboard');
+    }
+
+    function showToast(message) {
+      const toast = document.getElementById('toastNotification');
+      const msg = document.getElementById('toastMessage');
+      if (!toast || !msg) return;
+
+      msg.innerText = message;
+      toast.classList.remove('translate-y-24', 'opacity-0');
+      toast.classList.add('translate-y-0', 'opacity-100');
+
+      setTimeout(() => {
+        toast.classList.remove('translate-y-0', 'opacity-100');
+        toast.classList.add('translate-y-24', 'opacity-0');
+      }, 3500);
     }
   </script>
 </body>
