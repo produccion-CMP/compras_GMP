@@ -132,9 +132,7 @@
       </div>
     </div>
 
-    <!-- ============================================================== -->
-    <!-- SECCIÓN 1: TABLERO DE CONSULTA DE ESTADOS (PROGRAMACIÓN PC)   -->
-    <!-- ============================================================== -->
+    <!-- SECCIÓN 1: TABLERO DE CONSULTA DE ESTADOS (PROGRAMACIÓN PC) -->
     <div id="sectionDashboard" class="space-y-6">
       
       <!-- Tarjetas Resumen KPIs -->
@@ -184,7 +182,6 @@
         </div>
       </div>
 
-      <!-- Barra de Filtros Inteligentes -->
       <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs space-y-3">
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
           
@@ -276,7 +273,7 @@
                 <th onclick="handleSort('descripcion')" class="p-3 min-w-[260px] th-sortable">
                   <div class="flex items-center space-x-1"><span>Descripcion</span><span id="sortIcon_descripcion">↕</span></div>
                 </th>
-                <!-- 6. Unidad (Cruce hoja USUARIO) -->
+                <!-- 6. Unidad (Cruce estricto hoja USUARIO Col A -> Col B) -->
                 <th onclick="handleSort('unidad')" class="p-3 whitespace-nowrap bg-indigo-50/60 text-indigo-950 th-sortable">
                   <div class="flex items-center space-x-1"><span>Unidad</span><span id="sortIcon_unidad">↕</span></div>
                 </th>
@@ -306,7 +303,7 @@
                 <th onclick="handleSort('reprogramacion')" class="p-3 whitespace-nowrap th-sortable">
                   <div class="flex items-center space-x-1"><span>Reprogramacion</span><span id="sortIcon_reprogramacion">↕</span></div>
                 </th>
-                <!-- Acciones (siempre visible o protegido) -->
+                <!-- Acciones -->
                 <th class="p-3 whitespace-nowrap text-center">Acción</th>
               </tr>
             </thead>
@@ -329,9 +326,7 @@
       </div>
     </div>
 
-    <!-- ============================================================== -->
-    <!-- SECCIÓN 2: CARGA Y RECONOCIMIENTO DE REPORTES FINNEGANS       -->
-    <!-- ============================================================== -->
+    <!-- SECCIÓN 2: CARGA Y RECONOCIMIENTO DE REPORTES FINNEGANS -->
     <div id="sectionImport" class="space-y-6 hidden">
       <div class="bg-white rounded-3xl border border-slate-200 shadow-xs p-6">
         <div class="border-b border-slate-100 pb-4 mb-6">
@@ -340,7 +335,7 @@
           </div>
           <h2 class="text-xl font-black text-slate-900 mt-1">Cargar Reportes Finnegans (Sin importar el nombre del archivo)</h2>
           <p class="text-xs text-slate-500 mt-1">
-            Puedes arrastrar archivos con nombres como <code class="bg-slate-100 px-1 py-0.5 rounded font-mono">Reporte (33).xlsx</code>, <code class="bg-slate-100 px-1 py-0.5 rounded font-mono">Reporte (35).xlsx</code>. El sistema detecta automáticamente cuál corresponde a <b>Gestión de Compras CMP - Autorizaciones</b> y cuál a <b>Análisis de Pedidos de Compra Pendientes</b>, unificando los renglones repetidos en un único <b>Nro de PC</b> y conservando las cargas manuales.
+            Puedes arrastrar archivos con nombres como <code class="bg-slate-100 px-1 py-0.5 rounded font-mono">Reporte (33).xlsx</code> o <code class="bg-slate-100 px-1 py-0.5 rounded font-mono">Reporte (35).xlsx</code>. El sistema detecta automáticamente cuál corresponde a <b>Gestión de Compras CMP - Autorizaciones</b> y cuál a <b>Análisis de Pedidos de Compra Pendientes</b>, unificando los renglones repetidos en un único <b>Nro de PC</b>, archivando el detalle en <b>master PC</b> / <b>master autorizaciones</b> y conservando intactas todas las cargas manuales.
           </p>
         </div>
 
@@ -351,7 +346,7 @@
             <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
           </div>
           <h3 class="text-base font-bold text-slate-800">Haz clic aquí o arrastra ambos reportes juntos o por separado</h3>
-          <p class="text-xs text-slate-500 mt-1 max-w-md">Formatos soportados: Excel (.xlsx, .xls) o CSV. Desduplicación automática por Nro de PC.</p>
+          <p class="text-xs text-slate-500 mt-1 max-w-md">Formatos soportados: Excel (.xlsx, .xls) o CSV. Desduplicación automática por Nro de PC y archivo histórico en master PC / master autorizaciones.</p>
         </div>
 
         <!-- Tarjetas de Archivos Detectados -->
@@ -362,7 +357,7 @@
               <span id="badgeDetect1" class="text-[10px] bg-slate-200 text-slate-600 px-2 py-0.5 rounded-full font-medium">Pendiente</span>
             </div>
             <h4 class="font-bold text-sm text-slate-800 mt-2" id="nameDetect1">No cargado</h4>
-            <p class="text-[11px] text-slate-500 mt-0.5" id="detailDetect1">Aporta: Fechaultactividad, Usuarioaltaoc y Autorizaciones.</p>
+            <p class="text-[11px] text-slate-500 mt-0.5" id="detailDetect1">Aporta: Fechaultactividad, Usuarioaltaoc, Actividad y Responsable.</p>
           </div>
 
           <div class="p-4 rounded-2xl border border-slate-200 bg-slate-50" id="cardReporte2">
@@ -401,9 +396,7 @@
 
   </main>
 
-  <!-- ============================================================== -->
-  <!-- MODAL DE AUTENTICACIÓN / CONTRASEÑA DE CARGA MANUAL           -->
-  <!-- ============================================================== -->
+  <!-- MODAL DE AUTENTICACIÓN / CONTRASEÑA DE CARGA MANUAL -->
   <div id="adminAuthModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 flex flex-col">
       <div class="flex items-center space-x-3 mb-4">
@@ -437,9 +430,7 @@
     </div>
   </div>
 
-  <!-- ============================================================== -->
-  <!-- MODAL SUITE DE GESTIÓN MANUAL Y CONFIGURACIÓN (PROTEGIDO)      -->
-  <!-- ============================================================== -->
+  <!-- MODAL SUITE DE GESTIÓN MANUAL Y CONFIGURACIÓN (PROTEGIDO) -->
   <div id="adminPanelModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-6 hidden">
     <div class="bg-white rounded-3xl max-w-5xl w-full p-6 shadow-2xl border border-slate-100 flex flex-col max-h-[94vh]">
       
@@ -647,7 +638,7 @@
         <!-- SUB-PESTAÑA B: GESTOR DE HOJA USUARIO (USUARIO -> UNIDAD) -->
         <div id="subTabUsersContainer" class="space-y-4 hidden">
           <div class="p-4 bg-indigo-50/70 border border-indigo-100 rounded-2xl text-xs text-indigo-950">
-            <h4 class="font-bold text-sm mb-1">Mapeo de la Hoja USUARIO (Columna A: Nombreusuarioalta &rarr; Columna B: Unidad)</h4>
+            <h4 class="font-bold text-sm mb-1">Mapeo Estricto de la Hoja USUARIO (Columna A: Nombreusuarioalta &rarr; Columna B: Unidad)</h4>
             <p>El sistema busca el valor exacto de <code class="font-mono bg-white px-1.5 py-0.5 rounded font-bold">Nombreusuarioalta</code> (de Pedidos) o <code class="font-mono bg-white px-1.5 py-0.5 rounded font-bold">Usuario alta pc</code> (de Autorizaciones) en la <b>Columna A</b> y asigna la <b>Unidad</b> en la Columna B.</p>
           </div>
 
@@ -788,16 +779,13 @@
     let adminListFilterMode = 'all';
 
     window.addEventListener('DOMContentLoaded', () => {
-      // Iniciar cotizaciones por defecto
       initDefaultRates();
 
-      // Cargar contraseña guardada si existe
       try {
         const savedPass = localStorage.getItem('finnegans_admin_pass');
         if (savedPass) window.adminPasswordHash = savedPass;
       } catch (e) {}
 
-      // Cargar URL guardada de Apps Script si existe
       try {
         const savedUrl = localStorage.getItem('finnegans_gas_url');
         if (savedUrl) {
@@ -812,6 +800,23 @@
       applyDatePreset();
       renderUsersTable();
     });
+
+    function initDefaultRates() {
+      const today = new Date();
+      for (let i = 0; i < 90; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        const ymd = d.toISOString().slice(0, 10);
+        window.dailyRatesMap[ymd] = {
+          date: ymd,
+          rate: 1250 - (i * 0.4),
+          source: 'Histórico Base'
+        };
+      }
+      renderRatesTable();
+      updateLatestRateHeader();
+      fetchOnlineTodayRate(true);
+    }
 
     function calculateSemana(dateVal) {
       if (!dateVal) return '-';
@@ -894,11 +899,6 @@
         .normalize("NFD")
         .replace(/[\u0300-\u036f]/g, "")
         .replace(/\s+/g, ' ');
-    }
-      }
-      renderRatesTable();
-      updateLatestRateHeader();
-      fetchOnlineTodayRate(true);
     }
 
     async function fetchOnlineTodayRate(silent = false) {
@@ -1079,7 +1079,7 @@
     }
 
     function addUserMappingRow() {
-      const u = document.getElementById('newInputUser').value.trim().toLowerCase();
+      const u = document.getElementById('newInputUser').value.trim();
       const unit = document.getElementById('newInputUnidad').value.trim();
 
       if (!u || !unit) {
@@ -1087,28 +1087,33 @@
         return;
       }
 
-      window.userUnitMap[u] = unit;
+      window.userUnitMap[u.toLowerCase()] = unit;
+      window.userUnitMap[normalizeUserKey(u)] = unit;
       document.getElementById('newInputUser').value = '';
       document.getElementById('newInputUnidad').value = '';
       renderUsersTable();
       showToast(`Mapeo guardado: ${u} &rarr; ${unit}`);
 
-      // Re-aplicar unidad a las órdenes en memoria
+      // Re-evaluar unidad en las órdenes en memoria
       window.masterPCData.forEach(o => {
-        const matchUser = (o.usuarioAlta || '').toLowerCase();
-        if (matchUser && window.userUnitMap[matchUser]) {
-          o.unidad = window.userUnitMap[matchUser];
+        const uCandidates = [o.nombreUsuarioAlta, o.usuarioAlta];
+        for (const cand of uCandidates) {
+          if (!cand) continue;
+          const kNorm = normalizeUserKey(cand);
+          const kLow = cand.toLowerCase();
+          if (window.userUnitMap[kNorm]) { o.unidad = window.userUnitMap[kNorm]; break; }
+          if (window.userUnitMap[kLow]) { o.unidad = window.userUnitMap[kLow]; break; }
         }
       });
       renderTable();
+      detectUnmappedUsersInOrders();
 
-      if (window.googleAppsScriptUrl) {
-        syncUsersToSheets();
-      }
+      if (window.googleAppsScriptUrl) syncUsersToSheets();
     }
 
     function removeUserMapping(userKey) {
       delete window.userUnitMap[userKey];
+      delete window.userUnitMap[normalizeUserKey(userKey)];
       renderUsersTable();
       showToast("Mapeo eliminado.");
       if (window.googleAppsScriptUrl) syncUsersToSheets();
@@ -1134,7 +1139,7 @@
             let importedCount = 0;
             userSheetData.forEach((rowArr, rowIdx) => {
               if (rowIdx === 0 && (String(rowArr[0]).toLowerCase().includes('usuario') || String(rowArr[0]).toLowerCase().includes('nombre'))) {
-                return; // Omitir fila de encabezados
+                return;
               }
               const uName = String(rowArr[0] || '').trim();
               const uUnit = String(rowArr[1] || '').trim();
@@ -1155,12 +1160,7 @@
 
           const headers = Object.keys(sheetData[0] || {}).map(h => normalizeStr(h));
 
-          // Firmas de CMP - Autorizaciones:
-          // Fechaultactividad, Usuarioaltaoc, Usuario alta pc, etc.
           const hasAutorizCols = headers.some(h => h.includes('fechaultactividad') || h.includes('usuarioaltaoc') || h.includes('usuarioaltapc') || h.includes('usuarioautorizante'));
-
-          // Firmas de Pedidos Pendientes:
-          // Doc.-nro. interno, F.comp, Pendiente destino, Nombreusuarioalta, etc.
           const hasPedidosCols = headers.some(h => h.includes('fcomp') || h.includes('pendientedestino') || h.includes('nombreusuarioalta'));
 
           if (normSheet.includes('masterautorizaciones') || hasAutorizCols) {
@@ -1247,7 +1247,7 @@
               usuarioAltaOC: usuarioAltaOC
             });
 
-            // Preparar renglón para master autorizaciones
+            // Preparar renglón íntegro para master autorizaciones
             window.rawMasterAutorizRows.push({
               docNroInterno: docNum,
               descripcion: desc,
@@ -1363,6 +1363,7 @@
             existing.fechaPedido = ymdFecha || existing.fechaPedido;
             existing.semana = semanaCalculada !== '-' ? semanaCalculada : existing.semana;
             existing.descripcion = grp.descripcion;
+            existing.nombreUsuarioAlta = usuarioAltaFinal;
             existing.usuarioAlta = usuarioAltaFinal;
             existing.unidad = unidadResuelta !== 'Sin asignar' ? unidadResuelta : (existing.unidad || 'Sin asignar');
             updatedCount++;
@@ -1388,6 +1389,7 @@
               cotizacionAplicada: null,
               fechaCotizacion: null,
               modoPresupuestoARS: 'auto',
+              nombreUsuarioAlta: usuarioAltaFinal,
               usuarioAlta: usuarioAltaFinal
             };
             existingMap.set(id, newRecord);
@@ -1422,7 +1424,8 @@
       const unmapped = new Set();
       window.masterPCData.forEach(o => {
         if (!o.unidad || o.unidad === 'Sin asignar' || o.unidad === 'UN') {
-          if (o.usuarioAlta) unmapped.add(o.usuarioAlta);
+          const userVal = o.nombreUsuarioAlta || o.usuarioAlta;
+          if (userVal) unmapped.add(userVal);
         }
       });
 
@@ -1446,127 +1449,6 @@
     function fillUserMappingInput(userName) {
       document.getElementById('newInputUser').value = userName;
       document.getElementById('newInputUnidad').focus();
-    }
-
-          if (docNum) {
-            rep1Map.set(normalizeStr(docNum), {
-              fechaUltActividad: fechaUltAct,
-              usuarioAltaOC: usuarioAltaOC
-            });
-          }
-        });
-        diagnostics.push(`Reporte Autorizaciones: Mapeadas ${rep1Map.size} órdenes con Fechaultactividad / Usuario.`);
-      }
-
-      // 2. Procesar Pedidos Pendientes (Reporte 2) y consolidar renglones por Nro de PC
-      const existingMap = new Map();
-      window.masterPCData.forEach(p => existingMap.set(p.id, p));
-
-      if (rawDetectedReport2) {
-        totalRawRows = rawDetectedReport2.rows.length;
-        const groupedRows = new Map();
-
-        rawDetectedReport2.rows.forEach((row, index) => {
-          let docNum = '';
-          let fComp = '';
-          let descPrincipal = '';
-          let descItem = '';
-          let nombreUsuarioAlta = '';
-
-          for (const [k, v] of Object.entries(row)) {
-            const nk = normalizeStr(k);
-            if (!docNum && (nk.includes('docnrointerno') || nk.includes('nrointerno') || nk.includes('doc'))) docNum = String(v).trim();
-            if (!fComp && (nk.includes('fcomp') || nk.includes('fechacomprobante') || nk.includes('fecha'))) fComp = v;
-            if (!descPrincipal && nk === 'descripcion') descPrincipal = String(v).trim();
-            if (nk.includes('descripcionitem') || nk.includes('item')) descItem = String(v).trim();
-            if (nk.includes('nombreusuarioalta') || nk.includes('usuarioalta') || nk.includes('solicitante')) nombreUsuarioAlta = String(v).trim();
-          }
-
-          if (!docNum) docNum = `OC-${index + 1000}`;
-          const id = normalizeStr(docNum);
-
-          if (!groupedRows.has(id)) {
-            groupedRows.set(id, {
-              docNum,
-              fComp,
-              // UNA SOLA DESCRIPCIÓN SUFICIENTE
-              descripcion: descPrincipal || descItem || 'Sin descripción',
-              nombreUsuarioAlta: nombreUsuarioAlta
-            });
-          }
-        });
-
-        // 3. Fusión en masterPCData
-        groupedRows.forEach((grp, id) => {
-          const rep1Data = rep1Map.get(id) || {};
-          
-          // Fecha Pedido = Fechaultactividad o F.comp
-          const effectiveDateVal = rep1Data.fechaUltActividad || grp.fComp;
-          const ymdFecha = formatDateToYMD(effectiveDateVal);
-          const semanaCalculada = calculateSemana(effectiveDateVal);
-
-          // Usuario Alta para cruce con hoja USUARIO
-          const usuarioAltaFinal = grp.nombreUsuarioAlta || rep1Data.usuarioAltaOC || '';
-          const normUser = usuarioAltaFinal.toLowerCase();
-          const unidadResuelta = window.userUnitMap[normUser] || 'UN';
-
-          if (existingMap.has(id)) {
-            // COMPROBANTE EXISTENTE: Preservar campos manuales intactos
-            const existing = existingMap.get(id);
-            existing.fechaPedido = ymdFecha || existing.fechaPedido;
-            existing.semana = semanaCalculada !== '-' ? semanaCalculada : existing.semana;
-            existing.descripcion = grp.descripcion;
-            existing.usuarioAlta = usuarioAltaFinal;
-            existing.unidad = unidadResuelta !== 'UN' ? unidadResuelta : existing.unidad;
-            updatedCount++;
-          } else {
-            // NUEVO COMPROBANTE ÚNICO
-            const newRecord = {
-              id: id,
-              semana: semanaCalculada,
-              nroPC: grp.docNum,
-              docNroInterno: grp.docNum,
-              fechaPedido: ymdFecha,
-              enReprogramacionCon: '',
-              descripcion: grp.descripcion,
-              unidad: unidadResuelta,
-              prioridad: '',
-              presupuestoUSD: null,
-              presupuestoARS: null,
-              comprador: '',
-              estado: 'Pendiente',
-              compras: '',
-              reprogramacion: 'No',
-              semanaReprogramada: '',
-              cotizacionAplicada: null,
-              fechaCotizacion: null,
-              modoPresupuestoARS: 'auto',
-              usuarioAlta: usuarioAltaFinal
-            };
-            existingMap.set(id, newRecord);
-            newCount++;
-          }
-        });
-      }
-
-      window.masterPCData = Array.from(existingMap.values());
-
-      diagnostics.push(`Filas leídas en el reporte: ${totalRawRows}`);
-      diagnostics.push(`Comprobantes únicos consolidados: ${window.masterPCData.length} (desduplicados ${totalRawRows - window.masterPCData.length} renglones)`);
-      diagnostics.push(`Nuevos comprobantes ingresados: ${newCount}`);
-      diagnostics.push(`Comprobantes actualizados preservando datos manuales: ${updatedCount}`);
-
-      document.getElementById('diagnosticsList').innerHTML = diagnostics.map(d => `<li>• ${d}</li>`).join('');
-      document.getElementById('importDiagnostics').classList.remove('hidden');
-
-      populateSemanaFilter();
-      renderTable();
-      updateKPIs();
-      showToast(`¡Consolidación exitosa! ${window.masterPCData.length} órdenes únicas.`);
-
-      if (window.googleAppsScriptUrl) syncWithGoogleSheets(true);
-
-      setTimeout(() => switchMainTab('dashboard'), 1300);
     }
 
     function applyDatePreset() {
@@ -1713,10 +1595,15 @@
 
           const cotizTooltip = item.cotizacionAplicada ? `Tasa: $${item.cotizacionAplicada} (${formatDisplayDate(item.fechaCotizacion)})` : 'Precio ingresado';
 
-          // Indicador visual claro para Unidad encontrada vs pendiente
+          // Indicador visual de Unidad con cruce estricto en la hoja USUARIO
           let unidadDisplay = `<span class="font-mono font-semibold text-indigo-950">${item.unidad}</span>`;
           if (!item.unidad || item.unidad === 'Sin asignar' || item.unidad === 'UN') {
-            unidadDisplay = `<span class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-50 text-rose-700 border border-rose-200" title="Usuario en ERP: ${item.usuarioAlta || 'Desconocido'} - Asignar en Hoja USUARIO">Sin asignar ⚠</span>`;
+            const rawUser = item.nombreUsuarioAlta || item.usuarioAlta || 'Desconocido';
+            unidadDisplay = `
+              <button onclick="requestAdminAccess('users'); fillUserMappingInput('${rawUser}');" class="px-1.5 py-0.5 rounded text-[10px] font-mono font-bold bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 flex items-center space-x-1" title="Haga clic para asignar Unidad a este usuario">
+                <span>Sin asignar ⚠ (${rawUser})</span>
+              </button>
+            `;
           }
 
           // Botón de acción: Si está autenticado abre directo el editor, si no pide contraseña
@@ -1899,7 +1786,6 @@
       const defaultCotizDate = pc.fechaCotizacion || pc.fechaPedido || new Date().toISOString().slice(0, 10);
       document.getElementById('adminInputFechaCotiz').value = defaultCotizDate;
 
-      // Modo de presupuesto ($)
       const modo = pc.modoPresupuestoARS || 'auto';
       if (modo === 'manual') {
         document.getElementById('radioModoManual').checked = true;
@@ -2086,6 +1972,47 @@
     function disconnectGoogleSheets() {
       window.googleAppsScriptUrl = '';
       try { localStorage.removeItem('finnegans_gas_url'); } catch(e){}
+      document.getElementById('inputAppsScriptUrl').value = '';
+      setSheetsConnectionStatus(false, "Google Sheets: No Conectado");
+      showToast("Desconectado de Google Sheets (Modo local).");
+    }
+
+    async function testGoogleSheetsConnection() {
+      const url = document.getElementById('inputAppsScriptUrl').value.trim();
+      const res = document.getElementById('sheetsConnectionResult');
+      res.classList.remove('hidden');
+      res.className = "p-3 rounded-xl text-[11px] font-mono bg-indigo-50 text-indigo-700 mt-2";
+      res.innerText = "Probando conexión con Google Apps Script...";
+
+      if (!url.startsWith('https://script.google.com/')) {
+        res.className = "p-3 rounded-xl text-[11px] font-mono bg-rose-50 text-rose-700 mt-2";
+        res.innerText = "Error: La URL debe comenzar con 'https://script.google.com/macros/s/.../exec'";
+        return;
+      }
+
+      try {
+        const pingUrl = url + (url.includes('?') ? '&' : '?') + 'action=PING';
+        const response = await fetch(pingUrl);
+        if (response.ok) {
+          const data = await response.json();
+          window.googleAppsScriptUrl = url;
+          try { localStorage.setItem('finnegans_gas_url', url); } catch(e){}
+          setSheetsConnectionStatus(true, "Google Sheets: Conectado");
+
+          res.className = "p-3 rounded-xl text-[11px] font-mono bg-emerald-50 text-emerald-800 mt-2";
+          res.innerText = `✓ ¡Conexión Exitosa! ${data.mensaje || 'Listo'}. Iniciando sincronización...`;
+          showToast("Conexión con Google Sheets verificada.");
+          syncWithGoogleSheets(false, url);
+        } else {
+          throw new Error(`Respuesta HTTP ${response.status}`);
+        }
+      } catch (err) {
+        res.className = "p-3 rounded-xl text-[11px] font-mono bg-rose-50 text-rose-700 mt-2";
+        res.innerText = "Error de conexión: " + err.message + ". Verifique que la Web App esté desplegada con acceso a 'Cualquiera' (Anyone).";
+        setSheetsConnectionStatus(false, "Error de Conexión");
+      }
+    }
+
     async function initBackendSheetsStructure() {
       const url = document.getElementById('inputAppsScriptUrl').value.trim() || window.googleAppsScriptUrl;
       const res = document.getElementById('sheetsConnectionResult');
@@ -2171,7 +2098,7 @@
                 remote.reprogramacion = localItem.reprogramacion || remote.reprogramacion;
                 remote.semanaReprogramada = localItem.semanaReprogramada || remote.semanaReprogramada;
                 // Reevaluar unidad con el mapa remoto
-                const userKey = normalizeUserKey(remote.usuarioAlta);
+                const userKey = normalizeUserKey(remote.nombreUsuarioAlta || remote.usuarioAlta);
                 if (window.userUnitMap[userKey]) remote.unidad = window.userUnitMap[userKey];
               } else {
                 remoteMap.set(localItem.id, localItem);
@@ -2248,7 +2175,7 @@
         return;
       }
 
-      // Orden estricto solicitado:
+      // Orden estricto oficial solicitado:
       // Semana, Nro de PC, Fecha del Pedido, En reprogramación con, Descripcion, Unidad, Prioridad, Presupuesto (usd), Presupuesto ($), Comprador, Estado, Compras, Reprogramacion
       const exportRows = window.masterPCData.map(item => ({
         "Semana": item.semana,
@@ -2292,7 +2219,7 @@
         const d = new Date(today);
         d.setDate(today.getDate() - m.daysAgo);
         const ymd = d.toISOString().slice(0, 10);
-        const sem = calculateSemana(d); // aaaa-ss
+        const sem = calculateSemana(d);
         const usdVal = (idx + 1) * 950;
         const rate = getRateForDate(ymd);
         const unit = window.userUnitMap[m.user.toLowerCase()] || 'UN';
@@ -2317,6 +2244,7 @@
           cotizacionAplicada: rate,
           fechaCotizacion: ymd,
           modoPresupuestoARS: 'auto',
+          nombreUsuarioAlta: m.user,
           usuarioAlta: m.user
         };
 
