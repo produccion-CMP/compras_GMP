@@ -125,12 +125,18 @@
         <div class="flex items-center space-x-2">
           <button id="navTabDashboard" onclick="switchMainTab('dashboard')" class="px-3 py-1.5 rounded-lg font-bold flex items-center space-x-2 bg-indigo-600 text-white shadow-xs transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-            <span>Programación PC (13 Columnas)</span>
-            <span id="badgeTotalItems" class="bg-indigo-800 text-indigo-100 text-[10px] px-2 py-0.5 rounded-full font-bold">0</span>
+            <span>Programación PC (Activas)</span>
+            <span id="badgeActiveItems" class="bg-indigo-800 text-indigo-100 text-[10px] px-2 py-0.5 rounded-full font-bold">0</span>
+          </button>
+
+          <button id="navTabCompleted" onclick="switchMainTab('completed')" class="px-3 py-1.5 rounded-lg font-medium flex items-center space-x-2 text-slate-300 hover:text-white hover:bg-slate-800 transition">
+            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+            <span>Compras Realizadas (Finalizadas)</span>
+            <span id="badgeCompletedItems" class="bg-emerald-900 text-emerald-200 text-[10px] px-2 py-0.5 rounded-full font-bold">0</span>
           </button>
 
           <button id="navTabMetrics" onclick="switchMainTab('metrics')" class="px-3 py-1.5 rounded-lg font-medium flex items-center space-x-1.5 text-slate-300 hover:text-white hover:bg-slate-800 transition">
-            <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
+            <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
             <span>Indicadores & Métricas</span>
           </button>
 
@@ -265,13 +271,13 @@
 
         <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1.5 border-t border-slate-100">
           <span id="activeFilterBadge" class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium">Filtrando: Todo el Histórico</span>
-          <span class="text-slate-400">Desplaza horizontalmente para ver las 13 columnas. Checkbox "Compras" en modo solo lectura.</span>
+          <span class="text-slate-400">Mostrando órdenes activas en gestión. Las marcadas en "Compras" se consultan en "Compras Realizadas".</span>
         </div>
       </div>
 
       <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div class="table-scroll-container">
-          <table class="w-full text-left border-collapse text-xs min-w-[1450px]" id="mainDataTable">
+          <table class="w-full text-left border-collapse text-xs min-w-[1350px]" id="mainDataTable">
             <thead class="bg-slate-100 text-slate-700 font-bold sticky top-0 z-10 backdrop-blur border-b border-slate-200 uppercase tracking-wider text-[11px]">
               <tr>
                 <th onclick="handleSort('semana')" class="p-2.5 whitespace-nowrap th-sortable w-[100px]">
@@ -307,9 +313,6 @@
                 <th onclick="handleSort('estado')" class="p-2.5 whitespace-nowrap th-sortable w-[110px]">
                   <div class="flex items-center space-x-1"><span>Estado</span><span id="sortIcon_estado">↕</span></div>
                 </th>
-                <th onclick="handleSort('compras')" class="p-2.5 whitespace-nowrap text-center th-sortable w-[90px]">
-                  <div class="flex items-center justify-center space-x-1"><span>Compras</span><span id="sortIcon_compras">↕</span></div>
-                </th>
                 <th onclick="handleSort('reprogramacion')" class="p-2.5 whitespace-nowrap th-sortable w-[130px]">
                   <div class="flex items-center space-x-1"><span>Reprogramacion</span><span id="sortIcon_reprogramacion">↕</span></div>
                 </th>
@@ -318,7 +321,7 @@
             </thead>
             <tbody id="tableBody" class="divide-y divide-slate-100 text-slate-700">
               <tr>
-                <td colspan="14" class="p-8 text-center text-slate-400">
+                <td colspan="13" class="p-8 text-center text-slate-400">
                   <p class="font-medium text-slate-600">Cargando registros...</p>
                 </td>
               </tr>
@@ -347,6 +350,83 @@
               <button id="btnNextPage" onclick="changePage(1)" class="px-2.5 py-1 bg-white border border-slate-300 rounded-lg hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed">Sig ▶</button>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SECCIÓN NUEVA: PEDIDOS FINALIZADOS / COMPRAS REALIZADAS -->
+    <div id="sectionCompleted" class="space-y-4 hidden">
+      <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+          <div>
+            <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Compras Realizadas</p>
+            <h3 class="text-2xl font-black text-emerald-600" id="kpiCompletedCount">0</h3>
+            <span class="text-xs text-slate-400">Verificadas y finalizadas</span>
+          </div>
+          <div class="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+          <div>
+            <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Ejecutado (USD)</p>
+            <h3 class="text-2xl font-black text-indigo-600 font-mono" id="kpiCompletedUSD">$ 0,00 USD</h3>
+            <span class="text-xs text-slate-400">Presupuesto en pedidos finalizados</span>
+          </div>
+          <div class="p-3 bg-indigo-50 text-indigo-600 rounded-2xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+          </div>
+        </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
+          <div>
+            <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Total Ejecutado (ARS)</p>
+            <h3 class="text-2xl font-black text-emerald-700 font-mono" id="kpiCompletedARS">≈ $ 0 ARS</h3>
+            <span class="text-xs text-slate-400">Calculado a cotización histórica</span>
+          </div>
+          <div class="p-3 bg-emerald-50 text-emerald-600 rounded-2xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z"></path></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between gap-3">
+        <div class="relative w-full max-w-md">
+          <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
+          </span>
+          <input type="text" id="filterSearchCompleted" oninput="renderCompletedTable()" placeholder="Buscar compra finalizada por Nro de PC, descripción..." class="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+        </div>
+        <div class="text-[11px] text-slate-400">
+          <span>Órdenes con confirmación de gestión en compras. Modificables mediante clave.</span>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+        <div class="table-scroll-container">
+          <table class="w-full text-left border-collapse text-xs min-w-[1350px]">
+            <thead class="bg-slate-100 text-slate-700 font-bold sticky top-0 z-10 border-b border-slate-200 uppercase tracking-wider text-[11px]">
+              <tr>
+                <th class="p-2.5 whitespace-nowrap w-[100px]">Semana</th>
+                <th class="p-2.5 whitespace-nowrap w-[110px]">Nro de PC</th>
+                <th class="p-2.5 whitespace-nowrap w-[120px]">Fecha Pedido</th>
+                <th class="p-2.5 min-w-[280px]">Descripcion</th>
+                <th class="p-2.5 whitespace-nowrap w-[150px]">Unidad</th>
+                <th class="p-2.5 whitespace-nowrap text-right w-[130px]">Presupuesto (usd)</th>
+                <th class="p-2.5 whitespace-nowrap text-right w-[130px]">Presupuesto ($)</th>
+                <th class="p-2.5 whitespace-nowrap w-[140px]">Comprador</th>
+                <th class="p-2.5 whitespace-nowrap text-center w-[120px]">Compras</th>
+                <th class="p-2.5 whitespace-nowrap w-[110px]">Estado</th>
+                <th class="p-2.5 whitespace-nowrap text-center w-[80px]">Acción</th>
+              </tr>
+            </thead>
+            <tbody id="completedTableBody" class="divide-y divide-slate-100 text-slate-700">
+              <tr>
+                <td colspan="11" class="p-8 text-center text-slate-400">No hay compras finalizadas registradas.</td>
+              </tr>
+            </tbody>
+          </table>
         </div>
       </div>
     </div>
@@ -675,7 +755,7 @@
                   <div class="flex items-center space-x-3 pt-2">
                     <label class="inline-flex items-center space-x-2 cursor-pointer">
                       <input type="checkbox" id="adminInputCompras" class="w-5 h-5 rounded text-indigo-600 border-slate-300 focus:ring-indigo-500">
-                      <span class="font-bold text-slate-700 text-xs">Compras (Marcado en gestión)</span>
+                      <span class="font-bold text-slate-700 text-xs">Compras (Marcar como compra finalizada / realizada)</span>
                     </label>
                   </div>
 
@@ -1065,23 +1145,33 @@
 
     function switchMainTab(tab) {
       const secDash = document.getElementById('sectionDashboard');
+      const secCompleted = document.getElementById('sectionCompleted');
       const secMetrics = document.getElementById('sectionMetrics');
       const btnDash = document.getElementById('navTabDashboard');
+      const btnCompleted = document.getElementById('navTabCompleted');
       const btnMetrics = document.getElementById('navTabMetrics');
 
       if (!secDash || !secMetrics || !btnDash || !btnMetrics) return;
 
+      secDash.classList.add('hidden');
+      if (secCompleted) secCompleted.classList.add('hidden');
+      secMetrics.classList.add('hidden');
+
+      btnDash.className = "px-3 py-1.5 rounded-lg font-medium flex items-center space-x-2 text-slate-300 hover:text-white hover:bg-slate-800 transition";
+      if (btnCompleted) btnCompleted.className = "px-3 py-1.5 rounded-lg font-medium flex items-center space-x-2 text-slate-300 hover:text-white hover:bg-slate-800 transition";
+      btnMetrics.className = "px-3 py-1.5 rounded-lg font-medium flex items-center space-x-1.5 text-slate-300 hover:text-white hover:bg-slate-800 transition";
+
       if (tab === 'dashboard') {
         secDash.classList.remove('hidden');
-        secMetrics.classList.add('hidden');
         btnDash.className = "px-3 py-1.5 rounded-lg font-bold flex items-center space-x-2 bg-indigo-600 text-white shadow-xs transition";
-        btnMetrics.className = "px-3 py-1.5 rounded-lg font-medium flex items-center space-x-1.5 text-slate-300 hover:text-white hover:bg-slate-800 transition";
         renderTable();
+      } else if (tab === 'completed') {
+        if (secCompleted) secCompleted.classList.remove('hidden');
+        if (btnCompleted) btnCompleted.className = "px-3 py-1.5 rounded-lg font-bold flex items-center space-x-2 bg-emerald-600 text-white shadow-xs transition";
+        renderCompletedTable();
       } else if (tab === 'metrics') {
-        secDash.classList.add('hidden');
         secMetrics.classList.remove('hidden');
-        btnDash.className = "px-3 py-1.5 rounded-lg font-medium flex items-center space-x-2 text-slate-300 hover:text-white hover:bg-slate-800 transition";
-        btnMetrics.className = "px-3 py-1.5 rounded-lg font-bold flex items-center space-x-1.5 bg-emerald-600 text-white shadow-xs transition";
+        btnMetrics.className = "px-3 py-1.5 rounded-lg font-bold flex items-center space-x-1.5 bg-amber-600 text-white shadow-xs transition";
         renderMetricsDashboard();
       }
     }
@@ -1117,6 +1207,10 @@
       const dateTo = document.getElementById('filterDateTo')?.value || '';
 
       let filtered = window.masterPCData.filter(item => {
+        // Excluir órdenes finalizadas (Compras = true) de la pantalla de Programación PC
+        const isComprasChecked = (item.compras === true || item.compras === 'TRUE' || item.compras === 'true');
+        if (isComprasChecked) return false;
+
         if (!item._searchBlob) cacheOrderComputedFields(item);
 
         const itemYMD = item._ymdDate;
@@ -1170,7 +1264,6 @@
       const startIndex = (window.currentPage - 1) * window.pageSize;
       const paginatedItems = filtered.slice(startIndex, startIndex + window.pageSize);
 
-      // Actualizar indicadores de paginación
       const pageIndicator = document.getElementById('pageIndicator');
       if (pageIndicator) pageIndicator.innerText = `Pág ${window.currentPage} de ${totalPages}`;
 
@@ -1186,8 +1279,8 @@
       if (paginatedItems.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="14" class="p-8 text-center text-slate-400">
-              No se encontraron comprobantes con los filtros o período seleccionados.
+            <td colspan="13" class="p-8 text-center text-slate-400">
+              No se encontraron comprobantes activos con los filtros o período seleccionados.
             </td>
           </tr>`;
       } else {
@@ -1208,14 +1301,6 @@
 
           const cotizTooltip = item.cotizacionAplicada ? `Tasa aplicada: 1 USD = $${item.cotizacionAplicada} ARS` : 'Presupuesto';
 
-          // CHECKBOX DE COMPRAS: Solo lectura en pantalla principal
-          const isComprasChecked = (item.compras === true || item.compras === 'TRUE' || item.compras === 'true');
-          const comprasCheckboxHtml = `
-            <div class="flex items-center justify-center" title="Solo lectura en el tablero. Modificable únicamente en gestión con contraseña.">
-              <input type="checkbox" ${isComprasChecked ? 'checked' : ''} disabled class="w-4 h-4 rounded text-indigo-600 border-slate-300 cursor-not-allowed opacity-90 accent-indigo-600 pointer-events-none">
-            </div>
-          `;
-
           const editBtn = `
             <button onclick="handleQuickEditClick('${item.nroPC}')" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg ${window.isAdminAuthenticated ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'} transition flex items-center space-x-1 mx-auto">
               <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
@@ -1223,6 +1308,7 @@
             </button>
           `;
 
+          // Fila limpia de Programación PC sin la columna Compras
           return `
             <tr class="hover:bg-slate-50/80 transition border-b border-slate-100">
               <td class="p-2.5 font-mono font-bold text-slate-900 whitespace-nowrap">${item.semana}</td>
@@ -1238,7 +1324,6 @@
               <td class="p-2.5 whitespace-nowrap text-right font-mono font-black text-emerald-700" title="${cotizTooltip}">${item._formattedARS}</td>
               <td class="p-2.5 whitespace-nowrap font-medium text-slate-700">${item.comprador || '<span class="text-slate-400 italic">Sin asignar</span>'}</td>
               <td class="p-2.5 whitespace-nowrap">${estadoBadge}</td>
-              <td class="p-2.5 whitespace-nowrap text-center">${comprasCheckboxHtml}</td>
               <td class="p-2.5 whitespace-nowrap">${reprogDisplay}</td>
               <td class="p-2.5 whitespace-nowrap text-center">${editBtn}</td>
             </tr>
@@ -1248,671 +1333,84 @@
         tbody.innerHTML = rowsHtml;
       }
 
+      const activeCount = window.masterPCData.filter(i => !(i.compras === true || i.compras === 'TRUE' || i.compras === 'true')).length;
+      const completedCount = window.masterPCData.length - activeCount;
+
       const summaryText = window.pageSize >= 999999 
-        ? `Mostrando todas las ${totalItems} órdenes de ${window.masterPCData.length} totales`
-        : `Mostrando ${startIndex + 1}-${Math.min(startIndex + window.pageSize, totalItems)} de ${totalItems} órdenes filtradas (${window.masterPCData.length} totales)`;
+        ? `Mostrando las ${totalItems} órdenes activas (${activeCount} en gestión)`
+        : `Mostrando ${startIndex + 1}-${Math.min(startIndex + window.pageSize, totalItems)} de ${totalItems} órdenes activas (${activeCount} en gestión)`;
 
       const tableSumEl = document.getElementById('tableSummary');
       if (tableSumEl) tableSumEl.innerText = summaryText;
 
-      const badgeTotal = document.getElementById('badgeTotalItems');
-      if (badgeTotal) badgeTotal.innerText = window.masterPCData.length;
+      const badgeActive = document.getElementById('badgeActiveItems');
+      if (badgeActive) badgeActive.innerText = activeCount;
+
+      const badgeCompleted = document.getElementById('badgeCompletedItems');
+      if (badgeCompleted) badgeCompleted.innerText = completedCount;
     }
 
-    function renderMetricsDashboard() {
-      const orders = window.masterPCData;
-      const totalOrders = orders.length;
+    function renderCompletedTable() {
+      const tbody = document.getElementById('completedTableBody');
+      if (!tbody) return;
 
-      let pendingCount = 0;
-      let approvedCount = 0;
-      let reprogCount = 0;
-      let reprogWithWeeksCount = 0;
-      let comprasCheckedCount = 0;
-      let totalUSD = 0;
-      let totalARS = 0;
-
-      const unitCounts = {};
-      const unitUSD = {};
-      const unitARS = {};
-      const reprogWithCounts = {};
-      const reprogWeekCounts = {};
-      const buyerCounts = {};
-
-      orders.forEach(o => {
-        const u = o.unidad || 'Sin asignar';
-        unitCounts[u] = (unitCounts[u] || 0) + 1;
-
-        const usd = o._numUSD || parseCurrencySafe(o.presupuestoUSD) || 0;
-        const ars = o._numARS || parseCurrencySafe(o.presupuestoARS) || 0;
-        totalUSD += usd;
-        totalARS += ars;
-
-        unitUSD[u] = (unitUSD[u] || 0) + usd;
-        unitARS[u] = (unitARS[u] || 0) + ars;
-
-        if (o.estado === 'Aprobado') approvedCount++;
-        else pendingCount++;
-
-        const isReprog = (o.reprogramacion === 'En espera' || o.estado === 'En espera');
-        if (isReprog) {
-          reprogCount++;
-          if (o.semanaReprogramada) {
-            reprogWithWeeksCount++;
-            reprogWeekCounts[o.semanaReprogramada] = (reprogWeekCounts[o.semanaReprogramada] || 0) + 1;
-          }
-          const withEntity = o.enReprogramacionCon?.trim() || 'Sin especificar';
-          reprogWithCounts[withEntity] = (reprogWithCounts[withEntity] || 0) + 1;
-        }
-
-        const isCompras = (o.compras === true || o.compras === 'TRUE' || o.compras === 'true');
-        if (isCompras) comprasCheckedCount++;
-
-        const b = o.comprador?.trim() || 'Sin Comprador';
-        buyerCounts[b] = (buyerCounts[b] || 0) + 1;
+      const search = (document.getElementById('filterSearchCompleted')?.value || '').toLowerCase();
+      const completedOrders = window.masterPCData.filter(item => {
+        const isCompras = (item.compras === true || item.compras === 'TRUE' || item.compras === 'true');
+        if (!isCompras) return false;
+        if (!search) return true;
+        if (!item._searchBlob) cacheOrderComputedFields(item);
+        return item._searchBlob.includes(search);
       });
-
-      const reprogRate = totalOrders > 0 ? Math.round((reprogCount / totalOrders) * 100) : 0;
-      const approvalRate = totalOrders > 0 ? Math.round((approvedCount / totalOrders) * 100) : 0;
-      const comprasRate = totalOrders > 0 ? Math.round((comprasCheckedCount / totalOrders) * 100) : 0;
-      const pendingRate = totalOrders > 0 ? Math.round((pendingCount / totalOrders) * 100) : 0;
-
-      const setElText = (id, text) => {
-        const el = document.getElementById(id);
-        if (el) el.innerText = text;
-      };
-
-      setElText('metricsReprogRate', `${reprogRate}%`);
-      setElText('metricsApprovalRate', `${approvalRate}%`);
-      setElText('metricsPendingCount', pendingCount);
-      setElText('metricsPendingPerc', `${pendingRate}% del total`);
-      setElText('metricsApprovedCount', `${approvedCount} aprobadas`);
-      setElText('metricsApprovedPerc', `${approvalRate}% del total`);
-      setElText('metricsReprogTotal', `${reprogCount} en espera`);
-      setElText('metricsReprogWithWeeks', `${reprogWithWeeksCount} con semana fijada`);
-      setElText('metricsComprasCheckedCount', comprasCheckedCount);
-      setElText('metricsComprasPerc', `${comprasRate}% del tablero`);
-      setElText('metricsTotalOrdersPill', `${totalOrders} órdenes`);
-      setElText('metricsTotalBudgetPill', `$ ${totalUSD.toLocaleString('es-AR', {maximumFractionDigits: 0})} USD`);
-
-      // 1. Gráfico de Pedidos por Unidad
-      const sortedUnitsByCount = Object.keys(unitCounts).sort((a, b) => unitCounts[b] - unitCounts[a]);
-      const containerUnitOrders = document.getElementById('chartContainerOrdersByUnit');
-      if (containerUnitOrders) {
-        if (sortedUnitsByCount.length === 0) {
-          containerUnitOrders.innerHTML = `<p class="text-xs text-slate-400 py-4 text-center">No hay datos disponibles.</p>`;
-        } else {
-          containerUnitOrders.innerHTML = sortedUnitsByCount.map(unit => {
-            const count = unitCounts[unit];
-            const pct = totalOrders > 0 ? Math.round((count / totalOrders) * 100) : 0;
-            return `
-              <div class="space-y-1">
-                <div class="flex items-center justify-between text-xs">
-                  <div class="flex items-center space-x-2">
-                    ${getUnitPastelBadge(unit)}
-                    <span class="font-bold text-slate-700">${count} pedidos</span>
-                  </div>
-                  <span class="font-mono text-slate-500 font-bold">${pct}%</span>
-                </div>
-                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                  <div class="bg-indigo-600 h-full rounded-full transition-all duration-300" style="width: ${pct}%"></div>
-                </div>
-              </div>
-            `;
-          }).join('');
-        }
-      }
-
-      // 2. Gráfico de Presupuesto por Unidad
-      const sortedUnitsByBudget = Object.keys(unitUSD).sort((a, b) => unitUSD[b] - unitUSD[a]);
-      const containerUnitBudget = document.getElementById('chartContainerBudgetByUnit');
-      if (containerUnitBudget) {
-        if (sortedUnitsByBudget.length === 0) {
-          containerUnitBudget.innerHTML = `<p class="text-xs text-slate-400 py-4 text-center">No hay datos de presupuesto.</p>`;
-        } else {
-          containerUnitBudget.innerHTML = sortedUnitsByBudget.map(unit => {
-            const usd = unitUSD[unit] || 0;
-            const ars = unitARS[unit] || 0;
-            const pct = totalUSD > 0 ? Math.round((usd / totalUSD) * 100) : 0;
-            return `
-              <div class="space-y-1">
-                <div class="flex items-center justify-between text-xs">
-                  <div class="flex items-center space-x-2">
-                    ${getUnitPastelBadge(unit)}
-                    <span class="font-mono font-bold text-indigo-700">$ ${usd.toLocaleString('es-AR', {maximumFractionDigits: 0})} USD</span>
-                  </div>
-                  <div class="text-right">
-                    <span class="font-mono text-emerald-700 font-bold text-[11px]">≈ $ ${Math.round(ars).toLocaleString('es-AR')} ARS</span>
-                    <span class="text-slate-400 text-[10px] ml-1 font-mono">(${pct}%)</span>
-                  </div>
-                </div>
-                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-                  <div class="bg-emerald-500 h-full rounded-full transition-all duration-300" style="width: ${pct}%"></div>
-                </div>
-              </div>
-            `;
-          }).join('');
-        }
-      }
-
-      // 3. Detalle Reprogramación con
-      const containerReprogWith = document.getElementById('containerReprogWith');
-      if (containerReprogWith) {
-        const withKeys = Object.keys(reprogWithCounts).sort((a, b) => reprogWithCounts[b] - reprogWithCounts[a]);
-        if (withKeys.length === 0) {
-          containerReprogWith.innerHTML = `<p class="text-slate-400 text-center py-2">Sin pedidos en reprogramación.</p>`;
-        } else {
-          containerReprogWith.innerHTML = withKeys.map(k => `
-            <div class="flex items-center justify-between p-2 rounded-xl bg-amber-50/60 border border-amber-100">
-              <span class="font-semibold text-amber-950">${k}</span>
-              <span class="font-mono font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded-full text-[10px]">${reprogWithCounts[k]}</span>
-            </div>
-          `).join('');
-        }
-      }
-
-      // 4. Semanas Reprogramadas
-      const containerReprogWeeks = document.getElementById('containerReprogWeeks');
-      if (containerReprogWeeks) {
-        const weekKeys = Object.keys(reprogWeekCounts).sort();
-        if (weekKeys.length === 0) {
-          containerReprogWeeks.innerHTML = `<p class="text-slate-400 text-center py-2 col-span-2">No hay semanas reprogramadas fijadas.</p>`;
-        } else {
-          containerReprogWeeks.innerHTML = weekKeys.map(w => `
-            <div class="flex items-center justify-between p-2 rounded-xl bg-indigo-50/60 border border-indigo-100">
-              <span class="font-mono font-bold text-indigo-900">Semana ${w}</span>
-              <span class="font-mono font-bold bg-indigo-200/80 text-indigo-900 px-2 py-0.5 rounded-full text-[10px]">${reprogWeekCounts[w]}</span>
-            </div>
-          `).join('');
-        }
-      }
-
-      // 5. Compradores
-      const containerBuyers = document.getElementById('containerBuyersDist');
-      if (containerBuyers) {
-        const buyerKeys = Object.keys(buyerCounts).sort((a, b) => buyerCounts[b] - buyerCounts[a]);
-        containerBuyers.innerHTML = buyerKeys.map(b => `
-          <div class="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100">
-            <span class="font-medium text-slate-800">${b}</span>
-            <span class="font-mono font-bold bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full text-[10px]">${buyerCounts[b]}</span>
-          </div>
-        `).join('');
-      }
-    }
-
-    function initRealisticHistoricalRates() {
-      const today = new Date();
-      for (let i = 0; i < 400; i++) {
-        const d = new Date(today);
-        d.setDate(today.getDate() - i);
-        const ymd = normalizeDateToYMD(d);
-        const baseRate = 1200 - (i * 0.45);
-        window.dailyRatesMap[ymd] = {
-          date: ymd,
-          rate: Number(Math.max(920, baseRate).toFixed(2)),
-          source: 'BNA Oficial Histórico'
-        };
-      }
-      renderRatesTable();
-      updateLatestRateHeader();
-      fetchOnlineTodayRate(true);
-    }
-
-    async function fetchOnlineTodayRate(silent = false) {
-      try {
-        const response = await fetch('https://dolarapi.com/v1/dolares/oficial');
-        if (response.ok) {
-          const data = await response.json();
-          const rateVal = data.venta || data.promedio || 1200;
-          const todayStr = normalizeDateToYMD(new Date());
-          
-          window.dailyRatesMap[todayStr] = {
-            date: todayStr,
-            rate: rateVal,
-            source: 'DolarAPI - BNA Venta Oficial'
-          };
-
-          renderRatesTable();
-          updateLatestRateHeader();
-          if (!silent) showToast(`Cotización oficial BNA actualizada: $${rateVal} ARS`);
-        }
-      } catch (err) {
-        console.warn("API de cotización en línea no disponible, usando histórico:", err);
-      }
-    }
-
-    function updateLatestRateHeader() {
-      const dates = Object.keys(window.dailyRatesMap).sort().reverse();
-      const latestDate = dates[0];
-      const latestRate = latestDate ? window.dailyRatesMap[latestDate].rate : 1200;
-      const el = document.getElementById('headerRateDisplay');
-      if (el) el.innerText = `$ ${Number(latestRate).toLocaleString('es-AR', {minimumFractionDigits: 2})} ARS`;
-    }
-
-    function getRateForDate(dateVal) {
-      const cleanYMD = normalizeDateToYMD(dateVal) || normalizeDateToYMD(new Date());
-      if (window.dailyRatesMap[cleanYMD]) {
-        return Number(window.dailyRatesMap[cleanYMD].rate);
-      }
-
-      const parts = cleanYMD.split('-');
-      const baseDate = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-      for (let i = 1; i <= 15; i++) {
-        const prev = new Date(baseDate);
-        prev.setDate(baseDate.getDate() - i);
-        const prevYMD = normalizeDateToYMD(prev);
-        if (window.dailyRatesMap[prevYMD]) {
-          return Number(window.dailyRatesMap[prevYMD].rate);
-        }
-      }
-
-      const allDates = Object.keys(window.dailyRatesMap).sort();
-      for (let i = allDates.length - 1; i >= 0; i--) {
-        if (allDates[i] <= cleanYMD) {
-          return Number(window.dailyRatesMap[allDates[i]].rate);
-        }
-      }
-      return allDates.length > 0 ? Number(window.dailyRatesMap[allDates[allDates.length - 1]].rate) : 1200.00;
-    }
-
-    function handleAdminButtonClick() {
-      if (window.isAdminAuthenticated) {
-        openAdminPanelModal();
-      } else {
-        openAdminAuthModal();
-      }
-    }
-
-    function requestAdminAccess(targetSubTab = 'orders') {
-      if (window.isAdminAuthenticated) {
-        openAdminPanelModal();
-        switchAdminSubTab(targetSubTab);
-      } else {
-        window.pendingAdminSubTab = targetSubTab;
-        openAdminAuthModal();
-      }
-    }
-
-    function openAdminAuthModal() {
-      const passIn = document.getElementById('inputAdminPassword');
-      if (passIn) passIn.value = '';
-      const errMsg = document.getElementById('authErrorMessage');
-      if (errMsg) errMsg.classList.add('hidden');
-      const modal = document.getElementById('adminAuthModal');
-      if (modal) modal.classList.remove('hidden');
-      setTimeout(() => passIn?.focus(), 100);
-    }
-
-    function closeAdminAuthModal() {
-      const modal = document.getElementById('adminAuthModal');
-      if (modal) modal.classList.add('hidden');
-    }
-
-    function verifyAdminPassword() {
-      const entered = document.getElementById('inputAdminPassword')?.value;
-      if (entered === window.adminPasswordHash || entered === 'admin123') {
-        window.isAdminAuthenticated = true;
-        closeAdminAuthModal();
-        updateAdminUIState();
-        openAdminPanelModal();
-        if (window.pendingAdminSubTab) {
-          switchAdminSubTab(window.pendingAdminSubTab);
-          window.pendingAdminSubTab = null;
-        }
-        showToast("✓ Acceso autorizado concedido");
-      } else {
-        const errMsg = document.getElementById('authErrorMessage');
-        if (errMsg) errMsg.classList.remove('hidden');
-      }
-    }
-
-    function lockAdminMode() {
-      window.isAdminAuthenticated = false;
-      closeAdminPanelModal();
-      updateAdminUIState();
-      showToast("Modo edición bloqueado");
-    }
-
-    function updateAdminUIState() {
-      const badge = document.getElementById('adminBadgeUnlocked');
-      const lockIcon = document.getElementById('iconAdminLock');
-      const lockDot = document.getElementById('badgeLockDot');
-
-      if (window.isAdminAuthenticated) {
-        if (badge) { badge.classList.remove('hidden'); badge.classList.add('flex'); }
-        if (lockIcon) { lockIcon.classList.remove('text-amber-400'); lockIcon.classList.add('text-emerald-400'); }
-        if (lockDot) lockDot.className = "w-2 h-2 rounded-full bg-emerald-400 absolute -top-0.5 -right-0.5 ring-2 ring-slate-900";
-      } else {
-        if (badge) { badge.classList.add('hidden'); badge.classList.remove('flex'); }
-        if (lockIcon) { lockIcon.classList.add('text-amber-400'); lockIcon.classList.remove('text-emerald-400'); }
-        if (lockDot) lockDot.className = "w-2 h-2 rounded-full bg-amber-400 absolute -top-0.5 -right-0.5 ring-2 ring-slate-900";
-      }
-      renderTable();
-    }
-
-    function openAdminPanelModal() {
-      const modal = document.getElementById('adminPanelModal');
-      if (modal) modal.classList.remove('hidden');
-      renderAdminOrdersList();
-      renderRatesTable();
-      renderUsersTable();
-    }
-
-    function closeAdminPanelModal() {
-      const modal = document.getElementById('adminPanelModal');
-      if (modal) modal.classList.add('hidden');
-    }
-
-    function switchAdminSubTab(subTab) {
-      ['orders', 'import', 'users', 'rates', 'security'].forEach(t => {
-        const capitalized = t.charAt(0).toUpperCase() + t.slice(1);
-        document.getElementById(`subTab${capitalized}Container`)?.classList.add('hidden');
-        const b = document.getElementById(`subTabBtn${capitalized}`);
-        if (b) b.className = "px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-100 flex items-center space-x-1";
-      });
-
-      const currentCapitalized = subTab.charAt(0).toUpperCase() + subTab.slice(1);
-      const activeContainer = document.getElementById(`subTab${currentCapitalized}Container`);
-      const activeBtn = document.getElementById(`subTabBtn${currentCapitalized}`);
-      
-      if (activeContainer) activeContainer.classList.remove('hidden');
-      if (activeBtn) activeBtn.className = "px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 font-bold flex items-center space-x-1";
-
-      if (subTab === 'orders') renderAdminOrdersList();
-      else if (subTab === 'users') renderUsersTable();
-      else if (subTab === 'rates') renderRatesTable();
-    }
-
-    function applyDatePreset() {
-      const preset = document.getElementById('filterDatePreset')?.value || 'all';
-      const customInputs = document.getElementById('customDateRangeInputs');
-      const badge = document.getElementById('activeFilterBadge');
-
-      if (preset === 'custom') {
-        if (customInputs) customInputs.classList.remove('hidden');
-        if (badge) badge.innerText = "Filtrando: Rango Personalizado";
-        return;
-      }
-
-      if (customInputs) customInputs.classList.add('hidden');
-      const today = new Date();
-      let fromDate = null;
-      let label = "Todo el Histórico";
-
-      if (preset === '6m') {
-        fromDate = new Date(today);
-        fromDate.setMonth(today.getMonth() - 6);
-        label = "Últimos 6 meses";
-      } else if (preset === '1m') {
-        fromDate = new Date(today);
-        fromDate.setDate(today.getDate() - 30);
-        label = "Últimos 30 días";
-      } else if (preset === 'this_year') {
-        fromDate = new Date(today.getFullYear(), 0, 1);
-        label = `Año ${today.getFullYear()}`;
-      } else if (preset === '1y') {
-        fromDate = new Date(today);
-        fromDate.setFullYear(today.getFullYear() - 1);
-        label = "Último año";
-      }
-
-      const inputFrom = document.getElementById('filterDateFrom');
-      if (inputFrom) inputFrom.value = fromDate ? normalizeDateToYMD(fromDate) : '';
-      
-      const inputTo = document.getElementById('filterDateTo');
-      if (inputTo) inputTo.value = normalizeDateToYMD(today);
-
-      if (badge) badge.innerText = `Filtrando: ${label}`;
-      window.currentPage = 1;
-      renderTable();
-    }
-
-    function resetFilters() {
-      const search = document.getElementById('filterSearch'); if (search) search.value = '';
-      const sem = document.getElementById('filterSemana'); if (sem) sem.value = '';
-      const prio = document.getElementById('filterPrioridad'); if (prio) prio.value = '';
-      const est = document.getElementById('filterEstado'); if (est) est.value = '';
-      const preset = document.getElementById('filterDatePreset'); if (preset) preset.value = 'all';
-      applyDatePreset();
-    }
-
-    function handleSort(colName) {
-      if (window.currentSortCol === colName) {
-        window.currentSortDir = window.currentSortDir === 'asc' ? 'desc' : 'asc';
-      } else {
-        window.currentSortCol = colName;
-        window.currentSortDir = 'asc';
-      }
-
-      document.querySelectorAll('[id^="sortIcon_"]').forEach(i => i.innerText = '↕');
-      const activeIcon = document.getElementById(`sortIcon_${colName}`);
-      if (activeIcon) activeIcon.innerText = window.currentSortDir === 'asc' ? '▲' : '▼';
-
-      renderTable();
-    }
-
-    function updateKPIs() {
-      const total = window.masterPCData.length;
-      const setEl = (id, txt) => {
-        const el = document.getElementById(id);
-        if (el) el.innerText = txt;
-      };
-
-      setEl('kpiTotalCount', total);
-
-      const activeWeeks = new Set(window.masterPCData.map(d => d.semana).filter(s => s && s !== '-')).size;
-      setEl('kpiWeeksCovered', `${activeWeeks} semanas activas`);
 
       let totalUSD = 0;
       let totalARS = 0;
-      let waitingCount = 0;
-      let unassignedCount = 0;
-
-      window.masterPCData.forEach(item => {
-        const usd = item._numUSD !== undefined ? item._numUSD : parseCurrencySafe(item.presupuestoUSD);
-        const ars = item._numARS !== undefined ? item._numARS : parseCurrencySafe(item.presupuestoARS);
-        if (usd) totalUSD += usd;
-        if (ars) totalARS += ars;
-        if (item.reprogramacion === 'En espera' || item.estado === 'En espera') waitingCount++;
-        if (!item.comprador || !item.prioridad) unassignedCount++;
+      completedOrders.forEach(o => {
+        totalUSD += (o._numUSD || parseCurrencySafe(o.presupuestoUSD) || 0);
+        totalARS += (o._numARS || parseCurrencySafe(o.presupuestoARS) || 0);
       });
 
-      setEl('kpiTotalUSD', `$ ${totalUSD.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})} USD`);
-      setEl('kpiConvertedARS', `≈ $ ${Math.round(totalARS).toLocaleString('es-AR')} ARS`);
-      setEl('kpiWaitingCount', waitingCount);
-      setEl('kpiWaitingPerc', total > 0 ? `${Math.round((waitingCount / total) * 100)}% del total` : '0% del total');
-      setEl('kpiUnassignedCount', unassignedCount);
-    }
+      const setEl = (id, txt) => { const el = document.getElementById(id); if (el) el.innerText = txt; };
+      setEl('kpiCompletedCount', completedOrders.length);
+      setEl('kpiCompletedUSD', `$ ${totalUSD.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})} USD`);
+      setEl('kpiCompletedARS', `≈ $ ${Math.round(totalARS).toLocaleString('es-AR')} ARS`);
 
-    function handleQuickEditClick(nroPC) {
-      if (window.isAdminAuthenticated) {
-        openAdminPanelModal();
-        switchAdminSubTab('orders');
-        selectAdminOrderForEdit(nroPC);
-      } else {
-        window.pendingAdminSubTab = 'orders';
-        window.pendingAdminOrderSelect = nroPC;
-        openAdminAuthModal();
-      }
-    }
-
-    function renderAdminOrdersList() {
-      const container = document.getElementById('adminOrdersScrollList');
-      if (!container) return;
-      const search = (document.getElementById('adminOrderSearch')?.value || '').toLowerCase();
-      const sortBy = document.getElementById('adminOrderSortBy')?.value || 'fechaDesc';
-
-      let items = window.masterPCData.filter(item => {
-        const matches = !search || item.nroPC.toLowerCase().includes(search) || item.descripcion.toLowerCase().includes(search);
-        if (adminListFilterMode === 'incomplete') {
-          return matches && (!item.comprador || !item.prioridad || item.presupuestoUSD === null);
-        }
-        return matches;
-      });
-
-      items.sort((a, b) => {
-        if (sortBy === 'fechaDesc') return (a._ymdDate || '').localeCompare(b._ymdDate || '');
-        if (sortBy === 'fechaAsc') return (b._ymdDate || '').localeCompare(a._ymdDate || '');
-        if (sortBy === 'semanaDesc') return (b.semana || '').localeCompare(a.semana || '');
-        if (sortBy === 'semanaAsc') return (a.semana || '').localeCompare(b.semana || '');
-        if (sortBy === 'pc') return (a.nroPC || '').localeCompare(b.nroPC || '');
-        return 0;
-      });
-
-      if (items.length === 0) {
-        container.innerHTML = `<p class="text-center text-xs text-slate-400 py-8">No hay comprobantes.</p>`;
+      if (completedOrders.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="11" class="p-8 text-center text-slate-400">
+              No hay compras finalizadas con el filtro aplicado.
+            </td>
+          </tr>`;
         return;
       }
 
-      container.innerHTML = items.map(item => {
-        const isSelected = item.nroPC === selectedPCId;
-        const hasData = item.comprador && item.prioridad;
-
-        return `
-          <div onclick="selectAdminOrderForEdit('${item.nroPC}')" class="p-2.5 rounded-xl cursor-pointer transition border ${isSelected ? 'bg-indigo-50 border-indigo-400 shadow-xs' : 'bg-white hover:bg-slate-50 border-slate-200'}">
-            <div class="flex items-center justify-between">
-              <span class="font-bold text-xs text-indigo-900 font-mono">${item.nroPC}</span>
-              <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">${item.semana}</span>
-            </div>
-            <p class="text-[11px] text-slate-600 truncate mt-1">${item.descripcion}</p>
-            <div class="flex items-center justify-between mt-2 pt-1 border-t border-slate-100 text-[10px]">
-              <span class="text-slate-400">${item.comprador || 'Sin comprador'}</span>
-              <span class="${hasData ? 'text-emerald-600 font-semibold' : 'text-rose-500 font-medium'}">${hasData ? '✓ Completo' : '● Incompleto'}</span>
-            </div>
-          </div>
-        `;
-      }).join('');
+      tbody.innerHTML = completedOrders.map(item => `
+        <tr class="hover:bg-slate-50/80 transition border-b border-slate-100">
+          <td class="p-2.5 font-mono font-bold text-slate-900 whitespace-nowrap">${item.semana}</td>
+          <td class="p-2.5 font-bold text-emerald-700 whitespace-nowrap font-mono">${item.nroPC}</td>
+          <td class="p-2.5 whitespace-nowrap text-slate-600 font-mono">${item._displayDate || '-'}</td>
+          <td class="p-2.5 text-slate-800 font-medium min-w-[280px]">
+            <div class="line-clamp-2" title="${item.descripcion}">${item.descripcion}</div>
+          </td>
+          <td class="p-2.5 whitespace-nowrap">${getUnitPastelBadge(item.unidad)}</td>
+          <td class="p-2.5 whitespace-nowrap text-right font-mono font-bold text-indigo-700">${item._formattedUSD}</td>
+          <td class="p-2.5 whitespace-nowrap text-right font-mono font-black text-emerald-700">${item._formattedARS}</td>
+          <td class="p-2.5 whitespace-nowrap font-medium text-slate-700">${item.comprador || '-'}</td>
+          <td class="p-2.5 whitespace-nowrap text-center">
+            <span class="px-2.5 py-0.5 rounded-full text-[10px] font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">✓ Finalizada</span>
+          </td>
+          <td class="p-2.5 whitespace-nowrap">
+            <span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-100 text-emerald-800">${item.estado || 'Aprobado'}</span>
+          </td>
+          <td class="p-2.5 whitespace-nowrap text-center">
+            <button onclick="handleQuickEditClick('${item.nroPC}')" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 transition mx-auto">
+              ${window.isAdminAuthenticated ? 'Editar' : 'Editar 🔒'}
+            </button>
+          </td>
+        </tr>
+      `).join('');
     }
-
-    function setAdminListFilter(mode) {
-      adminListFilterMode = mode;
-      const bAll = document.getElementById('btnAdminListAll');
-      const bInc = document.getElementById('btnAdminListInc');
-      if (bAll) bAll.className = mode === 'all' ? "w-1/2 py-1 bg-indigo-50 text-indigo-700 font-bold rounded-lg text-[10px]" : "w-1/2 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px]";
-      if (bInc) bInc.className = mode === 'incomplete' ? "w-1/2 py-1 bg-indigo-50 text-indigo-700 font-bold rounded-lg text-[10px]" : "w-1/2 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px]";
-      renderAdminOrdersList();
-    }
-
-    function selectAdminOrderForEdit(nroPC) {
-      selectedPCId = nroPC;
-      const pc = window.masterPCData.find(p => p.nroPC === nroPC);
-      if (!pc) return;
-
-      renderAdminOrdersList();
-
-      document.getElementById('adminFormEmptyState')?.classList.add('hidden');
-      document.getElementById('adminOrderForm')?.classList.remove('hidden');
-
-      const setT = (id, txt) => { const el = document.getElementById(id); if (el) el.innerText = txt; };
-      const setV = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
-
-      setT('adminFormNroPC', pc.nroPC);
-      setT('adminFormSemana', pc.semana);
-      setT('adminFormDesc', pc.descripcion);
-      setT('adminFormFecha', pc._displayDate || formatDisplayDate(pc.fechaPedido));
-
-      setV('adminInputEnReprogramacionCon', pc.enReprogramacionCon || '');
-      setV('adminInputPrioridad', pc.prioridad || '');
-      
-      const parsedUSD = parseCurrencySafe(pc.presupuestoUSD);
-      setV('adminInputUSD', parsedUSD !== null ? parsedUSD : '');
-      
-      const defaultCotizDate = normalizeDateToYMD(pc.fechaCotizacion || pc.fechaPedido || new Date());
-      setV('adminInputFechaCotiz', defaultCotizDate);
-
-      const modo = pc.modoPresupuestoARS || 'auto';
-      const radMan = document.getElementById('radioModoManual');
-      const radAuto = document.getElementById('radioModoAuto');
-      if (radMan && radAuto) {
-        if (modo === 'manual') radMan.checked = true;
-        else radAuto.checked = true;
-      }
-      toggleModoPresupuestoARS();
-
-      const parsedARS = parseCurrencySafe(pc.presupuestoARS);
-      if (parsedARS !== null) {
-        setV('adminInputARS', Math.round(parsedARS));
-        setT('adminCotizRateBadge', pc.cotizacionAplicada ? `1 USD = $${pc.cotizacionAplicada} ARS` : 'Ingreso Manual');
-      } else {
-        setV('adminInputARS', '');
-        handlePresupuestoUSDChange();
-      }
-
-      setV('adminInputComprador', pc.comprador || '');
-      setV('adminInputEstado', pc.estado === 'Aprobado' ? 'Aprobado' : 'Pendiente');
-      
-      const chkCompras = document.getElementById('adminInputCompras');
-      if (chkCompras) chkCompras.checked = (pc.compras === true || pc.compras === 'TRUE' || pc.compras === 'true');
-      
-      setV('adminInputReprogramacion', pc.reprogramacion || 'No');
-      setV('adminInputSemanaReprog', pc.semanaReprogramada || '');
-
-      toggleAdminSemanaReprog();
-    }
-
-    function toggleModoPresupuestoARS() {
-      const isManual = document.getElementById('radioModoManual')?.checked;
-      const arsInput = document.getElementById('adminInputARS');
-      const info = document.getElementById('adminCotizSnapshotInfo');
-      if (!arsInput) return;
-
-      if (isManual) {
-        arsInput.removeAttribute('readonly');
-        arsInput.classList.remove('bg-slate-50');
-        arsInput.classList.add('bg-white');
-        if (info) info.innerText = "Modo manual: Ingresa directamente el monto en pesos argentinos ($ ARS).";
-      } else {
-        arsInput.setAttribute('readonly', 'true');
-        arsInput.classList.remove('bg-white');
-        arsInput.classList.add('bg-slate-50');
-        if (info) info.innerText = "Modo automático: Calculado con la cotización en $ ARS de la fecha elegida (con lookback hábil).";
-        handlePresupuestoUSDChange();
-      }
-    }
-
-    function handlePresupuestoUSDChange() {
-      const isManual = document.getElementById('radioModoManual')?.checked;
-      if (isManual) return;
-
-      const usdVal = parseFloat(document.getElementById('adminInputUSD')?.value);
-      const cotizDate = document.getElementById('adminInputFechaCotiz')?.value || normalizeDateToYMD(new Date());
-
-      if (!isNaN(usdVal) && usdVal >= 0) {
-        const rate = getRateForDate(cotizDate);
-        const arsVal = Math.round(usdVal * rate);
-        const inputARS = document.getElementById('adminInputARS');
-        if (inputARS) inputARS.value = arsVal;
-        const badge = document.getElementById('adminCotizRateBadge');
-        if (badge) badge.innerText = `1 USD = $${rate} ARS (${formatDisplayDate(cotizDate)})`;
-      } else {
-        const inputARS = document.getElementById('adminInputARS');
-        if (inputARS) inputARS.value = '';
-      }
-    }
-
-    function handleFechaCotizChange() {
-      handlePresupuestoUSDChange();
-    }
-
-    function setAdminCotizDate(mode) {
-      if (mode === 'order') {
-        const pc = window.masterPCData.find(p => p.nroPC === selectedPCId);
-        if (pc && pc.fechaPedido) {
-          const inputDate = document.getElementById('adminInputFechaCotiz');
-          if (inputDate) inputDate.value = normalizeDateToYMD(pc.fechaPedido);
-          handlePresupuestoUSDChange();
-          showToast("Fecha fijada a la fecha original del pedido.");
-        }
-      }
-    }
-
-    function toggleAdminSemanaReprog() {
-      const val = document.getElementById('adminInputReprogramacion')?.value;
-      const container = document.getElementById('adminContainerSemanaReprog');
-      if (!container) return;
-      if (val === 'En espera') container.classList.remove('hidden');
-      else container.classList.add('hidden');
-    }
-
     function saveAdminOrderData() {
       if (!selectedPCId) return;
       const pc = window.masterPCData.find(p => p.nroPC === selectedPCId);
@@ -1947,6 +1445,8 @@
       pc.prioridad = document.getElementById('adminInputPrioridad')?.value || '';
       pc.comprador = document.getElementById('adminInputComprador')?.value.trim() || '';
       pc.estado = document.getElementById('adminInputEstado')?.value || 'Pendiente';
+      
+      const previousCompras = pc.compras;
       pc.compras = document.getElementById('adminInputCompras')?.checked || false;
       pc.reprogramacion = document.getElementById('adminInputReprogramacion')?.value || 'No';
       pc.semanaReprogramada = pc.reprogramacion === 'En espera' ? document.getElementById('adminInputSemanaReprog')?.value.trim() : '';
@@ -1954,82 +1454,18 @@
       cacheOrderComputedFields(pc);
       renderAdminOrdersList();
       renderTable();
+      renderCompletedTable();
       updateKPIs();
       renderMetricsDashboard();
-      showToast(`Orden ${pc.nroPC} guardada con éxito.`);
+
+      if (pc.compras && !previousCompras) {
+        showToast(`Orden ${pc.nroPC} finalizada y movida a Compras Realizadas.`);
+      } else {
+        showToast(`Orden ${pc.nroPC} guardada con éxito.`);
+      }
 
       if (window.googleAppsScriptUrl) syncSingleOrderToSheets(pc);
     }
-
-    function saveAdminRateManual() {
-      const d = document.getElementById('adminRateDate')?.value;
-      const r = parseFloat(document.getElementById('adminRateVal')?.value);
-
-      if (!d || isNaN(r) || r <= 0) {
-        showToast("Ingresa una fecha y cotización válidas en $ ARS.");
-        return;
-      }
-
-      const ymd = normalizeDateToYMD(d);
-      window.dailyRatesMap[ymd] = { date: ymd, rate: r, source: 'Manual' };
-      renderRatesTable();
-      updateLatestRateHeader();
-      showToast(`Cotización guardada para ${ymd}: 1 USD = $${r} ARS`);
-
-      if (window.googleAppsScriptUrl) syncSingleRateToSheets(ymd, r);
-    }
-
-    function renderRatesTable() {
-      const tbody = document.getElementById('adminRatesTableBody');
-      if (!tbody) return;
-      const dates = Object.keys(window.dailyRatesMap).sort().reverse();
-
-      if (dates.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" class="p-3 text-center text-slate-400">No hay cotizaciones registradas.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = dates.slice(0, 50).map(dt => {
-        const item = window.dailyRatesMap[dt];
-        return `
-          <tr class="hover:bg-slate-50 transition border-b border-slate-100">
-            <td class="p-2.5 font-bold text-slate-800">${item.date}</td>
-            <td class="p-2.5 font-bold text-emerald-600">$ ${Number(item.rate).toLocaleString('es-AR', {minimumFractionDigits: 2})} ARS</td>
-            <td class="p-2.5 text-slate-500">${item.source || 'Oficial'}</td>
-          </tr>
-        `;
-      }).join('');
-    }
-
-    function renderUsersTable() {
-      const tbody = document.getElementById('userMappingTableBody');
-      if (!tbody) return;
-      const users = Object.keys(window.userUnitMap).sort();
-
-      if (users.length === 0) {
-        tbody.innerHTML = `<tr><td colspan="3" class="p-3 text-center text-slate-400">No hay mapeos de usuarios cargados.</td></tr>`;
-        return;
-      }
-
-      tbody.innerHTML = users.map(u => `
-        <tr class="hover:bg-slate-50 transition border-b border-slate-100">
-          <td class="p-2.5 font-bold text-slate-800">${u}</td>
-          <td class="p-2.5">${getUnitPastelBadge(window.userUnitMap[u])}</td>
-          <td class="p-2.5 text-right">
-            <button onclick="removeUserMapping('${u}')" class="text-rose-600 hover:text-rose-800 font-bold text-[10px]">Eliminar</button>
-          </td>
-        </tr>
-      `).join('');
-    }
-
-    function addUserMappingRow() {
-      const u = document.getElementById('newInputUser')?.value.trim();
-      const unit = document.getElementById('newInputUnidad')?.value.trim();
-
-      if (!u || !unit) {
-        showToast("Completa el usuario y la unidad.");
-        return;
-      }
 
       window.userUnitMap[u.toLowerCase()] = unit;
       window.userUnitMap[normalizeUserKey(u)] = unit;
@@ -2145,7 +1581,7 @@
       const diagnostics = [];
       let totalRawRows = 0;
       let newCount = 0;
-      let updatedCount = 0;
+      let preservedCount = 0;
 
       window.rawMasterAutorizRows = [];
       window.rawMasterPCRows = [];
@@ -2192,7 +1628,7 @@
             });
           }
         });
-        diagnostics.push(`Reporte Autorizaciones: Mapeadas ${rep1Map.size} órdenes.`);
+        diagnostics.push(`Reporte Autorizaciones: Procesadas ${rep1Map.size} órdenes.`);
       }
 
       const existingMap = new Map();
@@ -2268,16 +1704,20 @@
                                  'Sin asignar';
 
           if (existingMap.has(id)) {
+            // REGLA CRÍTICA: PEDIDO YA EXISTE.
+            // Prioridad absoluta a las modificaciones y tratamiento realizados en el programa.
+            // No se sobreescriben comprador, prioridad, presupuestos, cotizaciones ni reprogramaciones.
             const existing = existingMap.get(id);
-            existing.fechaPedido = ymdFecha || existing.fechaPedido;
-            existing.semana = semanaCalculada !== '-' ? semanaCalculada : existing.semana;
-            existing.descripcion = grp.descripcion;
-            existing.nombreUsuarioAlta = usuarioAltaFinal;
-            existing.usuarioAlta = usuarioAltaFinal;
-            existing.unidad = unidadResuelta !== 'Sin asignar' ? unidadResuelta : (existing.unidad || 'Sin asignar');
+            if (!existing.fechaPedido && ymdFecha) existing.fechaPedido = ymdFecha;
+            if (!existing.semana || existing.semana === '-') existing.semana = semanaCalculada;
+            if (!existing.descripcion && grp.descripcion) existing.descripcion = grp.descripcion;
+            if ((!existing.unidad || existing.unidad === 'Sin asignar') && unidadResuelta !== 'Sin asignar') {
+              existing.unidad = unidadResuelta;
+            }
             cacheOrderComputedFields(existing);
-            updatedCount++;
+            preservedCount++;
           } else {
+            // NUEVO PEDIDO INCORPORADO
             const newRecord = {
               id: id,
               semana: semanaCalculada,
@@ -2310,11 +1750,11 @@
 
       window.masterPCData = Array.from(existingMap.values());
 
-      diagnostics.push(`Filas para master PC: ${window.rawMasterPCRows.length}`);
-      diagnostics.push(`Filas para master autorizaciones: ${window.rawMasterAutorizRows.length}`);
-      diagnostics.push(`Comprobantes consolidados: ${window.masterPCData.length} (desduplicadas ${totalRawRows - window.masterPCData.length} líneas)`);
-      diagnostics.push(`Nuevas órdenes ingresadas: ${newCount}`);
-      diagnostics.push(`Órdenes actualizadas: ${updatedCount}`);
+      diagnostics.push(`Renglones para master PC: ${window.rawMasterPCRows.length}`);
+      diagnostics.push(`Renglones para master autorizaciones: ${window.rawMasterAutorizRows.length}`);
+      diagnostics.push(`Nuevas órdenes ingresadas al sistema: ${newCount}`);
+      diagnostics.push(`Órdenes ya existentes preservadas con sus datos tratados: ${preservedCount}`);
+      diagnostics.push(`Total comprobantes consolidados: ${window.masterPCData.length}`);
 
       document.getElementById('diagnosticsList').innerHTML = diagnostics.map(d => `<li>• ${d}</li>`).join('');
       document.getElementById('importDiagnostics').classList.remove('hidden');
@@ -2322,37 +1762,57 @@
       detectUnmappedUsersInOrders();
       populateSemanaFilter();
       renderTable();
+      renderCompletedTable();
       updateKPIs();
       renderMetricsDashboard();
-      showToast(`¡Consolidación exitosa! ${window.masterPCData.length} comprobantes únicos.`);
 
-      if (window.googleAppsScriptUrl) syncWithGoogleSheets(true);
+      showToast(`¡Consolidación exitosa! +${newCount} nuevas órdenes.`);
+
+      // Guardar y persistir inmediatamente los nuevos registros y el acumulado en Sheets
+      sendFullSyncToSheets();
     }
 
-    function detectUnmappedUsersInOrders() {
-      const unmapped = new Set();
-      window.masterPCData.forEach(o => {
-        if (!o.unidad || o.unidad === 'Sin asignar' || o.unidad === 'UN') {
-          const userVal = o.nombreUsuarioAlta || o.usuarioAlta;
-          if (userVal) unmapped.add(userVal);
+    async function sendFullSyncToSheets() {
+      const url = sanitizeGasUrl(window.googleAppsScriptUrl || document.getElementById('inputAppsScriptUrl')?.value);
+      if (!url) return;
+
+      const btn = document.getElementById('btnProcessReports');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = `<span>Guardando en Google Sheets...</span>`;
+      }
+
+      try {
+        const payload = {
+          action: 'SYNC_ALL',
+          orders: window.masterPCData,
+          masterPCRows: window.rawMasterPCRows || [],
+          masterAutorizRows: window.rawMasterAutorizRows || [],
+          rates: window.dailyRatesMap,
+          users: window.userUnitMap
+        };
+
+        const response = await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+          body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          setSheetsConnectionStatus(true, "Google Sheets: Conectado");
+          showToast(`✓ Base de datos sincronizada: Registros guardados en Google Sheets.`);
         }
-      });
-
-      const notice = document.getElementById('unmappedUsersNotice');
-      const tags = document.getElementById('unmappedUsersTags');
-      const count = document.getElementById('unmappedUsersCount');
-
-      if (notice && tags && count) {
-        if (unmapped.size > 0) {
-          count.innerText = unmapped.size;
-          tags.innerHTML = Array.from(unmapped).map(u => `
-            <button onclick="fillUserMappingInput('${u}')" class="px-2 py-1 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg font-mono text-[10px] flex items-center space-x-1">
-              <span>+ ${u}</span>
-            </button>
-          `).join('');
-          notice.classList.remove('hidden');
-        } else {
-          notice.classList.add('hidden');
+      } catch (err) {
+        console.warn("Fallo de guardado en Google Sheets:", err);
+        showToast("Aviso: Registros consolidados en la app. Verifique la conexión a Sheets.");
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = `
+            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+            <span>Desduplicar por Nro de PC y Consolidar</span>
+          `;
         }
       }
     }
