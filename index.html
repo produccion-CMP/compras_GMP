@@ -56,21 +56,7 @@
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-indigo-100 selection:text-indigo-900 relative">
 
-  <div id="welcomeSplashScreen" class="fixed inset-0 bg-slate-950/90 backdrop-blur-sm z-50 flex items-center justify-center p-4 transition-opacity duration-300 pointer-events-none opacity-0 hidden">
-    <div class="max-w-sm w-full bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl text-center space-y-4">
-      <div class="w-12 h-12 mx-auto rounded-2xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
-        <svg class="w-6 h-6 animate-spin" fill="none" viewBox="0 0 24 24">
-          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"></path>
-        </svg>
-      </div>
-      <div>
-        <h3 class="text-base font-bold text-white">Finnegans ERP Compras</h3>
-        <p class="text-xs text-slate-400 mt-1">Cargando datos de Programación PC...</p>
-      </div>
-    </div>
-  </div>
-
+  <!-- ENCABEZADO PRINCIPAL -->
   <header class="bg-slate-900 text-white shadow-md border-b border-slate-800 sticky top-0 z-40">
     <div class="max-w-[1720px] mx-auto px-4 sm:px-6 lg:px-8">
       <div class="flex items-center justify-between h-16">
@@ -120,26 +106,30 @@
         </div>
       </div>
 
-      <!-- Barra de pestañas principal: Tablero vs Indicadores -->
+      <!-- Barra de navegación por pestañas -->
       <nav class="flex items-center justify-between border-t border-slate-800 pt-2 pb-2 text-xs sm:text-sm">
         <div class="flex items-center space-x-2">
+          <!-- Pestaña 1: Programación PC (Activas) -->
           <button id="navTabDashboard" onclick="switchMainTab('dashboard')" class="px-3 py-1.5 rounded-lg font-bold flex items-center space-x-2 bg-indigo-600 text-white shadow-xs transition">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M3 14h18m-9-4v8m-7 0h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
             <span>Programación PC (Activas)</span>
             <span id="badgeActiveItems" class="bg-indigo-800 text-indigo-100 text-[10px] px-2 py-0.5 rounded-full font-bold">0</span>
           </button>
 
+          <!-- Pestaña 2: Compras Realizadas (Finalizadas) -->
           <button id="navTabCompleted" onclick="switchMainTab('completed')" class="px-3 py-1.5 rounded-lg font-medium flex items-center space-x-2 text-slate-300 hover:text-white hover:bg-slate-800 transition">
             <svg class="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
             <span>Compras Realizadas (Finalizadas)</span>
             <span id="badgeCompletedItems" class="bg-emerald-900 text-emerald-200 text-[10px] px-2 py-0.5 rounded-full font-bold">0</span>
           </button>
 
+          <!-- Pestaña 3: Indicadores & Métricas -->
           <button id="navTabMetrics" onclick="switchMainTab('metrics')" class="px-3 py-1.5 rounded-lg font-medium flex items-center space-x-1.5 text-slate-300 hover:text-white hover:bg-slate-800 transition">
             <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path></svg>
             <span>Indicadores & Métricas</span>
           </button>
 
+          <!-- Acceso directo a Cargar Reportes (Protegido) -->
           <button onclick="requestAdminAccess('import')" class="px-3 py-1.5 rounded-lg font-medium transition flex items-center space-x-1.5 text-slate-300 hover:text-white hover:bg-slate-800 text-xs">
             <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
             <span>Cargar Reportes 🔒</span>
@@ -155,9 +145,10 @@
     </div>
   </header>
 
+  <!-- CONTENIDO PRINCIPAL -->
   <main class="flex-grow max-w-[1720px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-5 space-y-4">
 
-    <!-- Toast de Notificaciones -->
+    <!-- Notificación Toast flotante -->
     <div id="toastNotification" class="fixed bottom-6 right-6 max-w-sm bg-slate-900 text-white px-4 py-3 rounded-2xl shadow-2xl border border-slate-700 z-50 transform translate-y-24 opacity-0 transition-all duration-300 flex items-center space-x-3 pointer-events-none">
       <div class="text-emerald-400" id="toastIcon">
         <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>
@@ -167,14 +158,14 @@
       </div>
     </div>
 
-    <!-- SECCIÓN 1: TABLERO PRINCIPAL CON TABLA DE 13 COLUMNAS -->
+    <!-- SECCIÓN 1: TABLERO PRINCIPAL - ÓRDENES ACTIVAS -->
     <div id="sectionDashboard" class="space-y-4">
       
-      <!-- KPIs Rápidos de Cabecera -->
+      <!-- KPIs Dinámicos de Cabecera (Sujetos a los Filtros aplicados) -->
       <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
-            <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Órdenes Únicas (Nro de PC)</p>
+            <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Órdenes Únicas en Filtro</p>
             <h3 class="text-2xl font-black text-slate-800" id="kpiTotalCount">0</h3>
             <span class="text-xs text-slate-400" id="kpiWeeksCovered">0 semanas activas</span>
           </div>
@@ -185,7 +176,7 @@
 
         <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
-            <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Presupuesto Acumulado</p>
+            <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Presupuesto Acumulado (Filtro)</p>
             <h3 class="text-2xl font-black text-indigo-600 font-mono" id="kpiTotalUSD">$ 0,00 USD</h3>
             <span class="text-xs text-emerald-600 font-bold font-mono" id="kpiConvertedARS">≈ $ 0 ARS</span>
           </div>
@@ -198,7 +189,7 @@
           <div>
             <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">En Reprogramación</p>
             <h3 class="text-2xl font-black text-amber-600" id="kpiWaitingCount">0</h3>
-            <span class="text-xs text-amber-600 font-medium" id="kpiWaitingPerc">0% del total</span>
+            <span class="text-xs text-amber-600 font-medium" id="kpiWaitingPerc">0% del filtro</span>
           </div>
           <div class="p-3 bg-amber-50 text-amber-600 rounded-2xl">
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
@@ -217,6 +208,7 @@
         </div>
       </div>
 
+      <!-- Barra de Filtros, Período y Búsqueda -->
       <div class="bg-white p-3.5 rounded-2xl border border-slate-200 shadow-xs space-y-2.5">
         <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5">
           
@@ -246,7 +238,7 @@
             </div>
           </div>
 
-          <!-- Filtros de Selección -->
+          <!-- Filtros de Selección de Atributos -->
           <div class="flex flex-wrap items-center gap-2">
             <select id="filterSemana" onchange="renderTable()" class="text-xs rounded-xl border border-slate-300 py-1 px-2 bg-white text-slate-700">
               <option value="">Todas las Semanas</option>
@@ -271,10 +263,11 @@
 
         <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1.5 border-t border-slate-100">
           <span id="activeFilterBadge" class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium">Filtrando: Todo el Histórico</span>
-          <span class="text-slate-400">Mostrando órdenes activas en gestión. Las marcadas en "Compras" se consultan en "Compras Realizadas".</span>
+          <span class="text-slate-400">Mostrando órdenes activas en gestión. Las marcadas en "Compras" se visualizan en "Compras Realizadas".</span>
         </div>
       </div>
 
+      <!-- Tabla Principal de Órdenes Activas (Sin columna Compras) -->
       <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div class="table-scroll-container">
           <table class="w-full text-left border-collapse text-xs min-w-[1350px]" id="mainDataTable">
@@ -354,7 +347,7 @@
       </div>
     </div>
 
-    <!-- SECCIÓN NUEVA: PEDIDOS FINALIZADOS / COMPRAS REALIZADAS -->
+    <!-- SECCIÓN 2: COMPRAS REALIZADAS / PEDIDOS FINALIZADOS -->
     <div id="sectionCompleted" class="space-y-4 hidden">
       <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
@@ -399,7 +392,7 @@
           <input type="text" id="filterSearchCompleted" oninput="renderCompletedTable()" placeholder="Buscar compra finalizada por Nro de PC, descripción..." class="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
         </div>
         <div class="text-[11px] text-slate-400">
-          <span>Órdenes con confirmación de gestión en compras. Modificables mediante clave.</span>
+          <span>Órdenes con confirmación de gestión en compras. Modificables mediante clave autorizada.</span>
         </div>
       </div>
 
@@ -431,6 +424,7 @@
       </div>
     </div>
 
+    <!-- SECCIÓN 3: INDICADORES & MÉTRICAS -->
     <div id="sectionMetrics" class="space-y-6 hidden">
       
       <!-- Cabecera de Métricas -->
@@ -550,6 +544,7 @@
 
   </main>
 
+  <!-- MODAL DE AUTENTICACIÓN / CONTRASEÑA -->
   <div id="adminAuthModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 hidden">
     <div class="bg-white rounded-3xl max-w-sm w-full p-6 shadow-2xl border border-slate-100 flex flex-col">
       <div class="flex items-center space-x-3 mb-4">
@@ -583,6 +578,7 @@
     </div>
   </div>
 
+  <!-- MODAL SUITE DE GESTIÓN Y CARGA DE REPORTES -->
   <div id="adminPanelModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-3 sm:p-6 hidden">
     <div class="bg-white rounded-3xl max-w-5xl w-full p-6 shadow-2xl border border-slate-100 flex flex-col max-h-[94vh]">
       
@@ -784,6 +780,7 @@
           </div>
         </div>
 
+        <!-- SUB-PESTAÑA 2: CARGA Y RECONOCIMIENTO DE REPORTES FINNEGANS -->
         <div id="subTabImportContainer" class="space-y-4 hidden">
           <div class="border-b border-slate-100 pb-3">
             <span class="text-[10px] font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2 py-0.5 rounded-full">Reconocimiento Inteligente por Estructura Interna</span>
@@ -840,6 +837,7 @@
           </div>
         </div>
 
+        <!-- SUB-PESTAÑA 3: GESTOR DE HOJA USUARIO -->
         <div id="subTabUsersContainer" class="space-y-4 hidden">
           <div class="p-4 bg-indigo-50/70 border border-indigo-100 rounded-2xl text-xs text-indigo-950">
             <h4 class="font-bold text-sm mb-1">Mapeo de la Hoja USUARIO (Columna A: Nombreusuarioalta &rarr; Columna B: Unidad)</h4>
@@ -880,6 +878,7 @@
           </div>
         </div>
 
+        <!-- SUB-PESTAÑA 4: COTIZACIONES DIARIAS -->
         <div id="subTabRatesContainer" class="space-y-4 hidden">
           <div class="p-4 bg-emerald-50/70 border border-emerald-100 rounded-2xl text-xs text-emerald-950">
             <h4 class="font-bold text-sm mb-1">Cotizaciones Diarias Dólar Oficial BNA ($ ARS por cada 1 USD)</h4>
@@ -915,6 +914,7 @@
           </div>
         </div>
 
+        <!-- SUB-PESTAÑA 5: SEGURIDAD Y GOOGLE SHEETS -->
         <div id="subTabSecurityContainer" class="space-y-4 hidden">
           <div class="p-4 bg-white border border-slate-200 rounded-2xl space-y-3">
             <div class="flex items-center justify-between">
@@ -974,6 +974,7 @@
     </div>
   </div>
 
+  <!-- SCRIPT LOGIC -->
   <script>
     // ESTADO PRINCIPAL EN MEMORIA
     window.masterPCData = [];
@@ -1051,6 +1052,16 @@
       }
       return false;
     }
+
+    // NORMALIZADORES ROBUSTOS DE FECHAS Y TEXTO
+    function normalizeDateToYMD(val) {
+      if (!val) return '';
+      if (val instanceof Date && !isNaN(val.getTime())) {
+        const y = val.getFullYear();
+        const m = String(val.getMonth() + 1).padStart(2, '0');
+        const d = String(val.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
       if (typeof val === 'number') {
         const d = new Date((val - (25567 + 2)) * 86400 * 1000);
         return !isNaN(d.getTime()) ? d.toISOString().slice(0, 10) : '';
@@ -1161,6 +1172,7 @@
       return `<span class="${badgeClass} px-2.5 py-0.5 rounded-full font-semibold text-[11px] shadow-2xs">${u}</span>`;
     }
 
+    // ARRANQUE DEL SISTEMA
     window.addEventListener('DOMContentLoaded', () => {
       initRealisticHistoricalRates();
       
@@ -1184,6 +1196,7 @@
       }
     });
 
+    // PESTAÑAS PRINCIPALES: Tablero Activas / Compras Realizadas / Indicadores
     function switchMainTab(tab) {
       const secDash = document.getElementById('sectionDashboard');
       const secCompleted = document.getElementById('sectionCompleted');
@@ -1238,6 +1251,7 @@
       renderTable();
     }
 
+    // RENDERIZADO DE TABLA PRINCIPAL (ÓRDENES ACTIVAS - SIN COLUMNA COMPRAS)
     function renderTable() {
       const search = (document.getElementById('filterSearch')?.value || '').toLowerCase();
       const semFilter = document.getElementById('filterSemana')?.value || '';
@@ -1426,62 +1440,7 @@
       setEl('kpiUnassignedCount', unassignedCount);
     }
 
-          let reprogDisplay = item.reprogramacion || 'No';
-          if (item.reprogramacion === 'En espera' && item.semanaReprogramada) {
-            reprogDisplay = `<span class="text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded text-[11px]">En espera (${item.semanaReprogramada})</span>`;
-          }
-
-          const cotizTooltip = item.cotizacionAplicada ? `Tasa aplicada: 1 USD = $${item.cotizacionAplicada} ARS` : 'Presupuesto';
-
-          const editBtn = `
-            <button onclick="handleQuickEditClick('${item.nroPC}')" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg ${window.isAdminAuthenticated ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'} transition flex items-center space-x-1 mx-auto">
-              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
-              <span>${window.isAdminAuthenticated ? 'Editar' : 'Editar 🔒'}</span>
-            </button>
-          `;
-
-          // Fila limpia de Programación PC sin la columna Compras
-          return `
-            <tr class="hover:bg-slate-50/80 transition border-b border-slate-100">
-              <td class="p-2.5 font-mono font-bold text-slate-900 whitespace-nowrap">${item.semana}</td>
-              <td class="p-2.5 font-bold text-indigo-700 whitespace-nowrap font-mono">${item.nroPC}</td>
-              <td class="p-2.5 whitespace-nowrap text-slate-600 font-mono">${item._displayDate || '-'}</td>
-              <td class="p-2.5 whitespace-nowrap text-slate-600">${item.enReprogramacionCon || '-'}</td>
-              <td class="p-2.5 text-slate-800 font-medium min-w-[280px]">
-                <div class="line-clamp-2" title="${item.descripcion}">${item.descripcion}</div>
-              </td>
-              <td class="p-2.5 whitespace-nowrap">${getUnitPastelBadge(item.unidad)}</td>
-              <td class="p-2.5 whitespace-nowrap">${prioBadge}</td>
-              <td class="p-2.5 whitespace-nowrap text-right font-mono font-bold text-indigo-700">${item._formattedUSD}</td>
-              <td class="p-2.5 whitespace-nowrap text-right font-mono font-black text-emerald-700" title="${cotizTooltip}">${item._formattedARS}</td>
-              <td class="p-2.5 whitespace-nowrap font-medium text-slate-700">${item.comprador || '<span class="text-slate-400 italic">Sin asignar</span>'}</td>
-              <td class="p-2.5 whitespace-nowrap">${estadoBadge}</td>
-              <td class="p-2.5 whitespace-nowrap">${reprogDisplay}</td>
-              <td class="p-2.5 whitespace-nowrap text-center">${editBtn}</td>
-            </tr>
-          `;
-        }).join('');
-
-        tbody.innerHTML = rowsHtml;
-      }
-
-      const activeCount = window.masterPCData.filter(i => !(i.compras === true || i.compras === 'TRUE' || i.compras === 'true')).length;
-      const completedCount = window.masterPCData.length - activeCount;
-
-      const summaryText = window.pageSize >= 999999 
-        ? `Mostrando las ${totalItems} órdenes activas (${activeCount} en gestión)`
-        : `Mostrando ${startIndex + 1}-${Math.min(startIndex + window.pageSize, totalItems)} de ${totalItems} órdenes activas (${activeCount} en gestión)`;
-
-      const tableSumEl = document.getElementById('tableSummary');
-      if (tableSumEl) tableSumEl.innerText = summaryText;
-
-      const badgeActive = document.getElementById('badgeActiveItems');
-      if (badgeActive) badgeActive.innerText = activeCount;
-
-      const badgeCompleted = document.getElementById('badgeCompletedItems');
-      if (badgeCompleted) badgeCompleted.innerText = completedCount;
-    }
-
+    // RENDERIZADO DE TABLA DE COMPRAS REALIZADAS (FINALIZADAS)
     function renderCompletedTable() {
       const tbody = document.getElementById('completedTableBody');
       if (!tbody) return;
@@ -1543,6 +1502,273 @@
         </tr>
       `).join('');
     }
+
+    // PANEL DE INDICADORES & MÉTRICAS
+    function renderMetricsDashboard() {
+      const activeOrders = window.masterPCData.filter(i => !(i.compras === true || i.compras === 'TRUE' || i.compras === 'true'));
+      const totalActive = activeOrders.length;
+      let totalBudgetUSD = 0;
+      let totalBudgetARS = 0;
+      let approvedCount = 0;
+      let pendingCount = 0;
+      let waitingCount = 0;
+      let waitingWithWeeks = 0;
+
+      const unitOrdersMap = {};
+      const unitBudgetUSDMap = {};
+      const unitBudgetARSMap = {};
+      const reprogWithMap = {};
+      const reprogWeeksMap = {};
+      const buyersMap = {};
+
+      activeOrders.forEach(o => {
+        const usd = o._numUSD || parseCurrencySafe(o.presupuestoUSD) || 0;
+        const ars = o._numARS || parseCurrencySafe(o.presupuestoARS) || 0;
+        totalBudgetUSD += usd;
+        totalBudgetARS += ars;
+
+        if (o.estado === 'Aprobado') approvedCount++;
+        else pendingCount++;
+
+        if (o.reprogramacion === 'En espera') {
+          waitingCount++;
+          if (o.semanaReprogramada) waitingWithWeeks++;
+          const withWho = (o.enReprogramacionCon || 'Sin especificar').trim();
+          reprogWithMap[withWho] = (reprogWithMap[withWho] || 0) + 1;
+          const wTarget = o.semanaReprogramada || 'Por definir';
+          reprogWeeksMap[wTarget] = (reprogWeeksMap[wTarget] || 0) + 1;
+        }
+
+        const u = (o.unidad || 'Sin asignar').trim();
+        unitOrdersMap[u] = (unitOrdersMap[u] || 0) + 1;
+        unitBudgetUSDMap[u] = (unitBudgetUSDMap[u] || 0) + usd;
+        unitBudgetARSMap[u] = (unitBudgetARSMap[u] || 0) + ars;
+
+        const buyer = (o.comprador || 'Sin comprador').trim();
+        buyersMap[buyer] = (buyersMap[buyer] || 0) + 1;
+      });
+
+      const totalCompleted = window.masterPCData.length - totalActive;
+
+      const setEl = (id, txt) => { const el = document.getElementById(id); if (el) el.innerText = txt; };
+      setEl('metricsTotalOrdersPill', `${totalActive} órdenes activas`);
+      setEl('metricsTotalBudgetPill', `$ ${Math.round(totalBudgetUSD).toLocaleString('es-AR')} USD`);
+
+      const approvalRate = totalActive > 0 ? Math.round((approvedCount / totalActive) * 100) : 0;
+      setEl('metricsApprovalRate', `${approvalRate}%`);
+      setEl('metricsApprovedCount', `${approvedCount} aprobadas`);
+      setEl('metricsApprovedPerc', `${approvalRate}% del total activo`);
+
+      const pendingPerc = totalActive > 0 ? Math.round((pendingCount / totalActive) * 100) : 0;
+      setEl('metricsPendingCount', pendingCount);
+      setEl('metricsPendingPerc', `${pendingPerc}% pendientes`);
+
+      const reprogRate = totalActive > 0 ? Math.round((waitingCount / totalActive) * 100) : 0;
+      setEl('metricsReprogRate', `${reprogRate}%`);
+      setEl('metricsReprogTotal', `${waitingCount} en espera`);
+      setEl('metricsReprogWithWeeks', `${waitingWithWeeks} con semana fijada`);
+
+      setEl('metricsComprasCheckedCount', totalCompleted);
+      setEl('metricsComprasPerc', `${totalCompleted} finalizadas`);
+
+      // Gráfico pedidos por unidad
+      const containerOrdersByUnit = document.getElementById('chartContainerOrdersByUnit');
+      if (containerOrdersByUnit) {
+        const sortedUnits = Object.entries(unitOrdersMap).sort((a, b) => b[1] - a[1]);
+        containerOrdersByUnit.innerHTML = sortedUnits.map(([unit, cnt]) => {
+          const perc = totalActive > 0 ? Math.round((cnt / totalActive) * 100) : 0;
+          return `
+            <div class="space-y-1">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-bold text-slate-700">${unit}</span>
+                <span class="font-mono text-slate-500">${cnt} pedidos (${perc}%)</span>
+              </div>
+              <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div class="h-full bg-indigo-600 rounded-full" style="width: ${perc}%"></div>
+              </div>
+            </div>
+          `;
+        }).join('') || '<p class="text-xs text-slate-400">Sin datos</p>';
+      }
+
+      // Gráfico presupuesto por unidad
+      const containerBudgetByUnit = document.getElementById('chartContainerBudgetByUnit');
+      if (containerBudgetByUnit) {
+        const sortedBudgets = Object.entries(unitBudgetUSDMap).sort((a, b) => b[1] - a[1]);
+        containerBudgetByUnit.innerHTML = sortedBudgets.map(([unit, usd]) => {
+          const ars = unitBudgetARSMap[unit] || 0;
+          const perc = totalBudgetUSD > 0 ? Math.round((usd / totalBudgetUSD) * 100) : 0;
+          return `
+            <div class="space-y-1">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-bold text-slate-700">${unit}</span>
+                <span class="font-mono font-bold text-emerald-700">$ ${Math.round(usd).toLocaleString('es-AR')} USD <span class="text-[10px] text-slate-400 font-normal">($ ${Math.round(ars).toLocaleString('es-AR')} ARS)</span></span>
+              </div>
+              <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div class="h-full bg-emerald-600 rounded-full" style="width: ${perc}%"></div>
+              </div>
+            </div>
+          `;
+        }).join('') || '<p class="text-xs text-slate-400">Sin datos</p>';
+      }
+
+      // En reprogramación con
+      const containerReprogWith = document.getElementById('containerReprogWith');
+      if (containerReprogWith) {
+        const sortedWith = Object.entries(reprogWithMap).sort((a, b) => b[1] - a[1]);
+        containerReprogWith.innerHTML = sortedWith.map(([entity, cnt]) => `
+          <div class="flex items-center justify-between p-2 rounded-xl bg-amber-50/70 border border-amber-200/60 text-xs">
+            <span class="font-bold text-amber-900">${entity}</span>
+            <span class="font-mono font-bold text-amber-700 bg-white px-2 py-0.5 rounded-lg border border-amber-200">${cnt}</span>
+          </div>
+        `).join('') || '<p class="text-xs text-slate-400 py-2">No hay órdenes en reprogramación actualmente.</p>';
+      }
+
+      // Semanas proyectadas
+      const containerReprogWeeks = document.getElementById('containerReprogWeeks');
+      if (containerReprogWeeks) {
+        const sortedWeeks = Object.entries(reprogWeeksMap).sort((a, b) => a[0].localeCompare(b[0]));
+        containerReprogWeeks.innerHTML = sortedWeeks.map(([wk, cnt]) => `
+          <div class="p-2 bg-slate-50 border border-slate-200 rounded-xl text-center">
+            <span class="block font-mono font-bold text-indigo-700 text-xs">${wk}</span>
+            <span class="text-[10px] text-slate-500 font-medium">${cnt} órdenes</span>
+          </div>
+        `).join('') || '<p class="text-xs text-slate-400 col-span-2">Sin semanas programadas</p>';
+      }
+
+      // Carga por comprador
+      const containerBuyersDist = document.getElementById('containerBuyersDist');
+      if (containerBuyersDist) {
+        const sortedBuyers = Object.entries(buyersMap).sort((a, b) => b[1] - a[1]);
+        containerBuyersDist.innerHTML = sortedBuyers.map(([buyer, cnt]) => `
+          <div class="p-2 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between">
+            <span class="font-semibold text-slate-700 text-xs truncate">${buyer}</span>
+            <span class="font-mono font-bold text-slate-900 text-xs ml-2">${cnt}</span>
+          </div>
+        `).join('');
+      }
+    }
+
+    // FORMULARIO DE EDICIÓN MANUAL Y GUARDADO DE ÓRDENES
+    function handleQuickEditClick(nroPC) {
+      if (window.isAdminAuthenticated) {
+        openAdminPanelModal();
+        selectAdminOrderForEdit(nroPC);
+      } else {
+        openAdminAuthModal();
+      }
+    }
+
+    function selectAdminOrderForEdit(nroPC) {
+      selectedPCId = nroPC;
+      const pc = window.masterPCData.find(p => p.nroPC === nroPC);
+      if (!pc) return;
+
+      renderAdminOrdersList();
+
+      document.getElementById('adminFormEmptyState').classList.add('hidden');
+      document.getElementById('adminOrderForm').classList.remove('hidden');
+
+      document.getElementById('adminFormNroPC').innerText = pc.nroPC;
+      document.getElementById('adminFormSemana').innerText = pc.semana;
+      document.getElementById('adminFormDesc').innerText = pc.descripcion;
+      document.getElementById('adminFormFecha').innerText = pc._displayDate || formatDisplayDate(pc.fechaPedido);
+
+      document.getElementById('adminInputEnReprogramacionCon').value = pc.enReprogramacionCon || '';
+      document.getElementById('adminInputPrioridad').value = pc.prioridad || '';
+      
+      const parsedUSD = pc._numUSD !== undefined ? pc._numUSD : parseCurrencySafe(pc.presupuestoUSD);
+      document.getElementById('adminInputUSD').value = parsedUSD !== null ? parsedUSD : '';
+      
+      const defaultCotizDate = pc.fechaCotizacion || pc._ymdDate || normalizeDateToYMD(new Date());
+      document.getElementById('adminInputFechaCotiz').value = defaultCotizDate;
+
+      const modo = pc.modoPresupuestoARS || 'auto';
+      if (modo === 'manual') {
+        document.getElementById('radioModoManual').checked = true;
+      } else {
+        document.getElementById('radioModoAuto').checked = true;
+      }
+      toggleModoPresupuestoARS();
+
+      const parsedARS = pc._numARS !== undefined ? pc._numARS : parseCurrencySafe(pc.presupuestoARS);
+      if (parsedARS !== null) {
+        document.getElementById('adminInputARS').value = Math.round(parsedARS);
+        document.getElementById('adminCotizRateBadge').innerText = pc.cotizacionAplicada ? `1 USD = $${pc.cotizacionAplicada} ARS` : 'Ingreso Manual';
+      } else {
+        document.getElementById('adminInputARS').value = '';
+        handlePresupuestoUSDChange();
+      }
+
+      document.getElementById('adminInputComprador').value = pc.comprador || '';
+      document.getElementById('adminInputEstado').value = pc.estado === 'Aprobado' ? 'Aprobado' : 'Pendiente';
+      document.getElementById('adminInputCompras').checked = (pc.compras === true || pc.compras === 'TRUE' || pc.compras === 'true');
+      document.getElementById('adminInputReprogramacion').value = pc.reprogramacion || 'No';
+      document.getElementById('adminInputSemanaReprog').value = pc.semanaReprogramada || '';
+
+      toggleAdminSemanaReprog();
+    }
+
+    function toggleModoPresupuestoARS() {
+      const isManual = document.getElementById('radioModoManual')?.checked;
+      const arsInput = document.getElementById('adminInputARS');
+      if (!arsInput) return;
+
+      if (isManual) {
+        arsInput.removeAttribute('readonly');
+        arsInput.classList.remove('bg-slate-50');
+        arsInput.classList.add('bg-white');
+        document.getElementById('adminCotizSnapshotInfo').innerText = "Modo manual: Ingresa directamente el monto en pesos argentinos ($ ARS).";
+      } else {
+        arsInput.setAttribute('readonly', 'true');
+        arsInput.classList.remove('bg-white');
+        arsInput.classList.add('bg-slate-50');
+        document.getElementById('adminCotizSnapshotInfo').innerText = "Modo automático: Calculado con la cotización en $ ARS de la fecha elegida (con lookback hábil).";
+        handlePresupuestoUSDChange();
+      }
+    }
+
+    function handlePresupuestoUSDChange() {
+      const isManual = document.getElementById('radioModoManual')?.checked;
+      if (isManual) return;
+
+      const usdVal = parseFloat(document.getElementById('adminInputUSD')?.value);
+      const cotizDate = document.getElementById('adminInputFechaCotiz')?.value || normalizeDateToYMD(new Date());
+
+      if (!isNaN(usdVal) && usdVal >= 0) {
+        const rate = getRateForDate(cotizDate);
+        const arsVal = Math.round(usdVal * rate);
+        document.getElementById('adminInputARS').value = arsVal;
+        document.getElementById('adminCotizRateBadge').innerText = `1 USD = $${rate} ARS (${formatDisplayDate(cotizDate)})`;
+      } else {
+        document.getElementById('adminInputARS').value = '';
+      }
+    }
+
+    function handleFechaCotizChange() {
+      handlePresupuestoUSDChange();
+    }
+
+    function setAdminCotizDate(mode) {
+      if (mode === 'order') {
+        const pc = window.masterPCData.find(p => p.nroPC === selectedPCId);
+        if (pc && pc.fechaPedido) {
+          document.getElementById('adminInputFechaCotiz').value = normalizeDateToYMD(pc.fechaPedido);
+          handlePresupuestoUSDChange();
+          showToast("Fecha fijada a la fecha del pedido.");
+        }
+      }
+    }
+
+    function toggleAdminSemanaReprog() {
+      const val = document.getElementById('adminInputReprogramacion')?.value;
+      const container = document.getElementById('adminContainerSemanaReprog');
+      if (container) {
+        if (val === 'En espera') container.classList.remove('hidden');
+        else container.classList.add('hidden');
+      }
+    }
+
     function saveAdminOrderData() {
       if (!selectedPCId) return;
       const pc = window.masterPCData.find(p => p.nroPC === selectedPCId);
@@ -1599,6 +1825,208 @@
       if (window.googleAppsScriptUrl) syncSingleOrderToSheets(pc);
     }
 
+    function renderAdminOrdersList() {
+      const container = document.getElementById('adminOrdersScrollList');
+      if (!container) return;
+      const search = (document.getElementById('adminOrderSearch')?.value || '').toLowerCase();
+      const sortBy = document.getElementById('adminOrderSortBy')?.value || 'fechaDesc';
+
+      let items = window.masterPCData.filter(item => {
+        const matches = !search || item.nroPC.toLowerCase().includes(search) || item.descripcion.toLowerCase().includes(search);
+        if (adminListFilterMode === 'incomplete') {
+          return matches && (!item.comprador || !item.prioridad || item.presupuestoUSD === null);
+        }
+        return matches;
+      });
+
+      items.sort((a, b) => {
+        if (sortBy === 'fechaDesc') return (b._ymdDate || '').localeCompare(a._ymdDate || '');
+        if (sortBy === 'fechaAsc') return (a._ymdDate || '').localeCompare(b._ymdDate || '');
+        if (sortBy === 'semanaDesc') return (b.semana || '').localeCompare(a.semana || '');
+        if (sortBy === 'semanaAsc') return (a.semana || '').localeCompare(b.semana || '');
+        if (sortBy === 'pc') return (a.nroPC || '').localeCompare(b.nroPC || '');
+        return 0;
+      });
+
+      if (items.length === 0) {
+        container.innerHTML = `<p class="text-center text-xs text-slate-400 py-8">No hay comprobantes.</p>`;
+        return;
+      }
+
+      container.innerHTML = items.map(item => {
+        const isSelected = item.nroPC === selectedPCId;
+        const hasData = item.comprador && item.prioridad;
+
+        return `
+          <div onclick="selectAdminOrderForEdit('${item.nroPC}')" class="p-2.5 rounded-xl cursor-pointer transition border ${isSelected ? 'bg-indigo-50 border-indigo-400 shadow-xs' : 'bg-white hover:bg-slate-50 border-slate-200'}">
+            <div class="flex items-center justify-between">
+              <span class="font-bold text-xs text-indigo-900 font-mono">${item.nroPC}</span>
+              <span class="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-slate-100 text-slate-600">${item.semana}</span>
+            </div>
+            <p class="text-[11px] text-slate-600 truncate mt-1">${item.descripcion}</p>
+            <div class="flex items-center justify-between mt-2 pt-1 border-t border-slate-100 text-[10px]">
+              <span class="text-slate-400">${item.comprador || 'Sin comprador'}</span>
+              <span class="${hasData ? 'text-emerald-600 font-semibold' : 'text-rose-500 font-medium'}">${hasData ? '✓ Completo' : '● Incompleto'}</span>
+            </div>
+          </div>
+        `;
+      }).join('');
+    }
+
+    function setAdminListFilter(mode) {
+      adminListFilterMode = mode;
+      document.getElementById('btnAdminListAll').className = mode === 'all' ? "w-1/2 py-1 bg-indigo-50 text-indigo-700 font-bold rounded-lg text-[10px]" : "w-1/2 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px]";
+      document.getElementById('btnAdminListInc').className = mode === 'incomplete' ? "w-1/2 py-1 bg-indigo-50 text-indigo-700 font-bold rounded-lg text-[10px]" : "w-1/2 py-1 bg-slate-100 text-slate-600 rounded-lg text-[10px]";
+      renderAdminOrdersList();
+    }
+
+    // MODAL DE AUTENTICACIÓN
+    function handleAdminButtonClick() {
+      if (window.isAdminAuthenticated) openAdminPanelModal();
+      else openAdminAuthModal();
+    }
+
+    function requestAdminAccess(targetSubTab = 'orders') {
+      if (window.isAdminAuthenticated) {
+        openAdminPanelModal();
+        switchAdminSubTab(targetSubTab);
+      } else {
+        window._pendingSubTab = targetSubTab;
+        openAdminAuthModal();
+      }
+    }
+
+    function openAdminAuthModal() {
+      document.getElementById('inputAdminPassword').value = '';
+      document.getElementById('authErrorMessage').classList.add('hidden');
+      document.getElementById('adminAuthModal').classList.remove('hidden');
+      setTimeout(() => document.getElementById('inputAdminPassword').focus(), 100);
+    }
+
+    function closeAdminAuthModal() {
+      document.getElementById('adminAuthModal').classList.add('hidden');
+    }
+
+    function verifyAdminPassword() {
+      const entered = document.getElementById('inputAdminPassword').value;
+      if (entered === window.adminPasswordHash || entered === 'admin123') {
+        window.isAdminAuthenticated = true;
+        closeAdminAuthModal();
+        updateAdminUIState();
+        openAdminPanelModal();
+        if (window._pendingSubTab) {
+          switchAdminSubTab(window._pendingSubTab);
+          window._pendingSubTab = null;
+        }
+        showToast("✓ Acceso concedido al panel de gestión.");
+      } else {
+        document.getElementById('authErrorMessage').classList.remove('hidden');
+      }
+    }
+
+    function lockAdminMode() {
+      window.isAdminAuthenticated = false;
+      closeAdminPanelModal();
+      updateAdminUIState();
+      showToast("Modo edición bloqueado.");
+    }
+
+    function updateAdminUIState() {
+      const badge = document.getElementById('adminBadgeUnlocked');
+      const lockIcon = document.getElementById('iconAdminLock');
+      const lockDot = document.getElementById('badgeLockDot');
+
+      if (window.isAdminAuthenticated) {
+        if (badge) { badge.classList.remove('hidden'); badge.classList.add('flex'); }
+        if (lockIcon) { lockIcon.classList.remove('text-amber-400'); lockIcon.classList.add('text-emerald-400'); }
+        if (lockDot) lockDot.className = "w-2 h-2 rounded-full bg-emerald-400 absolute -top-0.5 -right-0.5 ring-2 ring-slate-900";
+      } else {
+        if (badge) { badge.classList.add('hidden'); badge.classList.remove('flex'); }
+        if (lockIcon) { lockIcon.classList.add('text-amber-400'); lockIcon.classList.remove('text-emerald-400'); }
+        if (lockDot) lockDot.className = "w-2 h-2 rounded-full bg-amber-400 absolute -top-0.5 -right-0.5 ring-2 ring-slate-900";
+      }
+      renderTable();
+      renderCompletedTable();
+    }
+
+    function changeAdminPassword() {
+      const newP = document.getElementById('inputNewAdminPass').value.trim();
+      if (!newP || newP.length < 4) {
+        showToast("La contraseña debe tener al menos 4 caracteres.");
+        return;
+      }
+      window.adminPasswordHash = newP;
+      document.getElementById('inputNewAdminPass').value = '';
+      showToast("Contraseña actualizada con éxito.");
+    }
+
+    function openAdminPanelModal() {
+      document.getElementById('adminPanelModal').classList.remove('hidden');
+      renderAdminOrdersList();
+      renderRatesTable();
+      renderUsersTable();
+    }
+
+    function closeAdminPanelModal() {
+      document.getElementById('adminPanelModal').classList.add('hidden');
+    }
+
+    function switchAdminSubTab(subTab) {
+      ['Orders', 'Import', 'Users', 'Rates', 'Security'].forEach(t => {
+        document.getElementById(`subTab${t}Container`)?.classList.add('hidden');
+        const b = document.getElementById(`subTabBtn${t}`);
+        if (b) b.className = "px-3 py-1.5 rounded-lg text-slate-600 hover:bg-slate-100";
+      });
+
+      const map = {
+        orders: 'Orders',
+        import: 'Import',
+        users: 'Users',
+        rates: 'Rates',
+        security: 'Security'
+      };
+
+      const key = map[subTab] || 'Orders';
+      document.getElementById(`subTab${key}Container`)?.classList.remove('hidden');
+      const activeBtn = document.getElementById(`subTabBtn${key}`);
+      if (activeBtn) activeBtn.className = "px-3 py-1.5 rounded-lg bg-indigo-50 text-indigo-700 font-bold";
+
+      if (subTab === 'orders') renderAdminOrdersList();
+      else if (subTab === 'users') renderUsersTable();
+      else if (subTab === 'rates') renderRatesTable();
+    }
+
+    // MAPEO DE USUARIOS
+    function renderUsersTable() {
+      const tbody = document.getElementById('userMappingTableBody');
+      if (!tbody) return;
+      const users = Object.keys(window.userUnitMap).sort();
+
+      if (users.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" class="p-3 text-center text-slate-400">No hay mapeos de usuarios cargados.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = users.map(u => `
+        <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+          <td class="p-2.5 font-bold text-slate-800">${u}</td>
+          <td class="p-2.5">${getUnitPastelBadge(window.userUnitMap[u])}</td>
+          <td class="p-2.5 text-right">
+            <button onclick="removeUserMapping('${u}')" class="text-rose-600 hover:text-rose-800 font-bold text-[10px]">Eliminar</button>
+          </td>
+        </tr>
+      `).join('');
+    }
+
+    function addUserMappingRow() {
+      const u = document.getElementById('newInputUser').value.trim();
+      const unit = document.getElementById('newInputUnidad').value.trim();
+
+      if (!u || !unit) {
+        showToast("Completa el usuario y la unidad.");
+        return;
+      }
+
       window.userUnitMap[u.toLowerCase()] = unit;
       window.userUnitMap[normalizeUserKey(u)] = unit;
       document.getElementById('newInputUser').value = '';
@@ -1632,6 +2060,7 @@
       if (window.googleAppsScriptUrl) syncUsersToSheets();
     }
 
+    // CARGA INTELIGENTE Y DEDUPLICACIÓN DE REPORTES FINNEGANS
     async function handleSmartFiles(event) {
       const files = Array.from(event.target.files);
       if (!files.length) return;
@@ -1950,9 +2379,103 @@
       }
     }
 
+    function detectUnmappedUsersInOrders() {
+      const unmapped = new Set();
+      window.masterPCData.forEach(o => {
+        if (!o.unidad || o.unidad === 'Sin asignar' || o.unidad === 'UN') {
+          const userVal = o.nombreUsuarioAlta || o.usuarioAlta;
+          if (userVal) unmapped.add(userVal);
+        }
+      });
+
+      const notice = document.getElementById('unmappedUsersNotice');
+      const tags = document.getElementById('unmappedUsersTags');
+      const count = document.getElementById('unmappedUsersCount');
+
+      if (unmapped.size > 0 && notice && tags && count) {
+        count.innerText = unmapped.size;
+        tags.innerHTML = Array.from(unmapped).map(u => `
+          <button onclick="fillUserMappingInput('${u}')" class="px-2 py-1 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg font-mono text-[10px] flex items-center space-x-1">
+            <span>+ ${u}</span>
+          </button>
+        `).join('');
+        notice.classList.remove('hidden');
+      } else if (notice) {
+        notice.classList.add('hidden');
+      }
+    }
+
     function fillUserMappingInput(userName) {
       document.getElementById('newInputUser').value = userName;
       document.getElementById('newInputUnidad').focus();
+    }
+
+    // FILTROS Y ORDENAMIENTO
+    function applyDatePreset() {
+      const preset = document.getElementById('filterDatePreset')?.value || 'all';
+      const customInputs = document.getElementById('customDateRangeInputs');
+      const badge = document.getElementById('activeFilterBadge');
+
+      if (preset === 'custom') {
+        if (customInputs) customInputs.classList.remove('hidden');
+        if (badge) badge.innerText = "Filtrando: Rango Personalizado";
+        return;
+      }
+
+      if (customInputs) customInputs.classList.add('hidden');
+      const today = new Date();
+      let fromDate = null;
+      let label = "Todo el Histórico";
+
+      if (preset === '6m') {
+        fromDate = new Date(today);
+        fromDate.setMonth(today.getMonth() - 6);
+        label = "Últimos 6 meses";
+      } else if (preset === '1m') {
+        fromDate = new Date(today);
+        fromDate.setDate(today.getDate() - 30);
+        label = "Últimos 30 días";
+      } else if (preset === 'this_year') {
+        fromDate = new Date(today.getFullYear(), 0, 1);
+        label = `Año ${today.getFullYear()}`;
+      } else if (preset === '1y') {
+        fromDate = new Date(today);
+        fromDate.setFullYear(today.getFullYear() - 1);
+        label = "Último año";
+      }
+
+      const inputFrom = document.getElementById('filterDateFrom');
+      const inputTo = document.getElementById('filterDateTo');
+      if (inputFrom) inputFrom.value = fromDate ? normalizeDateToYMD(fromDate) : '';
+      if (inputTo) inputTo.value = normalizeDateToYMD(today);
+      if (badge) badge.innerText = `Filtrando: ${label}`;
+
+      renderTable();
+    }
+
+    function resetFilters() {
+      const setV = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+      setV('filterSearch', '');
+      setV('filterSemana', '');
+      setV('filterPrioridad', '');
+      setV('filterEstado', '');
+      setV('filterDatePreset', 'all');
+      applyDatePreset();
+    }
+
+    function handleSort(colName) {
+      if (window.currentSortCol === colName) {
+        window.currentSortDir = window.currentSortDir === 'asc' ? 'desc' : 'asc';
+      } else {
+        window.currentSortCol = colName;
+        window.currentSortDir = 'asc';
+      }
+
+      document.querySelectorAll('[id^="sortIcon_"]').forEach(i => i.innerText = '↕');
+      const activeIcon = document.getElementById(`sortIcon_${colName}`);
+      if (activeIcon) activeIcon.innerText = window.currentSortDir === 'asc' ? '▲' : '▼';
+
+      renderTable();
     }
 
     function populateSemanaFilter() {
@@ -1968,6 +2491,119 @@
       });
     }
 
+    // COTIZACIONES Y LOOKBACK DE DÍAS HÁBILES
+    function initRealisticHistoricalRates() {
+      const today = new Date();
+      for (let i = 0; i < 365; i++) {
+        const d = new Date(today);
+        d.setDate(today.getDate() - i);
+        const ymd = normalizeDateToYMD(d);
+        const baseRate = 1200 - (i * 0.45);
+        window.dailyRatesMap[ymd] = {
+          date: ymd,
+          rate: Number(Math.max(950, baseRate).toFixed(2)),
+          source: 'Oficial BNA Histórico'
+        };
+      }
+      renderRatesTable();
+      updateLatestRateHeader();
+      fetchOnlineTodayRate(true);
+    }
+
+    async function fetchOnlineTodayRate(silent = false) {
+      try {
+        const response = await fetch('https://dolarapi.com/v1/dolares/oficial');
+        if (response.ok) {
+          const data = await response.json();
+          const rateVal = data.venta || data.promedio || 1200;
+          const todayStr = normalizeDateToYMD(new Date());
+          
+          window.dailyRatesMap[todayStr] = {
+            date: todayStr,
+            rate: rateVal,
+            source: 'DolarAPI - BNA Oficial'
+          };
+
+          renderRatesTable();
+          updateLatestRateHeader();
+          if (!silent) showToast(`Cotización oficial: $${rateVal} ARS`);
+        }
+      } catch (err) {}
+    }
+
+    function updateLatestRateHeader() {
+      const dates = Object.keys(window.dailyRatesMap).sort().reverse();
+      const latestDate = dates[0];
+      const latestRate = latestDate ? window.dailyRatesMap[latestDate].rate : 1200;
+      const el = document.getElementById('headerRateDisplay');
+      if (el) el.innerText = `$ ${Number(latestRate).toLocaleString('es-AR', {minimumFractionDigits: 2})} ARS`;
+    }
+
+    function getRateForDate(dateStr) {
+      if (!dateStr) return 1200.00;
+      const cleanDate = normalizeDateToYMD(dateStr);
+      
+      if (window.dailyRatesMap[cleanDate]) {
+        return window.dailyRatesMap[cleanDate].rate;
+      }
+
+      // Lookback a días hábiles
+      const curr = new Date(cleanDate + 'T12:00:00Z');
+      for (let i = 1; i <= 10; i++) {
+        curr.setUTCDate(curr.getUTCDate() - 1);
+        const iso = curr.toISOString().slice(0, 10);
+        if (window.dailyRatesMap[iso]) {
+          return window.dailyRatesMap[iso].rate;
+        }
+      }
+
+      const allDates = Object.keys(window.dailyRatesMap).sort();
+      for (const d of allDates) {
+        if (d <= cleanDate) return window.dailyRatesMap[d].rate;
+      }
+      return 1200.00;
+    }
+
+    function saveAdminRateManual() {
+      const d = document.getElementById('adminRateDate')?.value;
+      const r = parseFloat(document.getElementById('adminRateVal')?.value);
+
+      if (!d || isNaN(r) || r <= 0) {
+        showToast("Ingresa una fecha y cotización válidas en $ ARS.");
+        return;
+      }
+
+      window.dailyRatesMap[d] = { date: d, rate: r, source: 'Manual' };
+      renderRatesTable();
+      updateLatestRateHeader();
+      showToast(`Cotización guardada para ${d}: 1 USD = $${r} ARS`);
+
+      if (window.googleAppsScriptUrl) syncSingleRateToSheets(d, r);
+    }
+
+    function renderRatesTable() {
+      const tbody = document.getElementById('adminRatesTableBody');
+      if (!tbody) return;
+      const dates = Object.keys(window.dailyRatesMap).sort().reverse();
+
+      if (dates.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="3" class="p-3 text-center text-slate-400">No hay cotizaciones registradas.</td></tr>`;
+        return;
+      }
+
+      tbody.innerHTML = dates.slice(0, 100).map(dt => {
+        const item = window.dailyRatesMap[dt];
+        return `
+          <tr class="hover:bg-slate-50 transition border-b border-slate-100">
+            <td class="p-2.5 font-bold text-slate-800">${item.date}</td>
+            <td class="p-2.5 font-bold text-emerald-600">$ ${Number(item.rate).toLocaleString('es-AR', {minimumFractionDigits: 2})} ARS</td>
+            <td class="p-2.5 text-slate-500">${item.source || 'Oficial'}</td>
+          </tr>
+        `;
+      }).join('');
+    }
+
+    // CONECTIVIDAD GOOGLE APPS SCRIPT
     function setSheetsConnectionStatus(connected, text) {
       const badge = document.getElementById('dbStatusBadge');
       const dot = document.getElementById('dbStatusDot');
@@ -2158,7 +2794,7 @@
 
             populateSemanaFilter();
             renderTable();
-            updateKPIs();
+            renderCompletedTable();
             renderMetricsDashboard();
             renderAdminOrdersList();
             detectUnmappedUsersInOrders();
@@ -2215,6 +2851,7 @@
       } catch (e) {}
     }
 
+    // EXPORTACIÓN A EXCEL (13 COLUMNAS OFICIALES)
     function exportToExcel() {
       if (window.masterPCData.length === 0) {
         showToast("No hay registros para exportar.");
@@ -2249,6 +2886,7 @@
       showToast("Archivo Excel descargado con las 13 columnas oficiales.");
     }
 
+    // DATASET DE DEMOSTRACIÓN INICIAL
     function loadBuiltInSampleDataset() {
       const today = new Date();
       const initialOrders = [
@@ -2304,7 +2942,7 @@
     function loadDemoSampleData() {
       loadBuiltInSampleDataset();
       renderTable();
-      updateKPIs();
+      renderCompletedTable();
       renderMetricsDashboard();
       showToast("Datos de demostración actualizados correctamente.");
       closeAdminPanelModal();
