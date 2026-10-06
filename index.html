@@ -1009,11 +1009,48 @@
     let selectedPCId = null;
     let adminListFilterMode = 'all';
 
-    function normalizeDateToYMD(val) {
-      if (!val) return '';
-      if (val instanceof Date && !isNaN(val.getTime())) {
-        return val.toISOString().slice(0, 10);
+    // Persistencia local en memoria de almacenamiento
+    function saveStateToLocalStorage() {
+      try {
+        localStorage.setItem('finnegans_orders_cache', JSON.stringify(window.masterPCData));
+        if (window.googleAppsScriptUrl) {
+          localStorage.setItem('finnegans_gas_url', window.googleAppsScriptUrl);
+        }
+        localStorage.setItem('finnegans_user_units', JSON.stringify(window.userUnitMap));
+      } catch (e) {
+        console.warn("No se pudo guardar en almacenamiento local:", e);
       }
+    }
+
+    function loadStateFromLocalStorage() {
+      try {
+        const savedUrl = localStorage.getItem('finnegans_gas_url');
+        if (savedUrl) {
+          window.googleAppsScriptUrl = savedUrl;
+          const inputUrl = document.getElementById('inputAppsScriptUrl');
+          if (inputUrl) inputUrl.value = savedUrl;
+          setSheetsConnectionStatus(true, "Google Sheets: Conectado");
+        }
+
+        const savedUsers = localStorage.getItem('finnegans_user_units');
+        if (savedUsers) {
+          Object.assign(window.userUnitMap, JSON.parse(savedUsers));
+        }
+
+        const savedOrders = localStorage.getItem('finnegans_orders_cache');
+        if (savedOrders) {
+          const parsed = JSON.parse(savedOrders);
+          if (Array.isArray(parsed) && parsed.length > 0) {
+            window.masterPCData = parsed;
+            window.masterPCData.forEach(o => cacheOrderComputedFields(o));
+            return true;
+          }
+        }
+      } catch (e) {
+        console.warn("Fallo al leer datos guardados:", e);
+      }
+      return false;
+    }
       if (typeof val === 'number') {
         const d = new Date((val - (25567 + 2)) * 86400 * 1000);
         return !isNaN(d.getTime()) ? d.toISOString().slice(0, 10) : '';
@@ -1126,17 +1163,21 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       initRealisticHistoricalRates();
-      loadBuiltInSampleDataset(); // Pre-carga inmediata para que la pantalla nunca esté vacía
+      
+      const hasLocalData = loadStateFromLocalStorage();
+      if (!hasLocalData) {
+        loadBuiltInSampleDataset();
+      }
       
       const rateDateInput = document.getElementById('adminRateDate');
       if (rateDateInput) rateDateInput.value = new Date().toISOString().slice(0, 10);
       
       renderUsersTable();
+      populateSemanaFilter();
       renderTable();
-      updateKPIs();
+      renderCompletedTable();
       renderMetricsDashboard();
 
-      // Consulta en segundo plano sin congelar la interfaz
       const currentUrl = sanitizeGasUrl(window.googleAppsScriptUrl || document.getElementById('inputAppsScriptUrl')?.value || '');
       if (currentUrl) {
         syncWithGoogleSheets(true, currentUrl);
@@ -1255,6 +1296,10 @@
       });
 
       window.currentFilteredOrders = filtered;
+
+      // ACTUALIZAR KPIS DINÁMICOS BASADOS EN EL FILTRO REALIZADO
+      updateKPIs(filtered);
+
       const totalItems = filtered.length;
       const totalPages = Math.ceil(totalItems / window.pageSize) || 1;
 
@@ -1293,6 +1338,93 @@
           if (item.estado === 'Aprobado') {
             estadoBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-100 text-emerald-800">Aprobado</span>`;
           }
+
+          let reprogDisplay = item.reprogramacion || 'No';
+          if (item.reprogramacion === 'En espera' && item.semanaReprogramada) {
+            reprogDisplay = `<span class="text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded text-[11px]">En espera (${item.semanaReprogramada})</span>`;
+          }
+
+          const cotizTooltip = item.cotizacionAplicada ? `Tasa aplicada: 1 USD = $${item.cotizacionAplicada} ARS` : 'Presupuesto';
+
+          const editBtn = `
+            <button onclick="handleQuickEditClick('${item.nroPC}')" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg ${window.isAdminAuthenticated ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'} transition flex items-center space-x-1 mx-auto">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+              <span>${window.isAdminAuthenticated ? 'Editar' : 'Editar 🔒'}</span>
+            </button>
+          `;
+
+          // Fila limpia de Programación PC sin la columna Compras
+          return `
+            <tr class="hover:bg-slate-50/80 transition border-b border-slate-100">
+              <td class="p-2.5 font-mono font-bold text-slate-900 whitespace-nowrap">${item.semana}</td>
+              <td class="p-2.5 font-bold text-indigo-700 whitespace-nowrap font-mono">${item.nroPC}</td>
+              <td class="p-2.5 whitespace-nowrap text-slate-600 font-mono">${item._displayDate || '-'}</td>
+              <td class="p-2.5 whitespace-nowrap text-slate-600">${item.enReprogramacionCon || '-'}</td>
+              <td class="p-2.5 text-slate-800 font-medium min-w-[280px]">
+                <div class="line-clamp-2" title="${item.descripcion}">${item.descripcion}</div>
+              </td>
+              <td class="p-2.5 whitespace-nowrap">${getUnitPastelBadge(item.unidad)}</td>
+              <td class="p-2.5 whitespace-nowrap">${prioBadge}</td>
+              <td class="p-2.5 whitespace-nowrap text-right font-mono font-bold text-indigo-700">${item._formattedUSD}</td>
+              <td class="p-2.5 whitespace-nowrap text-right font-mono font-black text-emerald-700" title="${cotizTooltip}">${item._formattedARS}</td>
+              <td class="p-2.5 whitespace-nowrap font-medium text-slate-700">${item.comprador || '<span class="text-slate-400 italic">Sin asignar</span>'}</td>
+              <td class="p-2.5 whitespace-nowrap">${estadoBadge}</td>
+              <td class="p-2.5 whitespace-nowrap">${reprogDisplay}</td>
+              <td class="p-2.5 whitespace-nowrap text-center">${editBtn}</td>
+            </tr>
+          `;
+        }).join('');
+
+        tbody.innerHTML = rowsHtml;
+      }
+
+      const activeCount = window.masterPCData.filter(i => !(i.compras === true || i.compras === 'TRUE' || i.compras === 'true')).length;
+      const completedCount = window.masterPCData.length - activeCount;
+
+      const summaryText = window.pageSize >= 999999 
+        ? `Mostrando las ${totalItems} órdenes activas (${activeCount} en gestión)`
+        : `Mostrando ${startIndex + 1}-${Math.min(startIndex + window.pageSize, totalItems)} de ${totalItems} órdenes activas (${activeCount} en gestión)`;
+
+      const tableSumEl = document.getElementById('tableSummary');
+      if (tableSumEl) tableSumEl.innerText = summaryText;
+
+      const badgeActive = document.getElementById('badgeActiveItems');
+      if (badgeActive) badgeActive.innerText = activeCount;
+
+      const badgeCompleted = document.getElementById('badgeCompletedItems');
+      if (badgeCompleted) badgeCompleted.innerText = completedCount;
+    }
+
+    // ACTUALIZACIÓN DE KPIS DE CABECERA DEPENDIENTE DE LOS FILTROS
+    function updateKPIs(filteredList = null) {
+      const activeList = filteredList || window.currentFilteredOrders || [];
+      const total = activeList.length;
+
+      const activeWeeks = new Set(activeList.map(d => d.semana).filter(s => s && s !== '-')).size;
+
+      let totalUSD = 0;
+      let totalARS = 0;
+      let waitingCount = 0;
+      let unassignedCount = 0;
+
+      activeList.forEach(item => {
+        const usd = item._numUSD !== undefined ? item._numUSD : parseCurrencySafe(item.presupuestoUSD);
+        const ars = item._numARS !== undefined ? item._numARS : parseCurrencySafe(item.presupuestoARS);
+        if (usd) totalUSD += usd;
+        if (ars) totalARS += ars;
+        if (item.reprogramacion === 'En espera') waitingCount++;
+        if (!item.comprador || !item.prioridad) unassignedCount++;
+      });
+
+      const setEl = (id, txt) => { const el = document.getElementById(id); if (el) el.innerText = txt; };
+      setEl('kpiTotalCount', total);
+      setEl('kpiWeeksCovered', `${activeWeeks} semanas en filtro`);
+      setEl('kpiTotalUSD', `$ ${totalUSD.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})} USD`);
+      setEl('kpiConvertedARS', `≈ $ ${Math.round(totalARS).toLocaleString('es-AR')} ARS`);
+      setEl('kpiWaitingCount', waitingCount);
+      setEl('kpiWaitingPerc', total > 0 ? `${Math.round((waitingCount / total) * 100)}% del filtro` : '0% del filtro');
+      setEl('kpiUnassignedCount', unassignedCount);
+    }
 
           let reprogDisplay = item.reprogramacion || 'No';
           if (item.reprogramacion === 'En espera' && item.semanaReprogramada) {
@@ -1452,10 +1584,10 @@
       pc.semanaReprogramada = pc.reprogramacion === 'En espera' ? document.getElementById('adminInputSemanaReprog')?.value.trim() : '';
 
       cacheOrderComputedFields(pc);
+      saveStateToLocalStorage();
       renderAdminOrdersList();
       renderTable();
       renderCompletedTable();
-      updateKPIs();
       renderMetricsDashboard();
 
       if (pc.compras && !previousCompras) {
@@ -1749,6 +1881,7 @@
       }
 
       window.masterPCData = Array.from(existingMap.values());
+      window.masterPCData.forEach(o => cacheOrderComputedFields(o));
 
       diagnostics.push(`Renglones para master PC: ${window.rawMasterPCRows.length}`);
       diagnostics.push(`Renglones para master autorizaciones: ${window.rawMasterAutorizRows.length}`);
@@ -1759,16 +1892,16 @@
       document.getElementById('diagnosticsList').innerHTML = diagnostics.map(d => `<li>• ${d}</li>`).join('');
       document.getElementById('importDiagnostics').classList.remove('hidden');
 
+      saveStateToLocalStorage();
       detectUnmappedUsersInOrders();
       populateSemanaFilter();
       renderTable();
       renderCompletedTable();
-      updateKPIs();
       renderMetricsDashboard();
 
       showToast(`¡Consolidación exitosa! +${newCount} nuevas órdenes.`);
 
-      // Guardar y persistir inmediatamente los nuevos registros y el acumulado en Sheets
+      // Sincronizar hacia Google Sheets
       sendFullSyncToSheets();
     }
 
