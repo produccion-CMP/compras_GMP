@@ -664,18 +664,17 @@
 
                   <!-- Bloque de Presupuesto -->
                   <div class="sm:col-span-2 p-3 bg-white border border-slate-200 rounded-xl space-y-3">
-                    <div class="flex items-center justify-between">
+                    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
                       <span class="font-bold text-slate-800 text-[11px] uppercase tracking-wide">Presupuesto y Conversión Monetaria</span>
-                      
-                      <div class="flex items-center space-x-2 text-[11px]">
-                        <span class="text-slate-500">Cálculo en Pesos:</span>
+                      <div class="flex flex-wrap items-center gap-3 text-[11px]">
+                        <span class="text-slate-500 font-semibold">Moneda original:</span>
                         <label class="inline-flex items-center space-x-1 cursor-pointer">
-                          <input type="radio" name="modoPresupuestoARS" value="auto" id="radioModoAuto" onchange="toggleModoPresupuestoARS()" checked class="text-indigo-600">
-                          <span class="font-medium text-slate-700">Por Cotización ($ ARS)</span>
+                          <input type="radio" name="monedaPresupuesto" value="usd" id="radioBudgetUSD" onchange="toggleBudgetCurrencyMode()" checked class="text-indigo-600">
+                          <span class="font-medium text-slate-700">USD</span>
                         </label>
-                        <label class="inline-flex items-center space-x-1 cursor-pointer ml-2">
-                          <input type="radio" name="modoPresupuestoARS" value="manual" id="radioModoManual" onchange="toggleModoPresupuestoARS()" class="text-indigo-600">
-                          <span class="font-medium text-slate-700">Ingreso Manual ($ ARS)</span>
+                        <label class="inline-flex items-center space-x-1 cursor-pointer">
+                          <input type="radio" name="monedaPresupuesto" value="ars" id="radioBudgetARS" onchange="toggleBudgetCurrencyMode()" class="text-indigo-600">
+                          <span class="font-medium text-slate-700">ARS</span>
                         </label>
                       </div>
                     </div>
@@ -685,12 +684,12 @@
                         <label class="block text-[11px] font-semibold text-slate-700 mb-1">Presupuesto (USD)</label>
                         <div class="relative">
                           <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400 font-bold text-xs">USD</span>
-                          <input type="number" step="0.01" min="0" id="adminInputUSD" oninput="handlePresupuestoUSDChange()" placeholder="0.00" class="w-full pl-11 pr-2 py-1.5 text-xs rounded-xl border border-slate-300 outline-none font-mono">
+                          <input type="number" step="0.01" min="0" id="adminInputUSD" oninput="handleBudgetAmountChange('usd')" placeholder="0.00" class="w-full pl-11 pr-2 py-1.5 text-xs rounded-xl border border-slate-300 outline-none font-mono">
                         </div>
                       </div>
 
                       <div>
-                        <label class="block text-[11px] font-semibold text-slate-700 mb-1">Fecha de Cotización</label>
+                        <label class="block text-[11px] font-semibold text-slate-700 mb-1">Fecha del Presupuesto / Cotización <span class="text-rose-600">*</span></label>
                         <div class="flex items-center space-x-1">
                           <input type="date" id="adminInputFechaCotiz" onchange="handleFechaCotizChange()" class="w-full p-1.5 text-xs rounded-xl border border-slate-300 outline-none">
                           <button type="button" onclick="setAdminCotizDate('order')" class="px-2 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg text-[10px]" title="Usar Fecha del Pedido">F.Pedido</button>
@@ -698,17 +697,17 @@
                       </div>
 
                       <div>
-                        <div class="flex items-center justify-between mb-1">
+                        <div class="flex items-center justify-between mb-1 gap-2">
                           <label class="text-[11px] font-semibold text-slate-700">Presupuesto ($ ARS)</label>
-                          <span id="adminCotizRateBadge" class="text-[10px] text-emerald-600 font-mono font-bold">1 USD = $ 1.200 ARS</span>
+                          <span id="adminCotizRateBadge" class="text-[10px] text-emerald-600 font-mono font-bold text-right">Sin cotización</span>
                         </div>
                         <div class="relative">
                           <span class="absolute inset-y-0 left-0 pl-2.5 flex items-center text-slate-400 font-bold text-xs">$</span>
-                          <input type="number" step="1" min="0" id="adminInputARS" class="w-full pl-7 pr-2 py-1.5 text-xs rounded-xl border border-slate-300 outline-none font-bold text-slate-800 font-mono" placeholder="0">
+                          <input type="number" step="0.01" min="0" id="adminInputARS" oninput="handleBudgetAmountChange('ars')" class="w-full pl-7 pr-2 py-1.5 text-xs rounded-xl border border-slate-300 outline-none font-bold text-slate-800 font-mono" placeholder="0.00">
                         </div>
                       </div>
                     </div>
-                    <span id="adminCotizSnapshotInfo" class="text-[10px] text-slate-500 block">Tasa congelada históricamente para consistencia contable.</span>
+                    <span id="adminCotizSnapshotInfo" class="text-[10px] text-slate-500 block">La fecha es obligatoria cuando existe un presupuesto. Si no hay cotización ese día, se aplica automáticamente la última cotización oficial anterior disponible.</span>
                   </div>
 
                   <div>
@@ -944,6 +943,7 @@
     window.rawMasterAutorizRows = [];
     window.dailyRatesMap = {};
     window.userUnitMap = {}; // Sin usuarios ficticios; se leen estrictamente de la hoja USUARIO
+    window.detectedFinnegansUsers = new Set();
     window.currentSortCol = 'fechaPedido';
     window.currentSortDir = 'desc';
     window.googleAppsScriptUrl = DEFAULT_APPS_SCRIPT_URL;
@@ -1100,6 +1100,64 @@
     function normalizeUserKey(str) {
       if (!str) return '';
       return String(str).toLowerCase().trim().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/\s+/g, ' ');
+    }
+
+    function escapeHtml(value) {
+      return String(value ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
+    }
+
+
+    function getExactField(row, aliases) {
+      const wanted = new Set(aliases.map(normalizeStr));
+      for (const [key, value] of Object.entries(row || {})) {
+        if (wanted.has(normalizeStr(key))) return value;
+      }
+      return '';
+    }
+
+    function normalizeFinnegansDateToYMD(val) {
+      if (val === null || val === undefined || val === '') return '';
+      if (val instanceof Date && !isNaN(val.getTime())) {
+        const y = val.getFullYear();
+        const m = String(val.getMonth() + 1).padStart(2, '0');
+        const d = String(val.getDate()).padStart(2, '0');
+        return `${y}-${m}-${d}`;
+      }
+      if (typeof val === 'number' && Number.isFinite(val)) {
+        const ms = Math.round((val - 25569) * 86400 * 1000);
+        const d = new Date(ms);
+        return !isNaN(d.getTime()) ? d.toISOString().slice(0, 10) : '';
+      }
+      const s = String(val).trim();
+      if (!s) return '';
+      if (/^\d{4}-\d{1,2}-\d{1,2}/.test(s)) return normalizeDateToYMD(s);
+      const m = s.match(/^(\d{1,2})[\/-](\d{1,2})[\/-](\d{4})/);
+      if (m) {
+        let a = Number(m[1]), b = Number(m[2]), y = Number(m[3]);
+        let month, day;
+        if (a > 12 && b <= 12) { day = a; month = b; }
+        else { month = a; day = b; } // Finnegans/Excel exporta normalmente M/D/YYYY
+        const dt = new Date(Date.UTC(y, month - 1, day));
+        if (dt.getUTCFullYear() === y && dt.getUTCMonth() === month - 1 && dt.getUTCDate() === day) {
+          return `${y}-${String(month).padStart(2,'0')}-${String(day).padStart(2,'0')}`;
+        }
+      }
+      return normalizeDateToYMD(s);
+    }
+
+    function registerDetectedFinnegansUser(userName) {
+      const clean = String(userName || '').trim();
+      if (clean) window.detectedFinnegansUsers.add(clean);
+    }
+
+    function findMappedUnitForUser(userName) {
+      const clean = String(userName || '').trim();
+      if (!clean) return '';
+      return window.userUnitMap[clean.toLowerCase()] || window.userUnitMap[normalizeUserKey(clean)] || window.userUnitMap[normalizeStr(clean)] || '';
+    }
+
+    function getUnmappedDetectedUsers() {
+      return Array.from(window.detectedFinnegansUsers || []).filter(u => !findMappedUnitForUser(u)).sort((a,b) => a.localeCompare(b, 'es'));
     }
 
     function getUnitPastelBadge(unitName) {
@@ -1612,13 +1670,11 @@
       const defaultCotizDate = pc.fechaCotizacion || pc._ymdDate || normalizeDateToYMD(new Date());
       document.getElementById('adminInputFechaCotiz').value = defaultCotizDate;
 
-      const modo = pc.modoPresupuestoARS || 'auto';
-      if (modo === 'manual') {
-        document.getElementById('radioModoManual').checked = true;
-      } else {
-        document.getElementById('radioModoAuto').checked = true;
-      }
-      toggleModoPresupuestoARS();
+      const modo = String(pc.modoPresupuestoARS || 'usd').toLowerCase();
+      const originARS = (modo === 'ars' || modo === 'manual');
+      document.getElementById('radioBudgetARS').checked = originARS;
+      document.getElementById('radioBudgetUSD').checked = !originARS;
+      toggleBudgetCurrencyMode();
 
       const parsedARS = pc._numARS !== undefined ? pc._numARS : parseCurrencySafe(pc.presupuestoARS);
       if (parsedARS !== null) {
@@ -1638,48 +1694,86 @@
       toggleAdminSemanaReprog();
     }
 
-    function toggleModoPresupuestoARS() {
-      const isManual = document.getElementById('radioModoManual')?.checked;
+    function getRateInfoForDate(dateStr) {
+      if (!dateStr) return null;
+      const requested = normalizeDateToYMD(dateStr);
+      if (!requested) return null;
+      const exact = window.dailyRatesMap?.[requested];
+      if (exact && Number(exact.rate) > 0) {
+        return { requestedDate: requested, effectiveDate: requested, rate: Number(exact.rate), source: exact.source || '', lookback: false };
+      }
+      const previousDates = Object.keys(window.dailyRatesMap || {})
+        .filter(d => d <= requested && Number(window.dailyRatesMap[d]?.rate) > 0)
+        .sort().reverse();
+      if (!previousDates.length) return null;
+      const effectiveDate = previousDates[0];
+      const row = window.dailyRatesMap[effectiveDate];
+      return { requestedDate: requested, effectiveDate, rate: Number(row.rate), source: row.source || '', lookback: effectiveDate !== requested };
+    }
+
+    function toggleBudgetCurrencyMode() {
+      const originARS = document.getElementById('radioBudgetARS')?.checked;
+      const usdInput = document.getElementById('adminInputUSD');
       const arsInput = document.getElementById('adminInputARS');
-      if (!arsInput) return;
+      if (!usdInput || !arsInput) return;
 
-      if (isManual) {
+      if (originARS) {
         arsInput.removeAttribute('readonly');
-        arsInput.classList.remove('bg-slate-50');
-        arsInput.classList.add('bg-white');
-        document.getElementById('adminCotizSnapshotInfo').innerText = "Modo manual: Ingresa directamente el monto en pesos argentinos ($ ARS).";
+        usdInput.setAttribute('readonly', 'true');
+        arsInput.classList.remove('bg-slate-50'); arsInput.classList.add('bg-white');
+        usdInput.classList.remove('bg-white'); usdInput.classList.add('bg-slate-50');
+        document.getElementById('adminCotizSnapshotInfo').innerText = 'Presupuesto original en ARS: se convierte automáticamente a USD usando la cotización de la fecha indicada.';
       } else {
+        usdInput.removeAttribute('readonly');
         arsInput.setAttribute('readonly', 'true');
-        arsInput.classList.remove('bg-white');
-        arsInput.classList.add('bg-slate-50');
-        document.getElementById('adminCotizSnapshotInfo').innerText = "Modo automático: Calculado con la cotización en $ ARS de la fecha elegida.";
-        handlePresupuestoUSDChange();
+        usdInput.classList.remove('bg-slate-50'); usdInput.classList.add('bg-white');
+        arsInput.classList.remove('bg-white'); arsInput.classList.add('bg-slate-50');
+        document.getElementById('adminCotizSnapshotInfo').innerText = 'Presupuesto original en USD: se convierte automáticamente a ARS usando la cotización de la fecha indicada.';
       }
+      recalculateBudgetConversion();
     }
-    function handlePresupuestoUSDChange() {
-      const isManual = document.getElementById('radioModoManual')?.checked;
-      if (isManual) return;
 
-      const usdVal = parseFloat(document.getElementById('adminInputUSD')?.value);
-      const cotizDate = document.getElementById('adminInputFechaCotiz')?.value || normalizeDateToYMD(new Date());
+    function toggleModoPresupuestoARS() { toggleBudgetCurrencyMode(); }
 
-      if (!isNaN(usdVal) && usdVal >= 0) {
-        const rate = getRateForDate(cotizDate);
-        if (rate === null) {
-          document.getElementById('adminInputARS').value = '';
-          document.getElementById('adminCotizRateBadge').innerText = 'Sin cotización oficial disponible para esa fecha.';
-          return;
-        }
-        const arsVal = Math.round(usdVal * rate);
-        document.getElementById('adminInputARS').value = arsVal;
-        document.getElementById('adminCotizRateBadge').innerText = `1 USD = $${rate.toLocaleString('es-AR')} ARS (fecha solicitada ${formatDisplayDate(cotizDate)})`;
-      } else {
-        document.getElementById('adminInputARS').value = '';
+    function handleBudgetAmountChange(origin) {
+      const isARS = document.getElementById('radioBudgetARS')?.checked;
+      if ((origin === 'ars' && !isARS) || (origin === 'usd' && isARS)) return;
+      recalculateBudgetConversion();
+    }
+
+    function recalculateBudgetConversion() {
+      const originARS = document.getElementById('radioBudgetARS')?.checked;
+      const usdInput = document.getElementById('adminInputUSD');
+      const arsInput = document.getElementById('adminInputARS');
+      const date = document.getElementById('adminInputFechaCotiz')?.value || '';
+      const badge = document.getElementById('adminCotizRateBadge');
+      const sourceVal = originARS ? parseCurrencySafe(arsInput?.value) : parseCurrencySafe(usdInput?.value);
+
+      if (sourceVal === null) {
+        if (originARS) usdInput.value = ''; else arsInput.value = '';
+        if (badge) badge.innerText = 'Sin presupuesto';
+        return;
       }
+      if (!date) {
+        if (originARS) usdInput.value = ''; else arsInput.value = '';
+        if (badge) badge.innerText = 'Selecciona una fecha';
+        return;
+      }
+      const info = getRateInfoForDate(date);
+      if (!info) {
+        if (originARS) usdInput.value = ''; else arsInput.value = '';
+        if (badge) badge.innerText = 'Sin cotización oficial disponible';
+        return;
+      }
+      if (originARS) usdInput.value = (sourceVal / info.rate).toFixed(2);
+      else arsInput.value = (sourceVal * info.rate).toFixed(2);
+      if (badge) badge.innerText = `1 USD = $${info.rate.toLocaleString('es-AR')} · ${formatDisplayDate(info.effectiveDate)}${info.lookback ? ' (lookback)' : ''}`;
     }
+
+    function handlePresupuestoUSDChange() { recalculateBudgetConversion(); }
 
     function handleFechaCotizChange() {
-      handlePresupuestoUSDChange();
+      recalculateBudgetConversion();
     }
 
     function setAdminCotizDate(mode) {
@@ -1707,34 +1801,38 @@
       const pc = window.masterPCData.find(p => p.nroPC === selectedPCId);
       if (!pc) return;
 
-      const isManual = document.getElementById('radioModoManual')?.checked;
+      const originARS = document.getElementById('radioBudgetARS')?.checked;
       const rawUSD = document.getElementById('adminInputUSD')?.value;
       const rawARS = document.getElementById('adminInputARS')?.value;
-      const usdVal = rawUSD !== '' ? parseFloat(rawUSD) : null;
-      const arsVal = rawARS !== '' ? parseFloat(rawARS) : null;
-      const cotizDate = document.getElementById('adminInputFechaCotiz')?.value || normalizeDateToYMD(new Date());
+      let usdVal = rawUSD !== '' ? parseCurrencySafe(rawUSD) : null;
+      let arsVal = rawARS !== '' ? parseCurrencySafe(rawARS) : null;
+      const hasBudget = originARS ? arsVal !== null : usdVal !== null;
+      const cotizDate = document.getElementById('adminInputFechaCotiz')?.value || '';
 
-      pc.presupuestoUSD = usdVal;
-      pc.modoPresupuestoARS = isManual ? 'manual' : 'auto';
-      pc.fechaCotizacion = cotizDate;
-
-      if (isManual) {
-        pc.presupuestoARS = arsVal;
-        pc.cotizacionAplicada = (usdVal && arsVal) ? Number((arsVal / usdVal).toFixed(2)) : null;
-      } else {
-        if (usdVal !== null) {
-          const rate = getRateForDate(cotizDate);
-          if (rate === null) {
-            showToast('No hay cotización oficial disponible para la fecha seleccionada. Actualiza las cotizaciones antes de guardar.');
-            return;
-          }
-          pc.presupuestoARS = Math.round(usdVal * rate);
-          pc.cotizacionAplicada = rate;
-        } else {
-          pc.presupuestoARS = null;
-          pc.cotizacionAplicada = null;
-        }
+      if (hasBudget && !cotizDate) {
+        showToast('La fecha del presupuesto/cotización es obligatoria.');
+        return;
       }
+
+      pc.modoPresupuestoARS = originARS ? 'ars' : 'usd';
+      pc.fechaCotizacion = hasBudget ? cotizDate : '';
+
+      if (hasBudget) {
+        const info = getRateInfoForDate(cotizDate);
+        if (!info) {
+          showToast('No hay cotización oficial disponible para esa fecha ni para días anteriores. Actualiza las cotizaciones.');
+          return;
+        }
+        if (originARS) usdVal = Number((arsVal / info.rate).toFixed(2));
+        else arsVal = Number((usdVal * info.rate).toFixed(2));
+        pc.cotizacionAplicada = info.rate;
+      } else {
+        usdVal = null;
+        arsVal = null;
+        pc.cotizacionAplicada = null;
+      }
+      pc.presupuestoUSD = usdVal;
+      pc.presupuestoARS = arsVal;
 
       pc.enReprogramacionCon = document.getElementById('adminInputEnReprogramacionCon')?.value.trim() || '';
       pc.prioridad = document.getElementById('adminInputPrioridad')?.value || '';
@@ -1952,6 +2050,7 @@
     }
 
     function renderUsersTable() {
+      detectUnmappedUsersInOrders();
       const tbody = document.getElementById('userMappingTableBody');
       if (!tbody) return;
       const users = Object.keys(window.userUnitMap).sort();
@@ -2069,6 +2168,7 @@
 
         if (recognizedType === 'autorizaciones') {
           rawDetectedReport1 = { rows, fileName: file.name, sheetName: bestSheet };
+          rows.forEach(r => registerDetectedFinnegansUser(getExactField(r, ['Usuario alta pc', 'Usuarioaltapc'])));
           document.getElementById('nameDetect1').innerText = file.name;
           document.getElementById('detailDetect1').innerHTML = `<span class="text-indigo-600 font-bold font-mono">Hoja: ${bestSheet}</span> (${rows.length} renglones)`;
           document.getElementById('badgeDetect1').className = "text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold";
@@ -2076,6 +2176,7 @@
           showToast(`Reconocido: ${file.name} (CMP - Autorizaciones)`);
         } else if (recognizedType === 'pedidos') {
           rawDetectedReport2 = { rows, fileName: file.name, sheetName: bestSheet };
+          rows.forEach(r => registerDetectedFinnegansUser(getExactField(r, ['Nombreusuarioalta', 'Nombre usuario alta'])));
           document.getElementById('nameDetect2').innerText = file.name;
           document.getElementById('detailDetect2').innerHTML = `<span class="text-emerald-600 font-bold font-mono">Hoja: ${bestSheet}</span> (${rows.length} renglones)`;
           document.getElementById('badgeDetect2').className = "text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold";
@@ -2086,12 +2187,20 @@
         }
       }
 
+      detectUnmappedUsersInOrders();
       if (rawDetectedReport1 || rawDetectedReport2) {
         document.getElementById('btnProcessReports').disabled = false;
       }
     }
 
     function executeSmartMerge() {
+      const missingUsers = getUnmappedDetectedUsers();
+      if (missingUsers.length > 0) {
+        detectUnmappedUsersInOrders();
+        switchAdminSubTab('users');
+        showToast(`Debes asignar una Unidad a ${missingUsers.length} usuario(s) de Finnegans antes de consolidar.`);
+        return;
+      }
       const diagnostics = [];
       let totalRawRows = 0;
       let newCount = 0;
@@ -2105,20 +2214,18 @@
         rawDetectedReport1.rows.forEach(row => {
           let docNum = '', fechaUltAct = '', usuarioAltaPC = '', usuarioAltaOC = '', desc = '', descItem = '', cantPend = '', resp = '', act = '', cantAp = '', userAut = '';
 
-          for (const [k, v] of Object.entries(row)) {
-            const nk = normalizeStr(k);
-            if (!docNum && (nk.includes('docnrointerno') || nk.includes('nrointerno') || nk.includes('comprobante'))) docNum = String(v).trim();
-            if (nk.includes('fechaultactividad')) fechaUltAct = v;
-            if (nk === 'usuarioaltapc' || nk.includes('altapc')) usuarioAltaPC = String(v).trim();
-            if (nk === 'usuarioaltaoc' || nk.includes('altaoc')) usuarioAltaOC = String(v).trim();
-            if (nk === 'descripcion') desc = String(v).trim();
-            if (nk.includes('descripcionitem')) descItem = String(v).trim();
-            if (nk.includes('cantidadpendiente')) cantPend = v;
-            if (nk.includes('responsablepedido') || nk.includes('responsable')) resp = String(v).trim();
-            if (nk === 'actividad') act = String(v).trim();
-            if (nk.includes('cantidadaplicadaoc')) cantAp = v;
-            if (nk.includes('usuarioautorizante')) userAut = String(v).trim();
-          }
+          docNum = String(getExactField(row, ['Doc nro interno', 'Doc.-nro. interno', 'docnrointerno']) || '').trim();
+          fechaUltAct = normalizeFinnegansDateToYMD(getExactField(row, ['Fechaultactividad', 'Fecha ult actividad']));
+          usuarioAltaPC = String(getExactField(row, ['Usuario alta pc', 'Usuarioaltapc']) || '').trim();
+          usuarioAltaOC = String(getExactField(row, ['Usuarioaltaoc', 'Usuario alta oc']) || '').trim();
+          desc = String(getExactField(row, ['Descripción', 'Descripcion']) || '').trim();
+          descItem = String(getExactField(row, ['Descripción item', 'Descripcion item']) || '').trim();
+          cantPend = getExactField(row, ['Cantidad pendiente']);
+          resp = String(getExactField(row, ['Responsable pedido']) || '').trim();
+          act = String(getExactField(row, ['Actividad']) || '').trim();
+          cantAp = getExactField(row, ['Cantidadaplicadaoc', 'Cantidad aplicada oc']);
+          userAut = String(getExactField(row, ['Usuarioautorizante', 'Usuario autorizante']) || '').trim();
+          registerDetectedFinnegansUser(usuarioAltaPC);
 
           if (docNum) {
             rep1Map.set(normalizeStr(docNum), {
@@ -2155,22 +2262,20 @@
         rawDetectedReport2.rows.forEach((row, index) => {
           let docNum = '', fComp = '', semFecha = '', fProxPaso = '', descPrincipal = '', producto = '', descItem = '', pendDestino = '', empresa = '', estado = '', nombreUsuarioAlta = '', solicitante = '', situacion = '';
 
-          for (const [k, v] of Object.entries(row)) {
-            const nk = normalizeStr(k);
-            if (!docNum && (nk.includes('docnrointerno') || nk.includes('nrointerno') || nk.includes('doc'))) docNum = String(v).trim();
-            if (!fComp && (nk.includes('fcomp') || nk.includes('fechacomprobante') || nk.includes('fecha'))) fComp = v;
-            if (nk.includes('semanafecha')) semFecha = String(v).trim();
-            if (nk.includes('fproxpaso')) fProxPaso = v;
-            if (!descPrincipal && nk === 'descripcion') descPrincipal = String(v).trim();
-            if (nk === 'producto') producto = String(v).trim();
-            if (nk.includes('descripcionitem') || nk.includes('item')) descItem = String(v).trim();
-            if (nk.includes('pendientedestino')) pendDestino = v;
-            if (nk === 'empresa') empresa = String(v).trim();
-            if (nk === 'estado') estado = String(v).trim();
-            if (nk.includes('nombreusuarioalta') || nk.includes('usuarioalta') || nk.includes('solicitante')) nombreUsuarioAlta = String(v).trim();
-            if (nk === 'solicitante') solicitante = String(v).trim();
-            if (nk === 'situacion') situacion = String(v).trim();
-          }
+          docNum = String(getExactField(row, ['Doc.-nro. interno', 'Doc nro interno', 'docnrointerno']) || '').trim();
+          semFecha = normalizeFinnegansDateToYMD(getExactField(row, ['Semana - fecha', 'Semana fecha']));
+          fComp = normalizeFinnegansDateToYMD(getExactField(row, ['F.comp', 'Fecha comprobante']));
+          fProxPaso = normalizeFinnegansDateToYMD(getExactField(row, ['F. prox. paso', 'F prox paso', 'Fecha proximo paso', 'Fecha próximo paso']));
+          descPrincipal = String(getExactField(row, ['Descripción', 'Descripcion']) || '').trim();
+          producto = String(getExactField(row, ['Producto']) || '').trim();
+          descItem = String(getExactField(row, ['Descripción item', 'Descripcion item']) || '').trim();
+          pendDestino = getExactField(row, ['Pendiente destino']);
+          empresa = String(getExactField(row, ['Empresa']) || '').trim();
+          estado = String(getExactField(row, ['Estado']) || '').trim();
+          nombreUsuarioAlta = String(getExactField(row, ['Nombreusuarioalta', 'Nombre usuario alta']) || '').trim();
+          solicitante = String(getExactField(row, ['Solicitante']) || '').trim();
+          situacion = String(getExactField(row, ['Situacion', 'Situación']) || '').trim();
+          registerDetectedFinnegansUser(nombreUsuarioAlta);
 
           if (!docNum) docNum = `PC-${index + 1000}`;
           const id = normalizeStr(docNum);
@@ -2203,9 +2308,9 @@
 
         groupedRows.forEach((grp, id) => {
           const rep1Data = rep1Map.get(id) || {};
-          const effectiveDateVal = rep1Data.fechaUltActividad || grp.fComp;
-          const ymdFecha = normalizeDateToYMD(effectiveDateVal);
-          const semanaCalculada = calculateSemana(effectiveDateVal);
+          const effectiveDateVal = grp.fComp || rep1Data.fechaUltActividad;
+          const ymdFecha = normalizeFinnegansDateToYMD(effectiveDateVal);
+          const semanaCalculada = calculateSemana(ymdFecha);
 
           const usuarioAltaFinal = grp.nombreUsuarioAlta || rep1Data.usuarioAltaPC || '';
           const userKeyA = usuarioAltaFinal.toLowerCase().trim();
@@ -2250,7 +2355,7 @@
               semanaReprogramada: '',
               cotizacionAplicada: null,
               fechaCotizacion: null,
-              modoPresupuestoARS: 'auto',
+              modoPresupuestoARS: 'usd',
               nombreUsuarioAlta: usuarioAltaFinal,
               usuarioAlta: usuarioAltaFinal
             };
@@ -2300,7 +2405,7 @@
           orders: window.masterPCData,
           masterPCRows: window.rawMasterPCRows || [],
           masterAutorizRows: window.rawMasterAutorizRows || [],
-          users: window.userUnitMap
+          users: buildUsersPayload()
         };
 
         const result = await gasPost(payload, true);
@@ -2321,12 +2426,10 @@
     }
 
     function detectUnmappedUsersInOrders() {
-      const unmapped = new Set();
+      const unmapped = new Set(getUnmappedDetectedUsers());
       window.masterPCData.forEach(o => {
-        if (!o.unidad || o.unidad === 'Sin asignar' || o.unidad === 'UN') {
-          const userVal = o.nombreUsuarioAlta || o.usuarioAlta;
-          if (userVal) unmapped.add(userVal);
-        }
+        const userVal = o.nombreUsuarioAlta || o.usuarioAlta;
+        if (userVal && !findMappedUnitForUser(userVal)) unmapped.add(userVal);
       });
 
       const notice = document.getElementById('unmappedUsersNotice');
@@ -2335,11 +2438,12 @@
 
       if (unmapped.size > 0 && notice && tags && count) {
         count.innerText = unmapped.size;
-        tags.innerHTML = Array.from(unmapped).map(u => `
-          <button onclick="fillUserMappingInput('${u}')" class="px-2 py-1 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg font-mono text-[10px] flex items-center space-x-1">
-            <span>+ ${u}</span>
+        tags.innerHTML = Array.from(unmapped).sort((a,b) => a.localeCompare(b, 'es')).map(u => `
+          <button type="button" data-user-name="${escapeHtml(u)}" class="unmapped-user-btn px-2 py-1 bg-white hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-lg font-mono text-[10px] flex items-center space-x-1">
+            <span>+ ${escapeHtml(u)}</span>
           </button>
         `).join('');
+        tags.querySelectorAll('.unmapped-user-btn').forEach(btn => btn.addEventListener('click', () => fillUserMappingInput(btn.dataset.userName)));
         notice.classList.remove('hidden');
       } else if (notice) {
         notice.classList.add('hidden');
@@ -2463,20 +2567,10 @@
       }
     }
     function getRateForDate(dateStr) {
-      if (!dateStr) return null;
-      const cleanDate = normalizeDateToYMD(dateStr);
-      if (!cleanDate) return null;
-
-      const exact = window.dailyRatesMap[cleanDate];
-      if (exact && Number(exact.rate) > 0) return Number(exact.rate);
-
-      const previousDates = Object.keys(window.dailyRatesMap || {})
-        .filter(d => d <= cleanDate && Number(window.dailyRatesMap[d]?.rate) > 0)
-        .sort()
-        .reverse();
-
-      return previousDates.length ? Number(window.dailyRatesMap[previousDates[0]].rate) : null;
+      const info = getRateInfoForDate(dateStr);
+      return info ? info.rate : null;
     }
+
     async function saveAdminRateManual() {
       const d = document.getElementById('adminRateDate')?.value;
       const r = parseFloat(document.getElementById('adminRateVal')?.value);
@@ -2727,10 +2821,28 @@
       if (!window.googleAppsScriptUrl) return;
       return gasPost({ action: 'SAVE_RATE', date: dateStr, rate: rateVal, source: 'Manual' }, true);
     }
+    function buildUsersPayload() {
+      const out = {};
+      const covered = new Set();
+      Array.from(window.detectedFinnegansUsers || []).forEach(name => {
+        const unit = findMappedUnitForUser(name);
+        if (unit) {
+          out[name] = unit;
+          covered.add(normalizeStr(name));
+        }
+      });
+      Object.entries(window.userUnitMap || {}).forEach(([key, unit]) => {
+        if (!unit) return;
+        const nk = normalizeStr(key);
+        if (!covered.has(nk)) out[key] = unit;
+      });
+      return out;
+    }
+
     async function syncUsersToSheets() {
       if (!window.googleAppsScriptUrl) return;
       try {
-        const result = await gasPost({ action: 'SAVE_USERS', users: window.userUnitMap }, true);
+        const result = await gasPost({ action: 'SAVE_USERS', users: buildUsersPayload() }, true);
         if (result.status !== 'SUCCESS') throw new Error(result.message || 'No se pudieron guardar los usuarios.');
       } catch (e) {
         showToast('No se guardaron los usuarios: ' + e.message);
