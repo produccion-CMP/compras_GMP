@@ -823,12 +823,18 @@
     window.adminPasswordHash = 'admin123';
     window.isAdminAuthenticated = false;
 
+    // Control de paginación de alta velocidad
+    window.currentPage = 1;
+    window.pageSize = 100;
+    window.currentFilteredOrders = [];
+
     let rawDetectedReport1 = null;
     let rawDetectedReport2 = null;
     let selectedPCId = null;
     let adminListFilterMode = 'all';
+    let filterDebounceTimer = null;
 
-    window.addEventListener('DOMContentLoaded', async () => {
+    window.addEventListener('DOMContentLoaded', () => {
       initRealisticHistoricalRates();
       loadBuiltInSampleDataset(); // Pre-carga datos realistas de base garantizando visualización inmediata
       applyDatePreset();
@@ -836,127 +842,425 @@
       document.getElementById('adminRateDate').value = new Date().toISOString().slice(0, 10);
       renderUsersTable();
 
-      // Inicia proceso automático de bienvenida y sincronización sin bloqueos
-      startBootSequence();
+      // Cierre instantáneo y ultra-rápido de la pantalla de bienvenida
+      startFastBootSequence();
     });
 
     /**
-     * Secuencia de bienvenida e inicio que sincroniza con Google Sheets automáticamente.
+     * Secuencia de arranque ultra-optimizada sin esperas artificiales.
      */
-    async function startBootSequence() {
+    function startFastBootSequence() {
       const progressBar = document.getElementById('splashProgressBar');
-      const stepInit = document.getElementById('stepInit');
-      const stepSheets = document.getElementById('stepSheets');
-      const stepReady = document.getElementById('stepReady');
+      if (progressBar) progressBar.style.width = '100%';
 
-      // Paso 1: Inicialización
-      progressBar.style.width = '35%';
-      stepInit.innerHTML = `<span class="text-emerald-400 font-bold">✓</span> <span>Memoria y tasas históricas inicializadas.</span>`;
-      stepSheets.className = "flex items-center space-x-2 text-indigo-300";
-      stepSheets.firstElementChild.className = "w-2 h-2 rounded-full bg-indigo-400 animate-ping";
+      // Renderiza datos de memoria al instante
+      renderTable();
+      updateKPIs();
+      renderMetricsDashboard();
 
-      // Paso 2: Conexión con Google Sheets si existe URL
-      const currentUrl = sanitizeGasUrl(window.googleAppsScriptUrl || document.getElementById('inputAppsScriptUrl')?.value || '');
-      if (currentUrl) {
-        progressBar.style.width = '70%';
-        try {
-          await syncWithGoogleSheets(true, currentUrl);
-          stepSheets.innerHTML = `<span class="text-emerald-400 font-bold">✓</span> <span>Google Sheets conectado. Registros cargados.</span>`;
-        } catch (e) {
-          stepSheets.innerHTML = `<span class="text-amber-400 font-bold">●</span> <span>Modo contingencia local cargado.</span>`;
-        }
-      } else {
-        stepSheets.innerHTML = `<span class="text-emerald-400 font-bold">✓</span> <span>Datos oficiales base precargados en memoria.</span>`;
-      }
-
-      // Paso 3: Consolidación y salida suave
-      progressBar.style.width = '100%';
-      stepReady.className = "flex items-center space-x-2 text-emerald-300";
-      stepReady.innerHTML = `<span class="text-emerald-400 font-bold">✓</span> <span>Tablero ejecutivo listo.</span>`;
-
+      // Cierra la pantalla de bienvenida casi de inmediato para navegación fluida
       setTimeout(() => {
         dismissSplashScreen();
-      }, 900);
+      }, 150);
+
+      // Consulta en segundo plano si existe URL sin trabar la interfaz
+      const currentUrl = sanitizeGasUrl(window.googleAppsScriptUrl || document.getElementById('inputAppsScriptUrl')?.value || '');
+      if (currentUrl) {
+        syncWithGoogleSheets(true, currentUrl);
+      }
     }
 
     function dismissSplashScreen() {
       const splash = document.getElementById('welcomeSplashScreen');
       if (splash) {
         splash.classList.add('opacity-0', 'pointer-events-none');
-        setTimeout(() => splash.remove(), 750);
+        setTimeout(() => splash.remove(), 350);
+      }
+    }
+
+    function debounceFilter() {
+      clearTimeout(filterDebounceTimer);
+      filterDebounceTimer = setTimeout(() => {
+        window.currentPage = 1;
+        renderTable();
+      }, 120);
+    }
+
+    function switchMainTab(tab) {
+      document.getElementById('sectionDashboard').classList.add('hidden');
+      document.getElementById('sectionMetrics').classList.add('hidden');
+
+      const btnDashboard = document.getElementById('navTabDashboard');
+      const btnMetrics = document.getElementById('navTabMetrics');
+
+      if (tab === 'dashboard') {
+        document.getElementById('sectionDashboard').classList.remove('hidden');
+        btnDashboard.className = "px-3 py-1.5 rounded-lg font-bold flex items-center space-x-2 bg-indigo-600 text-white shadow-xs transition";
+        btnMetrics.className = "px-3 py-1.5 rounded-lg font-medium flex items-center space-x-1.5 text-slate-300 hover:text-white hover:bg-slate-800 transition";
+        renderTable();
+      } else if (tab === 'metrics') {
+        document.getElementById('sectionMetrics').classList.remove('hidden');
+        btnDashboard.className = "px-3 py-1.5 rounded-lg font-medium flex items-center space-x-2 text-slate-300 hover:text-white hover:bg-slate-800 transition";
+        btnMetrics.className = "px-3 py-1.5 rounded-lg font-bold flex items-center space-x-1.5 bg-emerald-600 text-white shadow-xs transition";
+        renderMetricsDashboard();
       }
     }
 
     /**
-     * Convierte de manera infalible cualquier fecha (Excel serial, dd/mm/aaaa, ISO, Date) a 'yyyy-mm-dd'.
+     * Pre-computa atributos pesados (monedas parseadas, fechas y strings) en cada pedido
+     * para que ordenar y filtrar miles de filas sea instantáneo (< 10 ms).
      */
-    function normalizeDateToYMD(dateVal) {
-      if (!dateVal) return '';
-      if (dateVal instanceof Date && !isNaN(dateVal.getTime())) {
-        const y = dateVal.getFullYear();
-        const m = String(dateVal.getMonth() + 1).padStart(2, '0');
-        const d = String(dateVal.getDate()).padStart(2, '0');
-        return `${y}-${m}-${d}`;
+    function cacheOrderComputedFields(order) {
+      order._numUSD = parseCurrencySafe(order.presupuestoUSD);
+      order._numARS = parseCurrencySafe(order.presupuestoARS);
+      order._formattedUSD = order._numUSD !== null ? `$ ${order._numUSD.toLocaleString('es-AR', {minimumFractionDigits: 2, maximumFractionDigits: 2})}` : '-';
+      order._formattedARS = order._numARS !== null ? `$ ${Math.round(order._numARS).toLocaleString('es-AR')}` : '-';
+      order._displayDate = formatDisplayDate(order.fechaPedido);
+      order._ymdDate = normalizeDateToYMD(order.fechaPedido);
+      order._searchBlob = `${order.semana} ${order.nroPC} ${order.fechaPedido} ${order.enReprogramacionCon} ${order.descripcion} ${order.unidad} ${order.prioridad} ${order.comprador} ${order.estado} ${order.reprogramacion}`.toLowerCase();
+    }
+
+    function cacheAllOrders() {
+      window.masterPCData.forEach(cacheOrderComputedFields);
+    }
+
+    function changePageSize(newSize) {
+      window.pageSize = newSize === 'all' ? 999999 : parseInt(newSize, 10);
+      window.currentPage = 1;
+      renderTable();
+    }
+
+    function changePage(direction) {
+      window.currentPage += direction;
+      renderTable();
+    }
+
+    function renderTable() {
+      const search = (document.getElementById('filterSearch')?.value || '').toLowerCase();
+      const semFilter = document.getElementById('filterSemana')?.value || '';
+      const prioFilter = document.getElementById('filterPrioridad')?.value || '';
+      const estFilter = document.getElementById('filterEstado')?.value || '';
+      const datePreset = document.getElementById('filterDatePreset')?.value || 'all';
+      const dateFrom = document.getElementById('filterDateFrom')?.value || '';
+      const dateTo = document.getElementById('filterDateTo')?.value || '';
+
+      let filtered = window.masterPCData.filter(item => {
+        if (!item._searchBlob) cacheOrderComputedFields(item);
+
+        const itemYMD = item._ymdDate;
+        if (datePreset !== 'all' && itemYMD) {
+          if (dateFrom && itemYMD < dateFrom) return false;
+          if (dateTo && itemYMD > dateTo) return false;
+        }
+
+        if (search && !item._searchBlob.includes(search)) return false;
+        if (semFilter && item.semana !== semFilter) return false;
+        if (prioFilter && (prioFilter === 'Sin asignar' ? !!item.prioridad : item.prioridad !== prioFilter)) return false;
+        if (estFilter && item.estado !== estFilter) return false;
+
+        return true;
+      });
+
+      filtered.sort((a, b) => {
+        let valA = a[window.currentSortCol];
+        let valB = b[window.currentSortCol];
+        if (valA === null || valA === undefined) valA = '';
+        if (valB === null || valB === undefined) valB = '';
+
+        if (window.currentSortCol === 'fechaPedido') {
+          const ymdA = a._ymdDate || '';
+          const ymdB = b._ymdDate || '';
+          return window.currentSortDir === 'asc' ? ymdA.localeCompare(ymdB) : ymdB.localeCompare(ymdA);
+        }
+
+        if (typeof valA === 'boolean' && typeof valB === 'boolean') {
+          return window.currentSortDir === 'asc' ? (valA === valB ? 0 : valA ? -1 : 1) : (valA === valB ? 0 : valA ? 1 : -1);
+        }
+
+        if (typeof valA === 'number' && typeof valB === 'number') {
+          return window.currentSortDir === 'asc' ? valA - valB : valB - valA;
+        }
+
+        const strA = String(valA).toLowerCase();
+        const strB = String(valB).toLowerCase();
+        if (strA < strB) return window.currentSortDir === 'asc' ? -1 : 1;
+        if (strA > strB) return window.currentSortDir === 'asc' ? 1 : -1;
+        return 0;
+      });
+
+      window.currentFilteredOrders = filtered;
+      const totalItems = filtered.length;
+      const totalPages = Math.ceil(totalItems / window.pageSize) || 1;
+
+      if (window.currentPage > totalPages) window.currentPage = totalPages;
+      if (window.currentPage < 1) window.currentPage = 1;
+
+      const startIndex = (window.currentPage - 1) * window.pageSize;
+      const paginatedItems = filtered.slice(startIndex, startIndex + window.pageSize);
+
+      // Actualizar controles de paginación
+      const pageIndicator = document.getElementById('pageIndicator');
+      if (pageIndicator) pageIndicator.innerText = `Pág ${window.currentPage} de ${totalPages}`;
+
+      const btnPrev = document.getElementById('btnPrevPage');
+      if (btnPrev) btnPrev.disabled = (window.currentPage <= 1);
+
+      const btnNext = document.getElementById('btnNextPage');
+      if (btnNext) btnNext.disabled = (window.currentPage >= totalPages);
+
+      const tbody = document.getElementById('tableBody');
+      if (paginatedItems.length === 0) {
+        tbody.innerHTML = `
+          <tr>
+            <td colspan="14" class="p-8 text-center text-slate-400">
+              No se encontraron comprobantes con los filtros o período seleccionados.
+            </td>
+          </tr>`;
+      } else {
+        const rowsHtml = paginatedItems.map(item => {
+          let prioBadge = '<span class="text-slate-400 italic">Sin asignar</span>';
+          if (item.prioridad === 'Alta') prioBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">Alta</span>';
+          else if (item.prioridad === 'Intermedia') prioBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">Intermedia</span>';
+
+          let estadoBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-100 text-amber-800">Pendiente</span>`;
+          if (item.estado === 'Aprobado') {
+            estadoBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-100 text-emerald-800">Aprobado</span>`;
+          }
+
+          let reprogDisplay = item.reprogramacion || 'No';
+          if (item.reprogramacion === 'En espera' && item.semanaReprogramada) {
+            reprogDisplay = `<span class="text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded text-[11px]">En espera (${item.semanaReprogramada})</span>`;
+          }
+
+          const cotizTooltip = item.cotizacionAplicada ? `Tasa aplicada: 1 USD = $${item.cotizacionAplicada} ARS` : 'Presupuesto';
+
+          // CHECKBOX DE COMPRAS: Solo lectura / No editable en la pantalla de visualización
+          const isComprasChecked = (item.compras === true || item.compras === 'TRUE' || item.compras === 'true');
+          const comprasCheckboxHtml = `
+            <div class="flex items-center justify-center" title="Solo editable en el formulario de gestión con clave">
+              <input type="checkbox" ${isComprasChecked ? 'checked' : ''} disabled class="w-4 h-4 rounded text-indigo-600 border-slate-300 cursor-not-allowed opacity-90 accent-indigo-600 pointer-events-none">
+            </div>
+          `;
+
+          const editBtn = `
+            <button onclick="handleQuickEditClick('${item.nroPC}')" class="px-2.5 py-1 text-[11px] font-semibold rounded-lg ${window.isAdminAuthenticated ? 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700' : 'bg-slate-100 hover:bg-slate-200 text-slate-600'} transition flex items-center space-x-1 mx-auto">
+              <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"></path></svg>
+              <span>${window.isAdminAuthenticated ? 'Editar' : 'Editar 🔒'}</span>
+            </button>
+          `;
+
+          return `
+            <tr class="hover:bg-slate-50/80 transition border-b border-slate-100">
+              <td class="p-2.5 font-mono font-bold text-slate-900 whitespace-nowrap">${item.semana}</td>
+              <td class="p-2.5 font-bold text-indigo-700 whitespace-nowrap font-mono">${item.nroPC}</td>
+              <td class="p-2.5 whitespace-nowrap text-slate-600 font-mono">${item._displayDate || '-'}</td>
+              <td class="p-2.5 whitespace-nowrap text-slate-600">${item.enReprogramacionCon || '-'}</td>
+              <td class="p-2.5 text-slate-800 font-medium min-w-[280px]">
+                <div class="line-clamp-2" title="${item.descripcion}">${item.descripcion}</div>
+              </td>
+              <td class="p-2.5 whitespace-nowrap">${getUnitPastelBadge(item.unidad)}</td>
+              <td class="p-2.5 whitespace-nowrap">${prioBadge}</td>
+              <td class="p-2.5 whitespace-nowrap text-right font-mono font-bold text-indigo-700">${item._formattedUSD}</td>
+              <td class="p-2.5 whitespace-nowrap text-right font-mono font-black text-emerald-700" title="${cotizTooltip}">${item._formattedARS}</td>
+              <td class="p-2.5 whitespace-nowrap font-medium text-slate-700">${item.comprador || '<span class="text-slate-400 italic">Sin asignar</span>'}</td>
+              <td class="p-2.5 whitespace-nowrap">${estadoBadge}</td>
+              <td class="p-2.5 whitespace-nowrap text-center">${comprasCheckboxHtml}</td>
+              <td class="p-2.5 whitespace-nowrap">${reprogDisplay}</td>
+              <td class="p-2.5 whitespace-nowrap text-center">${editBtn}</td>
+            </tr>
+          `;
+        }).join('');
+
+        tbody.innerHTML = rowsHtml;
       }
-      if (typeof dateVal === 'number') {
-        const d = new Date((dateVal - (25567 + 2)) * 86400 * 1000);
-        if (!isNaN(d.getTime())) {
-          const y = d.getUTCFullYear();
-          const m = String(d.getUTCMonth() + 1).padStart(2, '0');
-          const day = String(d.getUTCDate()).padStart(2, '0');
-          return `${y}-${m}-${day}`;
+
+      const summaryText = window.pageSize >= 999999 
+        ? `Mostrando todas las ${totalItems} órdenes de ${window.masterPCData.length} totales`
+        : `Mostrando ${startIndex + 1}-${Math.min(startIndex + window.pageSize, totalItems)} de ${totalItems} órdenes filtradas (${window.masterPCData.length} totales)`;
+
+      document.getElementById('tableSummary').innerText = summaryText;
+      document.getElementById('badgeTotalItems').innerText = window.masterPCData.length;
+    }
+
+    function renderMetricsDashboard() {
+      const orders = window.masterPCData;
+      const totalOrders = orders.length;
+
+      let pendingCount = 0;
+      let approvedCount = 0;
+      let reprogCount = 0;
+      let reprogWithWeeksCount = 0;
+      let comprasCheckedCount = 0;
+      let totalUSD = 0;
+      let totalARS = 0;
+
+      const unitCounts = {};
+      const unitUSD = {};
+      const unitARS = {};
+      const reprogWithCounts = {};
+      const reprogWeekCounts = {};
+      const buyerCounts = {};
+
+      orders.forEach(o => {
+        const u = o.unidad || 'Sin asignar';
+        unitCounts[u] = (unitCounts[u] || 0) + 1;
+
+        const usd = o._numUSD || parseCurrencySafe(o.presupuestoUSD) || 0;
+        const ars = o._numARS || parseCurrencySafe(o.presupuestoARS) || 0;
+        totalUSD += usd;
+        totalARS += ars;
+
+        unitUSD[u] = (unitUSD[u] || 0) + usd;
+        unitARS[u] = (unitARS[u] || 0) + ars;
+
+        if (o.estado === 'Aprobado') approvedCount++;
+        else pendingCount++;
+
+        const isReprog = (o.reprogramacion === 'En espera' || o.estado === 'En espera');
+        if (isReprog) {
+          reprogCount++;
+          if (o.semanaReprogramada) {
+            reprogWithWeeksCount++;
+            reprogWeekCounts[o.semanaReprogramada] = (reprogWeekCounts[o.semanaReprogramada] || 0) + 1;
+          }
+          const withEntity = o.enReprogramacionCon?.trim() || 'Sin especificar';
+          reprogWithCounts[withEntity] = (reprogWithCounts[withEntity] || 0) + 1;
+        }
+
+        const isCompras = (o.compras === true || o.compras === 'TRUE' || o.compras === 'true');
+        if (isCompras) comprasCheckedCount++;
+
+        const b = o.comprador?.trim() || 'Sin Comprador';
+        buyerCounts[b] = (buyerCounts[b] || 0) + 1;
+      });
+
+      // Actualizar KPIs de la pantalla de indicadores
+      const reprogRate = totalOrders > 0 ? Math.round((reprogCount / totalOrders) * 100) : 0;
+      const approvalRate = totalOrders > 0 ? Math.round((approvedCount / totalOrders) * 100) : 0;
+      const comprasRate = totalOrders > 0 ? Math.round((comprasCheckedCount / totalOrders) * 100) : 0;
+      const pendingRate = totalOrders > 0 ? Math.round((pendingCount / totalOrders) * 100) : 0;
+
+      document.getElementById('metricsReprogRate').innerText = `${reprogRate}%`;
+      document.getElementById('metricsApprovalRate').innerText = `${approvalRate}%`;
+
+      document.getElementById('metricsPendingCount').innerText = pendingCount;
+      document.getElementById('metricsPendingPerc').innerText = `${pendingRate}% del total`;
+
+      document.getElementById('metricsApprovedCount').innerText = approvedCount;
+      document.getElementById('metricsApprovedPerc').innerText = `${approvalRate}% del total`;
+
+      document.getElementById('metricsReprogTotal').innerText = reprogCount;
+      document.getElementById('metricsReprogWithWeeks').innerText = `${reprogWithWeeksCount} con semana fijada`;
+
+      document.getElementById('metricsComprasCheckedCount').innerText = comprasCheckedCount;
+      document.getElementById('metricsComprasPerc').innerText = `${comprasRate}% marcadas en compras`;
+
+      document.getElementById('metricsTotalOrdersPill').innerText = `${totalOrders} órdenes`;
+      document.getElementById('metricsTotalBudgetPill').innerText = `$ ${totalUSD.toLocaleString('es-AR', {maximumFractionDigits: 0})} USD`;
+
+      // 1. Gráfico de Pedidos por Unidad
+      const sortedUnitsByCount = Object.keys(unitCounts).sort((a, b) => unitCounts[b] - unitCounts[a]);
+      const containerUnitOrders = document.getElementById('chartContainerOrdersByUnit');
+      if (containerUnitOrders) {
+        if (sortedUnitsByCount.length === 0) {
+          containerUnitOrders.innerHTML = `<p class="text-xs text-slate-400 py-4 text-center">No hay datos disponibles.</p>`;
+        } else {
+          containerUnitOrders.innerHTML = sortedUnitsByCount.map(unit => {
+            const count = unitCounts[unit];
+            const pct = totalOrders > 0 ? Math.round((count / totalOrders) * 100) : 0;
+            return `
+              <div class="space-y-1">
+                <div class="flex items-center justify-between text-xs">
+                  <div class="flex items-center space-x-2">
+                    ${getUnitPastelBadge(unit)}
+                    <span class="font-bold text-slate-700">${count} pedidos</span>
+                  </div>
+                  <span class="font-mono text-slate-500 font-bold">${pct}%</span>
+                </div>
+                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                  <div class="bg-indigo-600 h-full rounded-full transition-all duration-300" style="width: ${pct}%"></div>
+                </div>
+              </div>
+            `;
+          }).join('');
         }
       }
-      const s = String(dateVal).trim();
-      if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(s)) {
-        const parts = s.split(' ')[0].split('/');
-        const day = parts[0].padStart(2, '0');
-        const month = parts[1].padStart(2, '0');
-        const year = parts[2];
-        return `${year}-${month}-${day}`;
-      }
-      if (/^\d{4}-\d{1,2}-\d{1,2}/.test(s)) {
-        const parts = s.split('T')[0].split(' ')[0].split('-');
-        const year = parts[0];
-        const month = parts[1].padStart(2, '0');
-        const day = parts[2].padStart(2, '0');
-        return `${year}-${month}-${day}`;
-      }
-      const parsed = new Date(s);
-      if (!isNaN(parsed.getTime())) {
-        const y = parsed.getFullYear();
-        const m = String(parsed.getMonth() + 1).padStart(2, '0');
-        const d = String(parsed.getDate()).padStart(2, '0');
-        return `${y}-${m}-${d}`;
-      }
-      return '';
-    }
 
-    function formatDisplayDate(dateVal) {
-      const ymd = normalizeDateToYMD(dateVal);
-      if (!ymd) return '-';
-      const parts = ymd.split('-');
-      return `${parts[2]}/${parts[1]}/${parts[0]}`;
-    }
+      // 2. Gráfico de Presupuesto por Unidad
+      const sortedUnitsByBudget = Object.keys(unitUSD).sort((a, b) => unitUSD[b] - unitUSD[a]);
+      const containerUnitBudget = document.getElementById('chartContainerBudgetByUnit');
+      if (containerUnitBudget) {
+        if (sortedUnitsByBudget.length === 0) {
+          containerUnitBudget.innerHTML = `<p class="text-xs text-slate-400 py-4 text-center">No hay datos de presupuesto.</p>`;
+        } else {
+          containerUnitBudget.innerHTML = sortedUnitsByBudget.map(unit => {
+            const usd = unitUSD[unit] || 0;
+            const ars = unitARS[unit] || 0;
+            const pct = totalUSD > 0 ? Math.round((usd / totalUSD) * 100) : 0;
+            return `
+              <div class="space-y-1">
+                <div class="flex items-center justify-between text-xs">
+                  <div class="flex items-center space-x-2">
+                    ${getUnitPastelBadge(unit)}
+                    <span class="font-mono font-bold text-indigo-700">$ ${usd.toLocaleString('es-AR', {minimumFractionDigits: 0, maximumFractionDigits: 0})} USD</span>
+                  </div>
+                  <div class="text-right">
+                    <span class="font-mono text-emerald-700 font-bold text-[11px]">≈ $ ${Math.round(ars).toLocaleString('es-AR')} ARS</span>
+                    <span class="text-slate-400 text-[10px] ml-1 font-mono">(${pct}%)</span>
+                  </div>
+                </div>
+                <div class="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+                  <div class="bg-emerald-500 h-full rounded-full transition-all duration-300" style="width: ${pct}%"></div>
+                </div>
+              </div>
+            `;
+          }).join('');
+        }
+      }
 
-    function calculateSemana(dateVal) {
-      const ymd = normalizeDateToYMD(dateVal);
-      if (!ymd) return '-';
-      const parts = ymd.split('-');
-      const d = new Date(Number(parts[0]), Number(parts[1]) - 1, Number(parts[2]));
-      if (isNaN(d.getTime())) return '-';
+      // 3. Detalle Reprogramación con
+      const containerReprogWith = document.getElementById('containerReprogWith');
+      if (containerReprogWith) {
+        const withKeys = Object.keys(reprogWithCounts).sort((a, b) => reprogWithCounts[b] - reprogWithCounts[a]);
+        if (withKeys.length === 0) {
+          containerReprogWith.innerHTML = `<p class="text-slate-400 text-center py-2">Sin pedidos en reprogramación.</p>`;
+        } else {
+          containerReprogWith.innerHTML = withKeys.map(k => `
+            <div class="flex items-center justify-between p-2 rounded-xl bg-amber-50/60 border border-amber-100">
+              <span class="font-semibold text-amber-950">${k}</span>
+              <span class="font-mono font-bold bg-amber-200/80 text-amber-900 px-2 py-0.5 rounded-full text-[10px]">${reprogWithCounts[k]}</span>
+            </div>
+          `).join('');
+        }
+      }
 
-      const target = new Date(d.valueOf());
-      const dayNr = (d.getDay() + 6) % 7;
-      target.setDate(target.getDate() - dayNr + 3);
-      const firstThursday = target.valueOf();
-      target.setMonth(0, 1);
-      if (target.getDay() !== 4) target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
-      const weekNum = 1 + Math.ceil((firstThursday - target) / 604800000);
-      const year = d.getFullYear();
-      const padWeek = weekNum < 10 ? '0' + weekNum : String(weekNum);
-      
-      return `${year}-${padWeek}`;
+      // 4. Semanas Reprogramadas
+      const containerReprogWeeks = document.getElementById('containerReprogWeeks');
+      if (containerReprogWeeks) {
+        const weekKeys = Object.keys(reprogWeekCounts).sort();
+        if (weekKeys.length === 0) {
+          containerReprogWeeks.innerHTML = `<p class="text-slate-400 text-center py-2">No hay semanas reprogramadas fijadas.</p>`;
+        } else {
+          containerReprogWeeks.innerHTML = weekKeys.map(w => `
+            <div class="flex items-center justify-between p-2 rounded-xl bg-indigo-50/60 border border-indigo-100">
+              <span class="font-mono font-bold text-indigo-900">Semana ${w}</span>
+              <span class="font-mono font-bold bg-indigo-200/80 text-indigo-900 px-2 py-0.5 rounded-full text-[10px]">${reprogWeekCounts[w]}</span>
+            </div>
+          `).join('');
+        }
+      }
+
+      // 5. Compradores
+      const containerBuyers = document.getElementById('containerBuyersDist');
+      if (containerBuyers) {
+        const buyerKeys = Object.keys(buyerCounts).sort((a, b) => buyerCounts[b] - buyerCounts[a]);
+        containerBuyers.innerHTML = buyerKeys.map(b => `
+          <div class="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-100">
+            <span class="font-medium text-slate-800">${b}</span>
+            <span class="font-mono font-bold bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full text-[10px]">${buyerCounts[b]}</span>
+          </div>
+        `).join('');
+      }
     }
 
     function initRealisticHistoricalRates() {
@@ -2394,7 +2698,7 @@
         const sem = calculateSemana(d);
         const rate = getRateForDate(ymd);
 
-        window.masterPCData.push({
+        const item = {
           id: normalizeStr(m.doc),
           semana: sem,
           nroPC: m.doc,
@@ -2416,13 +2720,63 @@
           modoPresupuestoARS: 'auto',
           nombreUsuarioAlta: m.user,
           usuarioAlta: m.user
-        });
+        };
+        cacheOrderComputedFields(item);
+        window.masterPCData.push(item);
       });
 
+      cacheAllOrders();
       populateSemanaFilter();
       renderTable();
       updateKPIs();
       renderAdminOrdersList();
+      renderMetricsDashboard();
+    }
+
+    function saveAdminOrderData() {
+      if (!selectedPCId) return;
+      const pc = window.masterPCData.find(p => p.nroPC === selectedPCId);
+      if (!pc) return;
+
+      const isManual = document.getElementById('radioModoManual').checked;
+      const usdVal = document.getElementById('adminInputUSD').value !== '' ? parseFloat(document.getElementById('adminInputUSD').value) : null;
+      const arsVal = document.getElementById('adminInputARS').value !== '' ? parseFloat(document.getElementById('adminInputARS').value) : null;
+      const cotizDate = document.getElementById('adminInputFechaCotiz').value || normalizeDateToYMD(new Date());
+
+      pc.presupuestoUSD = usdVal;
+      pc.modoPresupuestoARS = isManual ? 'manual' : 'auto';
+      pc.fechaCotizacion = cotizDate;
+
+      if (isManual) {
+        pc.presupuestoARS = arsVal;
+        pc.cotizacionAplicada = (usdVal && arsVal) ? Number((arsVal / usdVal).toFixed(2)) : null;
+      } else {
+        if (usdVal !== null) {
+          const rate = getRateForDate(cotizDate);
+          pc.presupuestoARS = Math.round(usdVal * rate);
+          pc.cotizacionAplicada = rate;
+        } else {
+          pc.presupuestoARS = null;
+          pc.cotizacionAplicada = null;
+        }
+      }
+
+      pc.enReprogramacionCon = document.getElementById('adminInputEnReprogramacionCon').value.trim();
+      pc.prioridad = document.getElementById('adminInputPrioridad').value;
+      pc.comprador = document.getElementById('adminInputComprador').value.trim();
+      pc.estado = document.getElementById('adminInputEstado').value;
+      pc.compras = document.getElementById('adminInputCompras').checked;
+      pc.reprogramacion = document.getElementById('adminInputReprogramacion').value;
+      pc.semanaReprogramada = pc.reprogramacion === 'En espera' ? document.getElementById('adminInputSemanaReprog').value.trim() : '';
+
+      cacheOrderComputedFields(pc);
+      renderAdminOrdersList();
+      renderTable();
+      updateKPIs();
+      renderMetricsDashboard();
+      showToast(`Orden ${pc.nroPC} guardada con éxito.`);
+
+      if (window.googleAppsScriptUrl) syncSingleOrderToSheets(pc);
     }
 
     function loadDemoSampleData() {
