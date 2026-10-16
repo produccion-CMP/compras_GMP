@@ -87,7 +87,7 @@
 
           <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-xl transition flex items-center space-x-1.5 shadow-sm">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
-            <span class="hidden sm:inline">Exportar Excel (13 Cols)</span>
+            <span class="hidden sm:inline">Exportar Excel (14 Cols)</span>
           </button>
 
           <!-- Acceso de Compradores Protegido -->
@@ -209,7 +209,7 @@
             <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path></svg>
             </span>
-            <input type="text" id="filterSearch" oninput="renderTable()" placeholder="Buscar por Nro de PC, descripción, unidad, comprador..." class="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
+            <input type="text" id="filterSearch" oninput="renderTable()" placeholder="Buscar por Nro de PC, descripción, unidad, responsable, comprador..." class="w-full pl-9 pr-3 py-1.5 text-xs rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 outline-none">
           </div>
 
           <div class="flex flex-wrap items-center gap-2 text-xs">
@@ -260,7 +260,7 @@
 
       <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div class="table-scroll-container">
-          <table class="w-full text-left border-collapse text-xs min-w-[1350px]" id="mainDataTable">
+          <table class="w-full text-left border-collapse text-xs min-w-[1500px]" id="mainDataTable">
             <thead class="bg-slate-100 text-slate-700 font-bold sticky top-0 z-10 backdrop-blur border-b border-slate-200 uppercase tracking-wider text-[11px]">
               <tr>
                 <th onclick="handleSort('semana')" class="p-2.5 whitespace-nowrap th-sortable w-[100px]">
@@ -280,6 +280,9 @@
                 </th>
                 <th onclick="handleSort('unidad')" class="p-2.5 whitespace-nowrap th-sortable w-[150px]">
                   <div class="flex items-center space-x-1"><span>Unidad</span><span id="sortIcon_unidad">↕</span></div>
+                </th>
+                <th onclick="handleSort('responsablePedido')" class="p-2.5 whitespace-nowrap th-sortable w-[170px]">
+                  <div class="flex items-center space-x-1"><span>Responsable pedido</span><span id="sortIcon_responsablePedido">↕</span></div>
                 </th>
                 <th onclick="handleSort('prioridad')" class="p-2.5 whitespace-nowrap th-sortable w-[120px]">
                   <div class="flex items-center space-x-1"><span>Prioridad</span><span id="sortIcon_prioridad">↕</span></div>
@@ -304,7 +307,7 @@
             </thead>
             <tbody id="tableBody" class="divide-y divide-slate-100 text-slate-700">
               <tr>
-                <td colspan="13" class="p-8 text-center text-slate-400">
+                <td colspan="14" class="p-8 text-center text-slate-400">
                   <p class="font-medium text-slate-600">Conectando con Google Sheets...</p>
                 </td>
               </tr>
@@ -387,7 +390,7 @@
 
       <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div class="table-scroll-container">
-          <table class="w-full text-left border-collapse text-xs min-w-[1350px]">
+          <table class="w-full text-left border-collapse text-xs min-w-[1450px]">
             <thead class="bg-slate-100 text-slate-700 font-bold sticky top-0 z-10 border-b border-slate-200 uppercase tracking-wider text-[11px]">
               <tr>
                 <th class="p-2.5 whitespace-nowrap w-[100px]">Semana</th>
@@ -395,6 +398,7 @@
                 <th class="p-2.5 whitespace-nowrap w-[120px]">Fecha Pedido</th>
                 <th class="p-2.5 min-w-[280px]">Descripcion</th>
                 <th class="p-2.5 whitespace-nowrap w-[150px]">Unidad</th>
+                <th class="p-2.5 whitespace-nowrap w-[170px]">Responsable pedido</th>
                 <th class="p-2.5 whitespace-nowrap text-right w-[130px]">Presupuesto (usd)</th>
                 <th class="p-2.5 whitespace-nowrap text-right w-[130px]">Presupuesto ($)</th>
                 <th class="p-2.5 whitespace-nowrap w-[140px]">Comprador</th>
@@ -405,7 +409,7 @@
             </thead>
             <tbody id="completedTableBody" class="divide-y divide-slate-100 text-slate-700">
               <tr>
-                <td colspan="11" class="p-8 text-center text-slate-400">No hay compras finalizadas registradas.</td>
+                <td colspan="12" class="p-8 text-center text-slate-400">No hay compras finalizadas registradas.</td>
               </tr>
             </tbody>
           </table>
@@ -427,7 +431,7 @@
         </div>
       </div>
 
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
           <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Tasa de Aprobación</p>
           <div class="flex items-baseline space-x-2 mt-1">
@@ -463,6 +467,15 @@
           </div>
           <span class="text-[10px] text-slate-400 block mt-1" id="metricsComprasPerc">0 finalizadas</span>
         </div>
+
+        <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs">
+          <p class="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Responsables con Pedidos</p>
+          <div class="flex items-baseline space-x-2 mt-1">
+            <h3 class="text-2xl font-black text-sky-700 font-mono" id="metricsResponsablesCount">0</h3>
+            <span class="text-xs text-slate-500">responsables</span>
+          </div>
+          <span class="text-[10px] text-rose-600 font-medium block mt-1" id="metricsSinResponsableCount">0 sin responsable</span>
+        </div>
       </div>
 
       <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
@@ -475,6 +488,17 @@
             <span class="text-[10px] text-slate-400 font-mono">Volumen</span>
           </div>
           <div id="chartContainerOrdersByUnit" class="space-y-2.5 pt-1"></div>
+        </div>
+
+        <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-3">
+          <div class="flex items-center justify-between border-b border-slate-100 pb-2">
+            <h4 class="font-bold text-slate-800 text-sm flex items-center space-x-2">
+              <span class="w-2.5 h-2.5 rounded-full bg-sky-600"></span>
+              <span>Pedidos por Responsable Pedido</span>
+            </h4>
+            <span class="text-[10px] text-slate-400 font-mono">Carga</span>
+          </div>
+          <div id="containerResponsablesPedido" class="space-y-2.5 pt-1"></div>
         </div>
 
         <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-xs space-y-3">
@@ -1235,7 +1259,7 @@
       order._formattedARS = order._numARS !== null ? `$ ${Math.round(order._numARS).toLocaleString('es-AR')}` : '-';
       order._displayDate = formatDisplayDate(order.fechaPedido);
       order._ymdDate = normalizeDateToYMD(order.fechaPedido);
-      order._searchBlob = `${order.semana} ${order.nroPC} ${order.fechaPedido} ${order.enReprogramacionCon} ${order.descripcion} ${order.unidad} ${order.prioridad} ${order.comprador} ${order.estado} ${order.reprogramacion}`.toLowerCase();
+      order._searchBlob = `${order.semana} ${order.nroPC} ${order.fechaPedido} ${order.enReprogramacionCon} ${order.descripcion} ${order.unidad} ${order.responsablePedido || ''} ${order.prioridad} ${order.comprador} ${order.estado} ${order.reprogramacion}`.toLowerCase();
     }
 
     function changePageSize(newSize) {
@@ -1335,7 +1359,7 @@
       if (paginatedItems.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="13" class="p-8 text-center text-slate-400">
+            <td colspan="14" class="p-8 text-center text-slate-400">
               No se encontraron comprobantes activos con los filtros o período seleccionados.
             </td>
           </tr>`;
@@ -1374,6 +1398,7 @@
                 <div class="line-clamp-2" title="${item.descripcion}">${item.descripcion}</div>
               </td>
               <td class="p-2.5 whitespace-nowrap">${getUnitPastelBadge(item.unidad)}</td>
+              <td class="p-2.5 whitespace-nowrap font-medium text-slate-700">${item.responsablePedido || '<span class="text-slate-400 italic">Sin asignar</span>'}</td>
               <td class="p-2.5 whitespace-nowrap">${prioBadge}</td>
               <td class="p-2.5 whitespace-nowrap text-right font-mono font-bold text-indigo-700">${item._formattedUSD}</td>
               <td class="p-2.5 whitespace-nowrap text-right font-mono font-black text-emerald-700" title="${cotizTooltip}">${item._formattedARS}</td>
@@ -1463,7 +1488,7 @@
       if (completedOrders.length === 0) {
         tbody.innerHTML = `
           <tr>
-            <td colspan="11" class="p-8 text-center text-slate-400">
+            <td colspan="12" class="p-8 text-center text-slate-400">
               No hay compras finalizadas con el filtro aplicado.
             </td>
           </tr>`;
@@ -1479,6 +1504,7 @@
             <div class="line-clamp-2" title="${item.descripcion}">${item.descripcion}</div>
           </td>
           <td class="p-2.5 whitespace-nowrap">${getUnitPastelBadge(item.unidad)}</td>
+          <td class="p-2.5 whitespace-nowrap font-medium text-slate-700">${item.responsablePedido || '-'}</td>
           <td class="p-2.5 whitespace-nowrap text-right font-mono font-bold text-indigo-700">${item._formattedUSD}</td>
           <td class="p-2.5 whitespace-nowrap text-right font-mono font-black text-emerald-700">${item._formattedARS}</td>
           <td class="p-2.5 whitespace-nowrap font-medium text-slate-700">${item.comprador || '-'}</td>
@@ -1513,6 +1539,8 @@
       const reprogWithMap = {};
       const reprogWeeksMap = {};
       const buyersMap = {};
+      const responsablesPedidoMap = {};
+      let sinResponsableCount = 0;
 
       activeOrders.forEach(o => {
         const usd = o._numUSD || parseCurrencySafe(o.presupuestoUSD) || 0;
@@ -1539,6 +1567,10 @@
 
         const buyer = (o.comprador || 'Sin comprador').trim();
         buyersMap[buyer] = (buyersMap[buyer] || 0) + 1;
+
+        const responsable = (o.responsablePedido || '').trim();
+        if (responsable) responsablesPedidoMap[responsable] = (responsablesPedidoMap[responsable] || 0) + 1;
+        else sinResponsableCount++;
       });
 
       const totalCompleted = window.masterPCData.length - totalActive;
@@ -1563,6 +1595,8 @@
 
       setEl('metricsComprasCheckedCount', totalCompleted);
       setEl('metricsComprasPerc', `${totalCompleted} finalizadas`);
+      setEl('metricsResponsablesCount', Object.keys(responsablesPedidoMap).length);
+      setEl('metricsSinResponsableCount', `${sinResponsableCount} sin responsable`);
 
       const containerOrdersByUnit = document.getElementById('chartContainerOrdersByUnit');
       if (containerOrdersByUnit) {
@@ -1581,6 +1615,30 @@
             </div>
           `;
         }).join('') || '<p class="text-xs text-slate-400">Sin datos</p>';
+      }
+
+      const containerResponsablesPedido = document.getElementById('containerResponsablesPedido');
+      if (containerResponsablesPedido) {
+        const sortedResponsables = Object.entries(responsablesPedidoMap).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+        const maxResponsable = sortedResponsables.length ? sortedResponsables[0][1] : 0;
+        containerResponsablesPedido.innerHTML = sortedResponsables.map(([responsable, cnt]) => {
+          const percTotal = totalActive > 0 ? Math.round((cnt / totalActive) * 100) : 0;
+          const barWidth = maxResponsable > 0 ? Math.max(4, Math.round((cnt / maxResponsable) * 100)) : 0;
+          return `
+            <div class="space-y-1">
+              <div class="flex items-center justify-between gap-3 text-xs">
+                <span class="font-bold text-slate-700 truncate" title="${responsable}">${responsable}</span>
+                <span class="font-mono text-slate-500 whitespace-nowrap">${cnt} pedidos (${percTotal}%)</span>
+              </div>
+              <div class="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div class="h-full bg-sky-600 rounded-full" style="width: ${barWidth}%"></div>
+              </div>
+            </div>
+          `;
+        }).join('') || '<p class="text-xs text-slate-400">Sin responsables asignados</p>';
+        if (sinResponsableCount > 0) {
+          containerResponsablesPedido.innerHTML += `<div class="pt-2 mt-2 border-t border-slate-100 text-[11px] text-rose-600 font-semibold">${sinResponsableCount} órdenes activas sin Responsable pedido.</div>`;
+        }
       }
 
       const containerBudgetByUnit = document.getElementById('chartContainerBudgetByUnit');
@@ -2228,10 +2286,15 @@
           registerDetectedFinnegansUser(usuarioAltaPC);
 
           if (docNum) {
-            rep1Map.set(normalizeStr(docNum), {
-              fechaUltActividad: fechaUltAct,
-              usuarioAltaPC: usuarioAltaPC || usuarioAltaOC,
-              usuarioAltaOC: usuarioAltaOC
+            const repKey = normalizeStr(docNum);
+            const prevAut = rep1Map.get(repKey) || {};
+            const prevFecha = prevAut.fechaUltActividad || '';
+            const tomarActual = !prevFecha || (fechaUltAct && fechaUltAct >= prevFecha);
+            rep1Map.set(repKey, {
+              fechaUltActividad: tomarActual ? (fechaUltAct || prevFecha) : prevFecha,
+              usuarioAltaPC: (tomarActual ? (usuarioAltaPC || usuarioAltaOC) : prevAut.usuarioAltaPC) || prevAut.usuarioAltaPC || usuarioAltaPC || usuarioAltaOC || '',
+              usuarioAltaOC: (tomarActual ? usuarioAltaOC : prevAut.usuarioAltaOC) || prevAut.usuarioAltaOC || usuarioAltaOC || '',
+              responsablePedido: (tomarActual ? resp : prevAut.responsablePedido) || prevAut.responsablePedido || resp || ''
             });
 
             window.rawMasterAutorizRows.push({
@@ -2332,6 +2395,7 @@
             if ((!existing.unidad || existing.unidad === 'Sin asignar') && unidadResuelta !== 'Sin asignar') {
               existing.unidad = unidadResuelta;
             }
+            if (rep1Data.responsablePedido) existing.responsablePedido = rep1Data.responsablePedido;
             cacheOrderComputedFields(existing);
             preservedCount++;
           } else {
@@ -2345,6 +2409,7 @@
               enReprogramacionCon: '',
               descripcion: grp.descripcion,
               unidad: unidadResuelta,
+              responsablePedido: rep1Data.responsablePedido || '',
               prioridad: '',
               presupuestoUSD: null,
               presupuestoARS: null,
@@ -2862,6 +2927,7 @@
         "En reprogramación con": item.enReprogramacionCon,
         "Descripcion": item.descripcion,
         "Unidad": item.unidad,
+        "Responsable pedido": item.responsablePedido || '',
         "Prioridad": item.prioridad,
         "Presupuesto (usd)": parseCurrencySafe(item.presupuestoUSD) !== null ? parseCurrencySafe(item.presupuestoUSD) : '',
         "Presupuesto ($)": parseCurrencySafe(item.presupuestoARS) !== null ? Math.round(parseCurrencySafe(item.presupuestoARS)) : '',
@@ -2880,7 +2946,7 @@
 
       const dateStr = normalizeDateToYMD(new Date());
       XLSX.writeFile(workbook, `Programacion_PC_${dateStr}.xlsx`);
-      showToast("Archivo Excel descargado con las 13 columnas oficiales.");
+      showToast("Archivo Excel descargado con las 14 columnas oficiales.");
     }
 
     function showToast(message) {
