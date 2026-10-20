@@ -796,7 +796,7 @@
               <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"></path></svg>
             </div>
             <h3 class="text-sm font-bold text-slate-800">Haz clic aquí o arrastra ambos reportes de Finnegans</h3>
-            <p class="text-[11px] text-slate-500 mt-0.5 max-w-md">Archiva el detalle en master PC / master autorizaciones y consolida en Programacion PC sin sobreescribir datos ya tratados.</p>
+            <p class="text-[11px] text-slate-500 mt-0.5 max-w-md">Archiva el detalle en master PC / master autorizaciones y consolida ambos orígenes en Programacion PC sin sobreescribir datos ya tratados. También puedes reprocesar luego las hojas master sin volver a subir archivos.</p>
           </div>
 
           <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
@@ -819,7 +819,11 @@
             </div>
           </div>
 
-          <div class="flex flex-col sm:flex-row items-center justify-end gap-3 pt-3 border-t border-slate-100">
+          <div class="flex flex-col sm:flex-row items-center justify-between gap-3 pt-3 border-t border-slate-100">
+            <button id="btnReprocessMasters" type="button" onclick="reprocessImportedMasters()" class="bg-slate-700 hover:bg-slate-800 text-white text-xs font-bold px-5 py-2.5 rounded-xl shadow-xs transition flex items-center space-x-2" title="Vuelve a procesar master PC y master autorizaciones ya guardados en Google Sheets">
+              <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
+              <span>Reprocesar masters → Programación PC</span>
+            </button>
             <button id="btnProcessReports" onclick="executeSmartMerge()" disabled class="bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 disabled:cursor-not-allowed text-white text-xs font-bold px-6 py-2.5 rounded-xl shadow-xs transition flex items-center space-x-2">
               <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path></svg>
               <span>Desduplicar por Nro de PC y Consolidar</span>
@@ -1137,6 +1141,54 @@
         if (wanted.has(normalizeStr(key))) return value;
       }
       return '';
+    }
+
+    function reportHasColumn(rows, aliases) {
+      if (!Array.isArray(rows) || rows.length === 0) return false;
+      const wanted = new Set(aliases.map(normalizeStr));
+      return Object.keys(rows[0] || {}).some(key => wanted.has(normalizeStr(key)));
+    }
+
+    function reportNonEmptyCount(rows, aliases) {
+      if (!Array.isArray(rows)) return 0;
+      let count = 0;
+      rows.forEach(row => {
+        const v = getExactField(row, aliases);
+        if (v !== null && v !== undefined && String(v).trim() !== '') count++;
+      });
+      return count;
+    }
+
+    function validatePedidosReportStructure(report) {
+      if (!report || !Array.isArray(report.rows) || report.rows.length === 0) {
+        return { ok: false, errors: ['El reporte Pedidos Pendientes no contiene filas.'], warnings: [] };
+      }
+
+      const required = [
+        { label: 'Semana - fecha', aliases: ['Semana - fecha', 'Semana fecha'], requireValues: true },
+        { label: 'F.comp', aliases: ['F.comp', 'Fecha comprobante'], requireValues: true },
+        { label: 'F. prox. paso', aliases: ['F. prox. paso', 'F prox paso', 'Fecha proximo paso', 'Fecha próximo paso'], requireValues: false },
+        { label: 'Doc.-nro. interno', aliases: ['Doc.-nro. interno', 'Doc nro interno', 'docnrointerno'], requireValues: true },
+        { label: 'Nombreusuarioalta', aliases: ['Nombreusuarioalta', 'Nombre usuario alta'], requireValues: true },
+        { label: 'Solicitante', aliases: ['Solicitante'], requireValues: false }
+      ];
+
+      const errors = [];
+      const warnings = [];
+      required.forEach(field => {
+        if (!reportHasColumn(report.rows, field.aliases)) {
+          errors.push(`No se encontró la columna "${field.label}" en Pedidos Pendientes.`);
+          return;
+        }
+        const nonEmpty = reportNonEmptyCount(report.rows, field.aliases);
+        if (field.requireValues && nonEmpty === 0) {
+          errors.push(`La columna "${field.label}" existe pero llegó completamente vacía.`);
+        } else if (!field.requireValues && nonEmpty === 0) {
+          warnings.push(`La columna "${field.label}" existe pero no contiene valores en este archivo.`);
+        }
+      });
+
+      return { ok: errors.length === 0, errors, warnings };
     }
 
     function normalizeFinnegansDateToYMD(val) {
@@ -2236,7 +2288,12 @@
           rawDetectedReport2 = { rows, fileName: file.name, sheetName: bestSheet };
           rows.forEach(r => registerDetectedFinnegansUser(getExactField(r, ['Nombreusuarioalta', 'Nombre usuario alta'])));
           document.getElementById('nameDetect2').innerText = file.name;
-          document.getElementById('detailDetect2').innerHTML = `<span class="text-emerald-600 font-bold font-mono">Hoja: ${bestSheet}</span> (${rows.length} renglones)`;
+          const semCount = reportNonEmptyCount(rows, ['Semana - fecha', 'Semana fecha']);
+          const fcompCount = reportNonEmptyCount(rows, ['F.comp', 'Fecha comprobante']);
+          const solicCount = reportNonEmptyCount(rows, ['Solicitante']);
+          document.getElementById('detailDetect2').innerHTML =
+            `<span class="text-emerald-600 font-bold font-mono">Hoja: ${bestSheet}</span> (${rows.length} renglones) · ` +
+            `Semana-fecha: ${semCount} · F.comp: ${fcompCount} · Solicitante: ${solicCount}`;
           document.getElementById('badgeDetect2').className = "text-[10px] bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded-full font-bold";
           document.getElementById('badgeDetect2').innerText = "✓ Reconocido";
           showToast(`Reconocido: ${file.name} (Pedidos Pendientes)`);
@@ -2259,7 +2316,27 @@
         showToast(`Debes asignar una Unidad a ${missingUsers.length} usuario(s) de Finnegans antes de consolidar.`);
         return;
       }
+
+      // No consolidar silenciosamente un reporte de Pedidos con columnas críticas ausentes.
+      if (rawDetectedReport2) {
+        const validation = validatePedidosReportStructure(rawDetectedReport2);
+        if (!validation.ok) {
+          const msg = validation.errors.join(' ');
+          document.getElementById('detailDetect2').innerHTML =
+            `<span class="text-rose-700 font-bold">Estructura inválida:</span> ${escapeHtml(msg)}`;
+          document.getElementById('badgeDetect2').className =
+            "text-[10px] bg-rose-100 text-rose-800 px-2 py-0.5 rounded-full font-bold";
+          document.getElementById('badgeDetect2').innerText = "Revisar columnas";
+          showToast(msg);
+          return;
+        }
+      }
+
       const diagnostics = [];
+      if (rawDetectedReport2) {
+        const validation = validatePedidosReportStructure(rawDetectedReport2);
+        validation.warnings.forEach(w => diagnostics.push(w));
+      }
       let totalRawRows = 0;
       let newCount = 0;
       let preservedCount = 0;
@@ -2364,7 +2441,8 @@
               docNum,
               fComp,
               descripcion: descPrincipal || descItem || 'Sin descripción',
-              nombreUsuarioAlta: nombreUsuarioAlta
+              nombreUsuarioAlta: nombreUsuarioAlta,
+              estadoFinnegans: estado
             });
           }
         });
@@ -2396,6 +2474,10 @@
               existing.unidad = unidadResuelta;
             }
             if (rep1Data.responsablePedido) existing.responsablePedido = rep1Data.responsablePedido;
+            // Estado: si todavía está Pendiente/vacío, refrescar con el valor real de Finnegans.
+            if ((!existing.estado || normalizeStr(existing.estado) === normalizeStr('Pendiente')) && grp.estadoFinnegans) {
+              existing.estado = grp.estadoFinnegans;
+            }
             cacheOrderComputedFields(existing);
             preservedCount++;
           } else {
@@ -2414,7 +2496,7 @@
               presupuestoUSD: null,
               presupuestoARS: null,
               comprador: '',
-              estado: 'Pendiente',
+              estado: grp.estadoFinnegans || 'Pendiente',
               compras: false,
               reprogramacion: 'No',
               semanaReprogramada: '',
@@ -2452,6 +2534,54 @@
 
       showToast(`¡Consolidación exitosa! +${newCount} nuevas órdenes.`);
       sendFullSyncToSheets();
+    }
+
+    async function reprocessImportedMasters() {
+      const btn = document.getElementById('btnReprocessMasters');
+      const original = btn ? btn.innerHTML : '';
+      if (btn) {
+        btn.disabled = true;
+        btn.innerHTML = '<span>Reprocesando masters...</span>';
+      }
+      try {
+        const result = await gasPost({ action: 'REPROCESS_MASTERS' }, true);
+        if (result.status !== 'SUCCESS') throw new Error(result.message || 'No se pudo reprocesar los masters.');
+
+        if (Array.isArray(result.orders)) {
+          window.masterPCData = result.orders;
+          window.masterPCData.forEach(o => cacheOrderComputedFields(o));
+        }
+        if (result.users && typeof result.users === 'object') window.userUnitMap = result.users;
+        if (result.rates && typeof result.rates === 'object') window.dailyRatesMap = result.rates;
+
+        populateSemanaFilter();
+        renderTable();
+        renderCompletedTable();
+        renderMetricsDashboard();
+        saveStateToLocalStorage();
+
+        const diagnostics = document.getElementById('diagnosticsList');
+        const box = document.getElementById('importDiagnostics');
+        if (diagnostics && box) {
+          diagnostics.innerHTML = [
+            `• Reproceso desde master PC + master autorizaciones`,
+            `• Total Programacion PC: ${result.total ?? (result.orders || []).length}`,
+            `• Nuevas: ${result.nuevos ?? 0}`,
+            `• Actualizadas: ${result.actualizados ?? 0}`,
+            `• Estado refrescado desde Finnegans cuando no estaba tratado manualmente`
+          ].map(x => `<li>${x}</li>`).join('');
+          box.classList.remove('hidden');
+        }
+        showToast(result.message || 'Masters reprocesados correctamente.');
+      } catch (err) {
+        console.error('Error reprocesando masters:', err);
+        showToast('Error: ' + (err.message || err));
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerHTML = original;
+        }
+      }
     }
 
     async function sendFullSyncToSheets() {
