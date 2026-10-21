@@ -238,7 +238,7 @@
             <select id="filterPrioridad" onchange="renderTable()" class="text-xs rounded-xl border border-slate-300 py-1 px-2 bg-white text-slate-700">
               <option value="">Todas las Prioridades</option>
               <option value="Alta">Alta</option>
-              <option value="Intermedia">Intermedia</option>
+              <option value="Intermedio">Intermedio</option>
               <option value="Sin asignar">Sin asignar</option>
             </select>
 
@@ -665,6 +665,7 @@
                       <span id="adminFormSemana" class="font-mono text-xs bg-slate-100 text-slate-700 px-2 py-0.5 rounded font-bold">2026-02</span>
                     </div>
                     <p id="adminFormDesc" class="text-xs text-slate-600 mt-1 line-clamp-1">Descripción de la orden...</p>
+                    <div class="flex flex-wrap items-center gap-2 mt-1"><p id="adminFinnegansAuth" class="text-[11px] text-slate-500">Finnegans: autorización no informada</p><button type="button" id="btnUsarSugerenciaFinnegans" onclick="aplicarSugerenciaEstadoFinnegans()" class="hidden text-[10px] rounded-lg px-2 py-1 border border-indigo-200 bg-indigo-50 text-indigo-700">Usar sugerencia</button></div>
                   </div>
                   <div class="text-right text-xs">
                     <span class="text-slate-400 block text-[10px]">Fecha Pedido:</span>
@@ -683,7 +684,7 @@
                     <select id="adminInputPrioridad" class="w-full rounded-xl border border-slate-300 p-2 bg-white">
                       <option value="">-- Sin Prioridad --</option>
                       <option value="Alta">Alta</option>
-                      <option value="Intermedia">Intermedia</option>
+                      <option value="Intermedio">Intermedio</option>
                     </select>
                   </div>
 
@@ -737,7 +738,7 @@
 
                   <div>
                     <label class="block font-semibold text-slate-700 mb-1">Comprador Asignado</label>
-                    <input type="text" id="adminInputComprador" placeholder="Nombre del comprador" class="w-full rounded-xl border border-slate-300 p-2 bg-white outline-none">
+                    <select id="adminInputComprador" class="w-full rounded-xl border border-slate-300 p-2 bg-white outline-none"><option value="">-- Sin comprador --</option></select>
                   </div>
 
                   <div>
@@ -749,6 +750,7 @@
                     </select>
                   </div>
 
+                  <p class="text-[11px] text-slate-500">La autorización en Finnegans es orientativa; el Estado es una decisión manual del equipo de Compras.</p>
                   <!-- Compras: Marcado de compra realizada -->
                   <div class="flex items-center space-x-3 pt-2">
                     <label class="inline-flex items-center space-x-2 cursor-pointer">
@@ -966,6 +968,8 @@
     window.rawMasterPCRows = [];
     window.rawMasterAutorizRows = [];
     window.dailyRatesMap = {};
+    window.compradoresActivos = [];
+    window.autorizacionesFinnegans = {};
     window.userUnitMap = {}; // Sin usuarios ficticios; se leen estrictamente de la hoja USUARIO
     window.detectedFinnegansUsers = new Set();
     window.currentSortCol = 'fechaPedido';
@@ -1414,8 +1418,9 @@
       } else {
         const rowsHtml = paginatedItems.map(item => {
           let prioBadge = '<span class="text-slate-400 italic">Sin asignar</span>';
-          if (item.prioridad === 'Alta') prioBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">Alta</span>';
-          else if (item.prioridad === 'Intermedia') prioBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">Intermedia</span>';
+          if (item.prioridad === 'Urgente') prioBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-200 text-rose-900">Urgente</span>';
+          else if (item.prioridad === 'Alta') prioBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-rose-100 text-rose-700">Alta</span>';
+          else if ((item.prioridad === 'Intermedio' || item.prioridad === 'Intermedia')) prioBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">Intermedio</span>';
 
           let estadoBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-100 text-amber-800">Pendiente</span>`;
           if (item.estado === 'En espera') estadoBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-orange-100 text-orange-800">En espera</span>`;
@@ -1766,10 +1771,14 @@
       document.getElementById('adminFormNroPC').innerText = pc.nroPC;
       document.getElementById('adminFormSemana').innerText = pc.semana;
       document.getElementById('adminFormDesc').innerText = pc.descripcion;
+      const authLabel = document.getElementById('adminFinnegansAuth');
+      if (authLabel) authLabel.textContent = pc.actividadAutorizacion ? ('Finnegans: ' + pc.actividadAutorizacion) : 'Finnegans: sin actividad de autorización';
+      const suggestion = document.getElementById('btnUsarSugerenciaFinnegans');
+      if (suggestion) suggestion.classList.toggle('hidden', !['Gestionar Pedido de Compra','Pendiente de Autorización'].includes(pc.actividadAutorizacion || ''));
       document.getElementById('adminFormFecha').innerText = pc._displayDate || formatDisplayDate(pc.fechaPedido);
 
       document.getElementById('adminInputEnReprogramacionCon').value = pc.enReprogramacionCon || '';
-      document.getElementById('adminInputPrioridad').value = pc.prioridad || '';
+      document.getElementById('adminInputPrioridad').value = pc.prioridad === 'Intermedia' ? 'Intermedio' : (pc.prioridad || '');
       
       const parsedUSD = pc._numUSD !== undefined ? pc._numUSD : parseCurrencySafe(pc.presupuestoUSD);
       document.getElementById('adminInputUSD').value = parsedUSD !== null ? parsedUSD : '';
@@ -1792,12 +1801,27 @@
         handlePresupuestoUSDChange();
       }
 
-      document.getElementById('adminInputComprador').value = pc.comprador || '';
+      const buyerSelect = document.getElementById('adminInputComprador');
+      buyerSelect.innerHTML = '<option value="">-- Sin comprador --</option>';
+      window.compradoresActivos.forEach(name => { const opt = document.createElement('option'); opt.value = name; opt.textContent = name; buyerSelect.appendChild(opt); });
+      if (pc.comprador && !window.compradoresActivos.some(n => n.toLowerCase() === pc.comprador.toLowerCase())) { const opt = document.createElement('option'); opt.value = pc.comprador; opt.textContent = pc.comprador + ' (no activo: seleccionar otro)'; opt.disabled = true; buyerSelect.appendChild(opt); }
+      buyerSelect.value = pc.comprador || '';
       document.getElementById('adminInputEstado').value = ['Pendiente','Aprobado','En espera'].includes(pc.estado) ? pc.estado : 'Pendiente';
       document.getElementById('adminInputCompras').checked = (pc.compras === true || pc.compras === 'TRUE' || pc.compras === 'true');
             document.getElementById('adminInputSemanaReprog').value = pc.semanaReprogramada || '';
 
       toggleAdminSemanaReprog();
+    }
+
+    function aplicarSugerenciaEstadoFinnegans() {
+      const pc = window.masterPCData.find(p => p.nroPC === selectedPCId);
+      if (!pc) return;
+      const act = (pc.actividadAutorizacion || '').toLowerCase();
+      const target = act === 'gestionar pedido de compra' ? 'Aprobado' : 'Pendiente';
+      document.getElementById('adminInputEstado').value = target;
+      if (target !== 'Aprobado') document.getElementById('adminInputCompras').checked = false;
+      toggleAdminSemanaReprog();
+      showToast('Estado sugerido: ' + target + '. Revisá y guardá para confirmar.');
     }
 
     function getRateInfoForDate(dateStr) {
@@ -1904,7 +1928,7 @@
       }
     }
 
-    function saveAdminOrderData() {
+    async function saveAdminOrderData() {
       if (!selectedPCId) return;
       const pc = window.masterPCData.find(p => p.nroPC === selectedPCId);
       if (!pc) return;
@@ -1922,6 +1946,7 @@
         return;
       }
 
+      const previousState = JSON.parse(JSON.stringify(pc));
       pc.modoPresupuestoARS = originARS ? 'ars' : 'usd';
       pc.fechaCotizacion = hasBudget ? cotizDate : '';
 
@@ -1954,6 +1979,8 @@
         if (+match[2] > maxWeek) { showToast('Esa semana ISO no existe en el año indicado.'); return; }
       }
       if (comprasNueva && estadoNuevo !== 'Aprobado') { showToast('Compras solamente puede ser Verdadero con Estado Aprobado.'); return; }
+      const buyerChoice = document.getElementById('adminInputComprador')?.value || '';
+      if (buyerChoice && !window.compradoresActivos.some(n => n.toLowerCase() === buyerChoice.toLowerCase())) { showToast('El comprador debe estar activo en la hoja Comprador.'); return; }
       pc.enReprogramacionCon = document.getElementById('adminInputEnReprogramacionCon')?.value.trim() || '';
       pc.prioridad = document.getElementById('adminInputPrioridad')?.value || '';
       pc.comprador = document.getElementById('adminInputComprador')?.value.trim() || '';
@@ -1964,6 +1991,18 @@
       pc.reprogramacion = estadoNuevo === 'En espera' ? 'En espera' : 'No';
       pc.semanaReprogramada = estadoNuevo === 'En espera' ? semanaNueva : '';
 
+      if (!window.googleAppsScriptUrl || !window.isAdminAuthenticated) {
+        Object.assign(pc, previousState);
+        showToast('Debés conectarte y autenticarte para guardar cambios en Sheets.'); return;
+      }
+      try {
+        const result = await gasPost({ action: 'UPDATE_ORDER', order: pc }, true);
+        if (result.status !== 'SUCCESS') throw new Error(result.message || 'Error de guardado');
+        if (result.order) Object.assign(pc, result.order);
+      } catch (err) {
+        Object.assign(pc, previousState);
+        showToast('No se guardaron los cambios: ' + err.message); return;
+      }
       cacheOrderComputedFields(pc);
       saveStateToLocalStorage();
       renderAdminOrdersList();
@@ -1977,7 +2016,8 @@
         showToast(`Orden ${pc.nroPC} guardada con éxito.`);
       }
 
-      if (window.googleAppsScriptUrl) syncSingleOrderToSheets(pc);
+      // Actualizar vista desde la fuente persistida para evitar desalineación.
+      try { await syncWithGoogleSheets(true); } catch (_) {}
     }
 
     function renderAdminOrdersList() {
@@ -2560,6 +2600,8 @@
         }
         if (result.users && typeof result.users === 'object') window.userUnitMap = result.users;
         if (result.rates && typeof result.rates === 'object') window.dailyRatesMap = result.rates;
+        if (Array.isArray(result.compradoresActivos)) window.compradoresActivos = result.compradoresActivos;
+        if (result.autorizaciones) window.autorizacionesFinnegans = result.autorizaciones;
 
         populateSemanaFilter();
         renderTable();
@@ -2997,6 +3039,8 @@
         }
 
         window.dailyRatesMap = result.rates || {};
+        window.compradoresActivos = result.compradoresActivos || [];
+        window.autorizacionesFinnegans = result.autorizaciones || {};
         renderRatesTable();
         updateLatestRateHeader();
 
@@ -3101,5 +3145,6 @@
       }, 3500);
     }
   </script>
+<footer style="padding:10px 16px;text-align:center;opacity:.36;font-size:10px;letter-spacing:.035em;pointer-events:none">App realizada por Acevedo Ezequiel - Produccion CMP</footer>
 </body>
 </html>
