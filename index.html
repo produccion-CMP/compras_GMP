@@ -47,6 +47,14 @@
     .badge-pastel-ingenieria { background-color: #ccfbf1; color: #0f766e; border: 1px solid #99f6e4; }
     .badge-pastel-mantenimiento { background-color: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
     .badge-pastel-default { background-color: #f1f5f9; color: #475569; border: 1px solid #e2e8f0; }
+
+    #mainDataTable .fin-pc-sticky { position:sticky; left:0; z-index:12; background:#fff; box-shadow:2px 0 0 #cbd5e1; min-width:112px; }
+    #mainDataTable thead .fin-pc-sticky { z-index:30; background:#e2e8f0; }
+    #mainDataTable tbody tr:hover .fin-pc-sticky {background:#f8fafc;}
+
+    /* Tabla finalizadas: la columna número permanece visible al desplazarse horizontalmente. */
+    #sectionCompleted table th:nth-child(2), #sectionCompleted table td:nth-child(2),
+    #sectionCompletedTable th:nth-child(2), #sectionCompletedTable td:nth-child(2) {position:sticky;left:0;z-index:8;background:white;box-shadow:2px 0 0 #cbd5e1;}
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-indigo-100 selection:text-indigo-900 relative">
@@ -85,6 +93,7 @@
             <span class="hidden lg:inline">Sincronizar Sheets</span>
           </button>
 
+          <button onclick="document.getElementById('finnegansManualModal').classList.remove('hidden')" class="bg-slate-800 text-white text-xs rounded-xl px-3 py-2">Ayuda</button>
           <button onclick="exportToExcel()" class="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold px-3 py-2 rounded-xl transition flex items-center space-x-1.5 shadow-sm">
             <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
             <span class="hidden sm:inline">Exportar Excel (14 Cols)</span>
@@ -261,7 +270,16 @@
 
       <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div class="table-scroll-container">
-          <table class="w-full text-left border-collapse text-xs min-w-[1500px]" id="mainDataTable">
+          
+<div class="flex flex-wrap items-center gap-2 text-xs py-2 px-1" id="columnControlPanel">
+  <label for="columnOrderSelector" class="font-semibold">Orden de columnas:</label>
+  <select id="columnOrderSelector" class="border border-slate-300 rounded-lg px-2 py-2 bg-white" aria-label="Campo a mover"></select>
+  <button onclick="shiftSelectedColumn(-1)" class="px-3 py-2 rounded-lg border bg-white hover:bg-slate-100" title="Mover a la izquierda">← Izquierda</button>
+  <button onclick="shiftSelectedColumn(1)" class="px-3 py-2 rounded-lg border bg-white hover:bg-slate-100" title="Mover a la derecha">Derecha →</button>
+  <button onclick="resetColumnOrder()" class="px-3 py-2 rounded-lg border bg-white hover:bg-slate-100">Restaurar orden</button>
+  <button onclick="document.getElementById('finnegansManualModal').classList.remove('hidden')" class="px-3 py-2 rounded-lg border bg-slate-900 text-white">Manual de usuario</button>
+</div>
+<table class="w-full text-left border-collapse text-xs min-w-[1500px]" id="mainDataTable">
             <thead class="bg-slate-100 text-slate-700 font-bold sticky top-0 z-10 backdrop-blur border-b border-slate-200 uppercase tracking-wider text-[11px]">
               <tr>
                 <th onclick="handleSort('semana')" class="p-2.5 whitespace-nowrap th-sortable w-[100px]">
@@ -959,6 +977,21 @@
     </div>
   </div>
 
+
+<div id="finnegansManualModal" class="hidden fixed inset-0 z-[100] bg-slate-950/60 p-4 overflow-auto" role="dialog" aria-modal="true" aria-labelledby="finnegansManualTitle">
+  <div class="max-w-3xl mx-auto my-8 bg-white rounded-2xl p-5 sm:p-7 shadow-xl text-sm space-y-4">
+    <div class="flex justify-between gap-4 items-center"><h2 id="finnegansManualTitle" class="font-bold text-lg">Manual de usuario · Finnegans Compras</h2><button onclick="document.getElementById('finnegansManualModal').classList.add('hidden')" class="rounded-lg bg-slate-100 px-3 py-2">Cerrar</button></div>
+    <section><h3 class="font-bold">Programación PC (Activas)</h3><p>Pedidos pendientes, aprobados sin compra finalizada o en espera. Podés buscar por número, comprador, unidad y responsable, filtrar por semana, estado y prioridad, y ordenar por encabezados. El Nro de PC queda fijo al desplazarte horizontalmente.</p></section>
+    <section><h3 class="font-bold">Organizar columnas</h3><p>Elegí un campo y movelo a izquierda/derecha desde el control sobre la tabla. El cambio afecta únicamente la vista de este navegador, no las columnas de Google Sheets. El número de PC permanece fijo.</p></section>
+    <section><h3 class="font-bold">Edición y seguridad</h3><p>Ingresá al modo administrador con la contraseña habilitada por Apps Script. Seleccioná Editar en la PC. Prioridad admite Urgente, Alta o Intermedio; Comprador se elige de los activos. Guardar espera confirmación del servidor y vuelve a cargar la base.</p></section>
+    <section><h3 class="font-bold">Estado y autorización</h3><p>Solo para PCs nuevas: Gestionar Pedido de Compra en master autorizaciones implica Aprobado; Pendiente de Autorización implica Pendiente. Una PC existente preserva su estado manual. En espera exige semana yyyy-ss. Solo Estado Aprobado + Compras verdadero pasa a Compras Realizadas.</p></section>
+    <section><h3 class="font-bold">Presupuestos en USD o ARS</h3><p>El usuario ingresa moneda original, importe manual y fecha de presupuesto. El sistema busca la cotización oficial de venta en esa fecha o la última disponible anterior, y calcula la otra moneda. Nunca confundir fecha del pedido con fecha del presupuesto. Si no se obtiene una cotización verificable, no debe guardarse la conversión.</p></section>
+    <section><h3 class="font-bold">Cargar reportes y reprocesar</h3><p>Los archivos de Finnegans se consolidan en master PC y master autorizaciones sin duplicar ítems. Reprocesar masters reconstruye los datos automáticos en Programacion PC, manteniendo íntegramente los campos de tratamiento manual existentes.</p></section>
+    <section><h3 class="font-bold">Indicadores y compras realizadas</h3><p>Indicadores muestra cantidad y presupuesto por unidad, comprador y responsable, entre otros. Compras Realizadas reúne las PC con Aprobado y Compras verdadero. Exportar Excel conserva la estructura oficial de 14 campos.</p></section>
+    <p class="text-xs text-slate-500">Para detalles técnicos sobre cada hoja y operación, consultá la hoja «Glosario ERP», generada desde el menú Finnegans ERP en Google Sheets.</p>
+  </div>
+</div>
+
   <script>
     /* URL OFICIAL DESPLEGADA DE GOOGLE APPS SCRIPT CONFIGURADA POR DEFECTO */
     const DEFAULT_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbz5XvQ2UV_evBztbLSECJOhKXrIlmzUqDab8XOGXWF8-CxHv3AXWh9HKPxp76pU9IFksg/exec';
@@ -1325,6 +1358,45 @@
       renderTable();
     }
 
+
+    // Orden visual por columna, sin tocar los índices ni el orden de Google Sheets.
+    const FIN_COLUMNS = ['Semana','Nro de PC','Fecha Pedido','En reprogramación con','Descripcion','Unidad','Responsable pedido','Prioridad','Presupuesto (usd)','Presupuesto ($)','Comprador','Estado','Reprogramacion','Acción'];
+    const FIN_PC_COL = 1;
+    let finOrder = (() => {
+      try {const value=JSON.parse(localStorage.getItem('finnegans_column_order_v8')||'null');
+      if(Array.isArray(value)&&value.length===14&&new Set(value).size===14&&value.every(x=>Number.isInteger(x)&&x>=0&&x<14)) return value;}
+      catch(e){} return FIN_COLUMNS.map((_,i)=>i);
+    })();
+    function persistFinOrder(){try{localStorage.setItem('finnegans_column_order_v8',JSON.stringify(finOrder));}catch(e){}}
+    function setupColumnSelector(){
+      const selector=document.getElementById('columnOrderSelector'); if(!selector) return;
+      const old=selector.value;
+      selector.innerHTML=finOrder.filter(i=>i!==FIN_PC_COL).map(i=>`<option value="${i}">${FIN_COLUMNS[i]}</option>`).join('');
+      if([...selector.options].some(o=>o.value===old))selector.value=old;
+    }
+    function shiftSelectedColumn(dir){
+      const selector=document.getElementById('columnOrderSelector'); const id=Number(selector?.value);
+      if(!Number.isInteger(id) || id===FIN_PC_COL) return;
+      const old=finOrder.indexOf(id), next=old+dir;
+      if(next<0||next>=finOrder.length)return;
+      [finOrder[old],finOrder[next]]=[finOrder[next],finOrder[old]];
+      persistFinOrder();setupColumnSelector(); if(selector)selector.value=String(id);applyFinColumns();
+    }
+    function resetColumnOrder(){finOrder=FIN_COLUMNS.map((_,i)=>i);persistFinOrder();setupColumnSelector();applyFinColumns();}
+    function applyFinColumns(){
+      const table=document.getElementById('mainDataTable');if(!table)return;
+      // Anotar la identidad original de cada columna una sola vez por fila nueva.
+      const rows=table.querySelectorAll('thead tr,tbody tr');
+      rows.forEach(row=>{
+        const cells=[...row.children];if(cells.length!==14)return;
+        cells.forEach((c,i)=>{if(!c.hasAttribute('data-field-index'))c.dataset.fieldIndex=String(i);});
+        finOrder.forEach(i=>{const cell=cells.find(c=>Number(c.dataset.fieldIndex)===i); if(cell)row.appendChild(cell);});
+        [...row.children].forEach(c=>{c.classList.remove('fin-pc-sticky');if(Number(c.dataset.fieldIndex)===FIN_PC_COL)c.classList.add('fin-pc-sticky');});
+      });
+    }
+    // No sticky left-hand stack beyond number column: always visible while scrolling horizontally.
+    setupColumnSelector();
+
     function renderTable() {
       const search = (document.getElementById('filterSearch')?.value || '').toLowerCase();
       const semFilter = document.getElementById('filterSemana')?.value || '';
@@ -1466,6 +1538,7 @@
 
         tbody.innerHTML = rowsHtml;
       }
+      applyFinColumns();
 
       const activeCount = window.masterPCData.filter(i => !(i.estado === 'Aprobado' && (i.compras === true || i.compras === 'TRUE' || i.compras === 'true'))).length;
       const completedCount = window.masterPCData.length - activeCount;
@@ -1811,6 +1884,7 @@
             document.getElementById('adminInputSemanaReprog').value = pc.semanaReprogramada || '';
 
       toggleAdminSemanaReprog();
+      if (defaultCotizDate) handleFechaCotizChange();
     }
 
     function aplicarSugerenciaEstadoFinnegans() {
@@ -1829,14 +1903,16 @@
       const requested = normalizeDateToYMD(dateStr);
       if (!requested) return null;
       const exact = window.dailyRatesMap?.[requested];
-      if (exact && Number(exact.rate) > 0) {
+      if (exact && Number(exact.rate) > 0 && !/oficial bna hist[oó]rico|bna oficial hist[oó]rico|fictici|sint[eé]tic/i.test(exact.source || '')) {
         return { requestedDate: requested, effectiveDate: requested, rate: Number(exact.rate), source: exact.source || '', lookback: false };
       }
       const previousDates = Object.keys(window.dailyRatesMap || {})
-        .filter(d => d <= requested && Number(window.dailyRatesMap[d]?.rate) > 0)
+        .filter(d => d <= requested && Number(window.dailyRatesMap[d]?.rate) > 0 && !/oficial bna hist[oó]rico|bna oficial hist[oó]rico|fictici|sint[eé]tic/i.test(window.dailyRatesMap[d]?.source || ''))
         .sort().reverse();
       if (!previousDates.length) return null;
       const effectiveDate = previousDates[0];
+      const daysOld = Math.round((Date.parse(requested+'T12:00:00Z')-Date.parse(effectiveDate+'T12:00:00Z'))/86400000);
+      if (daysOld < 0 || daysOld > 10) return null;
       const row = window.dailyRatesMap[effectiveDate];
       return { requestedDate: requested, effectiveDate, rate: Number(row.rate), source: row.source || '', lookback: effectiveDate !== requested };
     }
@@ -1902,8 +1978,18 @@
 
     function handlePresupuestoUSDChange() { recalculateBudgetConversion(); }
 
-    function handleFechaCotizChange() {
+    async function handleFechaCotizChange() {
       recalculateBudgetConversion();
+      const fecha = document.getElementById('adminInputFechaCotiz')?.value;
+      if (!fecha) return;
+      const label = document.getElementById('adminCotizRateBadge');
+      if (label) label.innerText = 'Consultando cotización histórica...';
+      try {
+        const res = await gasPost({action:'GET_RATE_DATE',date:fecha},true);
+        if(res.status!=='SUCCESS' || !res.info || !res.info.rate) throw new Error(res.message || 'No se obtuvo cotización');
+        window.dailyRatesMap[res.info.effectiveDate] = {date:res.info.effectiveDate,rate:res.info.rate,source:res.info.source};
+        if(document.getElementById('adminInputFechaCotiz')?.value===fecha) recalculateBudgetConversion();
+      } catch(e) { if(label) label.innerText='Error consultando la cotización: '+e.message; }
     }
 
     function setAdminCotizDate(mode) {
