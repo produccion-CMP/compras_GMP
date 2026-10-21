@@ -55,6 +55,21 @@
     /* Tabla finalizadas: la columna número permanece visible al desplazarse horizontalmente. */
     #sectionCompleted table th:nth-child(2), #sectionCompleted table td:nth-child(2),
     #sectionCompletedTable th:nth-child(2), #sectionCompletedTable td:nth-child(2) {position:sticky;left:0;z-index:8;background:white;box-shadow:2px 0 0 #cbd5e1;}
+  
+    #mainDataTable tbody tr {cursor:pointer; transition:background .12s ease;}
+    #mainDataTable tbody tr:nth-child(even){background:#f8fafc;}
+    #mainDataTable tbody tr:hover {background:#eef2ff;}
+    #mainDataTable td{border-bottom:1px solid #e2e8f0;vertical-align:middle;}
+    #mainDataTable th{box-shadow:inset 0 -1px 0 #cbd5e1;}
+    #mainDataTable .fin-inline{max-width:165px;min-width:96px;font-size:11px;border:1px solid #cbd5e1;border-radius:7px;padding:5px 7px;background:white;color:#0f172a;}
+    #finDetailOverlay {position:fixed;inset:0;background:rgba(15,23,42,.65);z-index:100;display:none;align-items:center;justify-content:center;padding:16px;}
+    #finDetailOverlay.fin-visible{display:flex;}
+    #finDetailCard{background:#fff;max-width:840px;width:100%;max-height:90vh;overflow:auto;border-radius:18px;box-shadow:0 25px 70px rgba(0,0,0,.25);padding:22px;}
+    #finDetailFields{display:grid;grid-template-columns:repeat(auto-fit,minmax(185px,1fr));gap:12px;margin-top:15px;}
+    #finDetailFields>div{border:1px solid #e2e8f0;background:#f8fafc;padding:12px;border-radius:10px;min-width:0;overflow-wrap:anywhere;}
+    #finDetailFields strong{display:block;color:#64748b;font-size:11px;margin-bottom:4px;}
+    #finColumnPanel label{display:inline-flex;gap:5px;align-items:center;margin:5px 10px 5px 0;cursor:pointer;}
+    @media(max-width:600px){#finDetailCard{padding:14px;}#finDetailFields{grid-template-columns:1fr 1fr;}}
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-indigo-100 selection:text-indigo-900 relative">
@@ -279,7 +294,8 @@
   <button onclick="resetColumnOrder()" class="px-3 py-2 rounded-lg border bg-white hover:bg-slate-100">Restaurar orden</button>
   <button onclick="document.getElementById('finnegansManualModal').classList.remove('hidden')" class="px-3 py-2 rounded-lg border bg-slate-900 text-white">Manual de usuario</button>
 </div>
-<table class="w-full text-left border-collapse text-xs min-w-[1500px]" id="mainDataTable">
+
+      <table class="w-full text-left border-collapse text-xs min-w-[1500px]" id="mainDataTable">
             <thead class="bg-slate-100 text-slate-700 font-bold sticky top-0 z-10 backdrop-blur border-b border-slate-200 uppercase tracking-wider text-[11px]">
               <tr>
                 <th onclick="handleSort('semana')" class="p-2.5 whitespace-nowrap th-sortable w-[100px]">
@@ -934,6 +950,12 @@
 
         <!-- SUB-PESTAÑA 5: SEGURIDAD Y GOOGLE SHEETS -->
         <div id="subTabSecurityContainer" class="space-y-4 hidden">
+          <div id="finColumnPanel" class="mb-3 border border-slate-200 bg-slate-50 rounded-xl p-3 text-xs">
+        <div class="font-bold text-slate-700 mb-1">Columnas visibles para todos los usuarios</div>
+        <p class="text-slate-500 mb-2">Solo un editor autenticado puede guardar cambios. Nro de PC y Acción siempre permanecen visibles.</p>
+        <div id="finColumnChecks" class="flex flex-wrap"></div>
+        <button type="button" id="finSaveColumns" class="px-3 py-2 bg-indigo-700 text-white rounded-lg disabled:opacity-40" onclick="finSaveSharedColumns()">Guardar configuración compartida</button>
+      </div>
           <div class="p-4 bg-white border border-slate-200 rounded-2xl space-y-3">
             <div class="flex items-center justify-between">
               <h4 class="font-bold text-slate-800 text-xs uppercase tracking-wider">URL de Google Apps Script Web App</h4>
@@ -1362,6 +1384,8 @@
     // Orden visual por columna, sin tocar los índices ni el orden de Google Sheets.
     const FIN_COLUMNS = ['Semana','Nro de PC','Fecha Pedido','En reprogramación con','Descripcion','Unidad','Responsable pedido','Prioridad','Presupuesto (usd)','Presupuesto ($)','Comprador','Estado','Reprogramacion','Acción'];
     const FIN_PC_COL = 1;
+    window.finVisibleCols = FIN_COLUMNS.map((_,i)=>i);
+    window.finDetailPC = null;
     let finOrder = (() => {
       try {const value=JSON.parse(localStorage.getItem('finnegans_column_order_v8')||'null');
       if(Array.isArray(value)&&value.length===14&&new Set(value).size===14&&value.every(x=>Number.isInteger(x)&&x>=0&&x<14)) return value;}
@@ -1391,7 +1415,7 @@
         const cells=[...row.children];if(cells.length!==14)return;
         cells.forEach((c,i)=>{if(!c.hasAttribute('data-field-index'))c.dataset.fieldIndex=String(i);});
         finOrder.forEach(i=>{const cell=cells.find(c=>Number(c.dataset.fieldIndex)===i); if(cell)row.appendChild(cell);});
-        [...row.children].forEach(c=>{c.classList.remove('fin-pc-sticky');if(Number(c.dataset.fieldIndex)===FIN_PC_COL)c.classList.add('fin-pc-sticky');});
+        [...row.children].forEach(c=>{c.classList.remove('fin-pc-sticky');if(Number(c.dataset.fieldIndex)===FIN_PC_COL)c.classList.add('fin-pc-sticky');c.style.display=window.finVisibleCols.includes(Number(c.dataset.fieldIndex))?'':'none';});
       });
     }
     // No sticky left-hand stack beyond number column: always visible while scrolling horizontally.
@@ -1515,7 +1539,7 @@
           `;
 
           return `
-            <tr class="hover:bg-slate-50/80 transition border-b border-slate-100">
+            <tr class="hover:bg-slate-50/80 transition border-b border-slate-100" data-fin-pc="${encodeURIComponent(item.nroPC)}">
               <td class="p-2.5 font-mono font-bold text-slate-900 whitespace-nowrap">${item.semana}</td>
               <td class="p-2.5 font-bold text-indigo-700 whitespace-nowrap font-mono">${item.nroPC}</td>
               <td class="p-2.5 whitespace-nowrap text-slate-600 font-mono">${item._displayDate || '-'}</td>
@@ -1525,11 +1549,11 @@
               </td>
               <td class="p-2.5 whitespace-nowrap">${getUnitPastelBadge(item.unidad)}</td>
               <td class="p-2.5 whitespace-nowrap font-medium text-slate-700">${item.responsablePedido || '<span class="text-slate-400 italic">Sin asignar</span>'}</td>
-              <td class="p-2.5 whitespace-nowrap">${prioBadge}</td>
+              <td class="p-2.5 whitespace-nowrap">${finInlineSelect(item,"prioridad",prioBadge)}</td>
               <td class="p-2.5 whitespace-nowrap text-right font-mono font-bold text-indigo-700">${item._formattedUSD}</td>
               <td class="p-2.5 whitespace-nowrap text-right font-mono font-black text-emerald-700" title="${cotizTooltip}">${item._formattedARS}</td>
-              <td class="p-2.5 whitespace-nowrap font-medium text-slate-700">${item.comprador || '<span class="text-slate-400 italic">Sin asignar</span>'}</td>
-              <td class="p-2.5 whitespace-nowrap">${estadoBadge}</td>
+              <td class="p-2.5 whitespace-nowrap font-medium text-slate-700">${finInlineSelect(item,"comprador",item.comprador || "-")}</td>
+              <td class="p-2.5 whitespace-nowrap">${finInlineSelect(item,"estado",estadoBadge)}</td>
               <td class="p-2.5 whitespace-nowrap">${reprogDisplay}</td>
               <td class="p-2.5 whitespace-nowrap text-center">${editBtn}</td>
             </tr>
@@ -2037,11 +2061,15 @@
       pc.fechaCotizacion = hasBudget ? cotizDate : '';
 
       if (hasBudget) {
-        const info = getRateInfoForDate(cotizDate);
-        if (!info) {
-          showToast('No hay cotización oficial disponible para esa fecha ni para días anteriores. Actualiza las cotizaciones.');
-          return;
+        let info = getRateInfoForDate(cotizDate);
+        if (!info && window.isAdminAuthenticated) {
+          try {const lookup=await gasPost({action:'GET_RATE_DATE',date:cotizDate},true);
+            if(lookup.status!=='SUCCESS') throw new Error(lookup.message||'Consulta fallida');
+            info=lookup.info;
+            if(info?.effectiveDate)window.dailyRatesMap[info.effectiveDate]={date:info.effectiveDate,rate:info.rate,source:info.source};
+          } catch(err) {showToast('No se pudo obtener cotización: '+err.message);return;}
         }
+        if (!info) {showToast('No hay cotización válida para la fecha.');return;}
         if (originARS) usdVal = Number((arsVal / info.rate).toFixed(2));
         else arsVal = Number((usdVal * info.rate).toFixed(2));
         pc.cotizacionAplicada = info.rate;
@@ -2200,6 +2228,7 @@
         if (result.status === 'SUCCESS') {
           window.adminPasswordSession = entered;
           window.isAdminAuthenticated = true;
+          finRenderColumnConfig();renderTable();
           closeAdminAuthModal();
           updateAdminUIState();
           openAdminPanelModal();
@@ -3101,6 +3130,8 @@
         if (result.status !== 'SUCCESS') throw new Error(result.message || 'Error de lectura.');
 
         window.securityConfigured = Boolean(result.securityConfigured);
+        if (Array.isArray(result.columnasVisibles)) window.finVisibleCols=result.columnasVisibles;
+        finRenderColumnConfig();
 
         if (result.users) {
           window.userUnitMap = result.users;
@@ -3230,7 +3261,78 @@
         toast.classList.add('translate-y-24', 'opacity-0');
       }, 3500);
     }
-  </script>
+  
+    // V9: detalle, edición in situ y preferencias compartidas de visualización.
+    function finEsc(v) {return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+    function finInlineSelect(item,field,display) {
+      if(!window.isAdminAuthenticated) return display;
+      let choices=[];
+      if(field==='prioridad') choices=['','Urgente','Alta','Intermedio'];
+      if(field==='estado') choices=['Pendiente','Aprobado','En espera'];
+      if(field==='comprador') choices=['',...(window.compradoresActivos||[])];
+      if(!choices.includes(String(item[field]||'')) && item[field]) choices.unshift(String(item[field]));
+      return '<select class="fin-inline" aria-label="'+finEsc(field)+'" data-fin-field="'+field+'" data-fin-pc="'+encodeURIComponent(item.nroPC)+'">'+choices.map(v=>'<option value="'+finEsc(v)+'" '+(v===String(item[field]||'')?'selected':'')+'>'+finEsc(v||'Sin asignar')+'</option>').join('')+'</select>';
+    }
+    async function finUpdateInline(pcId,field,value,el) {
+      if(!window.isAdminAuthenticated)return;
+      const original=window.masterPCData.find(o=>o.nroPC===pcId);if(!original)return;
+      const next={...original,[field]:value};
+      if(field==='estado') {
+        if(value==='En espera') {
+          const w=prompt('Semana de reprogramación obligatoria (yyyy-ss):',original.semanaReprogramada||'');
+          if(w===null){renderTable();return;}
+          if(!/^\d{4}-(0[1-9]|[1-4]\d|5[0-3])$/.test(w)){showToast('Semana inválida. Usá yyyy-ss.');renderTable();return;}
+          next.semanaReprogramada=w;next.reprogramacion='En espera';
+        } else {next.semanaReprogramada='';next.reprogramacion='No';if(value!=='Aprobado')next.compras=false;}
+      }
+      el.disabled=true;
+      try {
+        const result=await gasPost({action:'UPDATE_ORDER',order:next},true);
+        if(result.status!=='SUCCESS')throw new Error(result.message||'Error al guardar');
+        await syncWithGoogleSheets(true);
+        showToast('Cambio guardado en Google Sheets.');
+      } catch(e){showToast('No se guardó: '+e.message);renderTable();}
+      finally {if(el.isConnected)el.disabled=false;}
+    }
+    function finOpenDetail(pcId){
+      const item=window.masterPCData.find(o=>o.nroPC===pcId); if(!item)return;
+      window.finDetailPC=pcId;
+      document.getElementById('finDetailTitle').textContent='Pedido '+pcId;
+      const fields=[['Semana',item.semana],['Fecha del pedido',item.fechaPedido],['Descripción',item.descripcion],['Unidad',item.unidad],['Responsable pedido',item.responsablePedido],['Prioridad',item.prioridad],['Comprador',item.comprador],['Estado',item.estado],['Compras',item.compras?'Verdadero':'Falso'],['Reprogramación',item.semanaReprogramada||'—'],['Presupuesto USD',item.presupuestoUSD],['Presupuesto ARS',item.presupuestoARS],['Fecha cotización',item.fechaCotizacion],['Cotización aplicada',item.cotizacionAplicada],['En reprogramación con',item.enReprogramacionCon],['Autorización Finnegans',item.actividadAutorizacion]];
+      document.getElementById('finDetailFields').innerHTML=fields.map(([k,v])=>'<div><strong>'+finEsc(k)+'</strong><span>'+finEsc(v==null||v===''?'—':v)+'</span></div>').join('');
+      document.getElementById('finDetailEdit').textContent=window.isAdminAuthenticated?'Editar pedido':'Editar (requiere contraseña)';
+      document.getElementById('finDetailOverlay').classList.add('fin-visible');
+    }
+    function finCloseDetail(){document.getElementById('finDetailOverlay').classList.remove('fin-visible');}
+    function finDetailEditOrder(){const pc=window.finDetailPC;finCloseDetail();if(pc)handleQuickEditClick(pc);}
+    function finRenderColumnConfig(){
+      const container=document.getElementById('finColumnChecks');if(!container)return;
+      container.innerHTML=FIN_COLUMNS.map((name,i)=>'<label><input type="checkbox" value="'+i+'" '+(window.finVisibleCols.includes(i)?'checked':'')+' '+(i===1||i===13||!window.isAdminAuthenticated?'disabled':'')+'/> '+finEsc(name)+'</label>').join('');
+      const btn=document.getElementById('finSaveColumns');if(btn)btn.disabled=!window.isAdminAuthenticated;
+      applyFinColumns();
+    }
+    async function finSaveSharedColumns(){
+      if(!window.isAdminAuthenticated){showToast('Requiere acceso de edición.');return;}
+      const checks=[...document.querySelectorAll('#finColumnChecks input')];
+      const cols=checks.filter(c=>c.checked).map(c=>Number(c.value));
+      if(!cols.includes(1))cols.push(1);if(!cols.includes(13))cols.push(13);
+      try{const r=await gasPost({action:'SAVE_UI_COLUMNS',columns:cols},true);if(r.status!=='SUCCESS')throw new Error(r.message||'Error');window.finVisibleCols=r.columnasVisibles;renderTable();showToast('Configuración compartida guardada.');}
+      catch(e){showToast('No pudo guardarse: '+e.message);}
+    }
+    document.getElementById('mainDataTable')?.addEventListener('click',e=>{
+      if(e.target.closest('button,select,input,a'))return;
+      const tr=e.target.closest('tr[data-fin-pc]');if(tr)finOpenDetail(decodeURIComponent(tr.dataset.finPc));
+    });
+    document.getElementById('mainDataTable')?.addEventListener('change',e=>{
+      const select=e.target.closest('select[data-fin-field]');if(!select)return;
+      finUpdateInline(decodeURIComponent(select.dataset.finPc),select.dataset.finField,select.value,select);
+    });
+    document.addEventListener('keydown',e=>{if(e.key==='Escape')finCloseDetail();});
+    finRenderColumnConfig();
+</script>
 <footer style="padding:10px 16px;text-align:center;opacity:.36;font-size:10px;letter-spacing:.035em;pointer-events:none">App realizada por Acevedo Ezequiel - Produccion CMP</footer>
+<div id="finDetailOverlay" role="dialog" aria-modal="true" aria-label="Detalle del pedido" onclick="if(event.target===this)finCloseDetail()">
+  <div id="finDetailCard"><div class="flex items-center justify-between gap-3"><h2 id="finDetailTitle" class="font-bold text-xl text-slate-900">Detalle del pedido</h2><button type="button" onclick="finCloseDetail()" class="border rounded-lg px-3 py-2">Cerrar ×</button></div><div id="finDetailFields"></div><div class="mt-4 flex justify-end"><button type="button" id="finDetailEdit" class="bg-indigo-700 text-white rounded-lg px-4 py-2" onclick="finDetailEditOrder()">Editar pedido</button></div></div>
+</div>
 </body>
 </html>
