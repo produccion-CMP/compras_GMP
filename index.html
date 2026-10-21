@@ -246,6 +246,7 @@
               <option value="">Todos los Estados</option>
               <option value="Pendiente">Pendiente</option>
               <option value="Aprobado">Aprobado</option>
+              <option value="En espera">En espera</option>
             </select>
 
             <button onclick="resetFilters()" class="text-xs text-indigo-600 hover:text-indigo-800 font-semibold px-2 py-1">Restablecer</button>
@@ -254,7 +255,7 @@
 
         <div class="flex items-center justify-between text-[11px] text-slate-500 pt-1.5 border-t border-slate-100">
           <span id="activeFilterBadge" class="bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded-full font-medium">Filtrando: Todo el Histórico</span>
-          <span class="text-slate-400">Mostrando órdenes activas en gestión (sin campo Compras). Las completadas se ven en "Compras Realizadas".</span>
+          <span class="text-slate-400">Activas hasta que Estado sea Aprobado y Compras sea Verdadero. Solo entonces pasan a Compras Realizadas.</span>
         </div>
       </div>
 
@@ -741,9 +742,10 @@
 
                   <div>
                     <label class="block font-semibold text-slate-700 mb-1">Estado</label>
-                    <select id="adminInputEstado" class="w-full rounded-xl border border-slate-300 p-2 bg-white">
+                    <select id="adminInputEstado" onchange="toggleAdminSemanaReprog()" class="w-full rounded-xl border border-slate-300 p-2 bg-white">
                       <option value="Pendiente">Pendiente</option>
                       <option value="Aprobado">Aprobado</option>
+                      <option value="En espera">En espera</option>
                     </select>
                   </div>
 
@@ -755,13 +757,7 @@
                     </label>
                   </div>
 
-                  <div>
-                    <label class="block font-semibold text-slate-700 mb-1">Reprogramacion</label>
-                    <select id="adminInputReprogramacion" onchange="toggleAdminSemanaReprog()" class="w-full rounded-xl border border-slate-300 p-2 bg-white">
-                      <option value="No">No</option>
-                      <option value="En espera">En espera</option>
-                    </select>
-                  </div>
+
 
                   <div id="adminContainerSemanaReprog" class="hidden sm:col-span-2">
                     <label class="block font-semibold text-amber-700 mb-1">Semana Reprogramada (aaaa-ss)</label>
@@ -1336,7 +1332,7 @@
 
       let filtered = window.masterPCData.filter(item => {
         // Excluir órdenes finalizadas (Compras = true) de la vista activa de Programación PC
-        const isComprasChecked = (item.compras === true || item.compras === 'TRUE' || item.compras === 'true');
+        const isComprasChecked = (item.estado === 'Aprobado' && (item.compras === true || item.compras === 'TRUE' || item.compras === 'true'));
         if (isComprasChecked) return false;
 
         if (!item._searchBlob) cacheOrderComputedFields(item);
@@ -1422,12 +1418,13 @@
           else if (item.prioridad === 'Intermedia') prioBadge = '<span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-100 text-amber-700">Intermedia</span>';
 
           let estadoBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-amber-100 text-amber-800">Pendiente</span>`;
+          if (item.estado === 'En espera') estadoBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-orange-100 text-orange-800">En espera</span>`;
           if (item.estado === 'Aprobado') {
             estadoBadge = `<span class="px-2 py-0.5 rounded-md text-[10px] font-semibold bg-emerald-100 text-emerald-800">Aprobado</span>`;
           }
 
           let reprogDisplay = item.reprogramacion || 'No';
-          if (item.reprogramacion === 'En espera' && item.semanaReprogramada) {
+          if (item.estado === 'En espera' && item.semanaReprogramada) {
             reprogDisplay = `<span class="text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded text-[11px]">En espera (${item.semanaReprogramada})</span>`;
           }
 
@@ -1465,7 +1462,7 @@
         tbody.innerHTML = rowsHtml;
       }
 
-      const activeCount = window.masterPCData.filter(i => !(i.compras === true || i.compras === 'TRUE' || i.compras === 'true')).length;
+      const activeCount = window.masterPCData.filter(i => !(i.estado === 'Aprobado' && (i.compras === true || i.compras === 'TRUE' || i.compras === 'true'))).length;
       const completedCount = window.masterPCData.length - activeCount;
 
       const summaryText = window.pageSize >= 999999 
@@ -1498,7 +1495,7 @@
         const ars = item._numARS !== undefined ? item._numARS : parseCurrencySafe(item.presupuestoARS);
         if (usd) totalUSD += usd;
         if (ars) totalARS += ars;
-        if (item.reprogramacion === 'En espera') waitingCount++;
+        if (item.estado === 'En espera') waitingCount++;
         if (!item.comprador || !item.prioridad) unassignedCount++;
       });
 
@@ -1518,7 +1515,7 @@
 
       const search = (document.getElementById('filterSearchCompleted')?.value || '').toLowerCase();
       const completedOrders = window.masterPCData.filter(item => {
-        const isCompras = (item.compras === true || item.compras === 'TRUE' || item.compras === 'true');
+        const isCompras = (item.estado === 'Aprobado' && (item.compras === true || item.compras === 'TRUE' || item.compras === 'true'));
         if (!isCompras) return false;
         if (!search) return true;
         if (!item._searchBlob) cacheOrderComputedFields(item);
@@ -1576,7 +1573,7 @@
     }
 
     function renderMetricsDashboard() {
-      const activeOrders = window.masterPCData.filter(i => !(i.compras === true || i.compras === 'TRUE' || i.compras === 'true'));
+      const activeOrders = window.masterPCData.filter(i => !(i.estado === 'Aprobado' && (i.compras === true || i.compras === 'TRUE' || i.compras === 'true')));
       const totalActive = activeOrders.length;
       let totalBudgetUSD = 0;
       let totalBudgetARS = 0;
@@ -1603,7 +1600,7 @@
         if (o.estado === 'Aprobado') approvedCount++;
         else pendingCount++;
 
-        if (o.reprogramacion === 'En espera') {
+        if (o.estado === 'En espera') {
           waitingCount++;
           if (o.semanaReprogramada) waitingWithWeeks++;
           const withWho = (o.enReprogramacionCon || 'Sin especificar').trim();
@@ -1796,10 +1793,9 @@
       }
 
       document.getElementById('adminInputComprador').value = pc.comprador || '';
-      document.getElementById('adminInputEstado').value = pc.estado === 'Aprobado' ? 'Aprobado' : 'Pendiente';
+      document.getElementById('adminInputEstado').value = ['Pendiente','Aprobado','En espera'].includes(pc.estado) ? pc.estado : 'Pendiente';
       document.getElementById('adminInputCompras').checked = (pc.compras === true || pc.compras === 'TRUE' || pc.compras === 'true');
-      document.getElementById('adminInputReprogramacion').value = pc.reprogramacion || 'No';
-      document.getElementById('adminInputSemanaReprog').value = pc.semanaReprogramada || '';
+            document.getElementById('adminInputSemanaReprog').value = pc.semanaReprogramada || '';
 
       toggleAdminSemanaReprog();
     }
@@ -1898,7 +1894,9 @@
     }
 
     function toggleAdminSemanaReprog() {
-      const val = document.getElementById('adminInputReprogramacion')?.value;
+      const val = document.getElementById('adminInputEstado')?.value;
+      const compras = document.getElementById('adminInputCompras');
+      if (compras) { compras.disabled = val !== 'Aprobado'; if (val !== 'Aprobado') compras.checked = false; }
       const container = document.getElementById('adminContainerSemanaReprog');
       if (container) {
         if (val === 'En espera') container.classList.remove('hidden');
@@ -1944,15 +1942,27 @@
       pc.presupuestoUSD = usdVal;
       pc.presupuestoARS = arsVal;
 
+      const estadoNuevo = document.getElementById('adminInputEstado')?.value || 'Pendiente';
+      const comprasNueva = document.getElementById('adminInputCompras')?.checked || false;
+      const semanaNueva = (document.getElementById('adminInputSemanaReprog')?.value || '').trim();
+      if (estadoNuevo === 'En espera') {
+        const match = /^(\d{4})-(\d{2})$/.exec(semanaNueva);
+        if (!match || +match[2] < 1 || +match[2] > 53) { showToast('Ingresá una semana válida yyyy-ss para En espera.'); return; }
+        const yy = +match[1]; const dd = new Date(Date.UTC(yy,11,28));
+        dd.setUTCDate(dd.getUTCDate() + 4 - (dd.getUTCDay() || 7));
+        const maxWeek = Math.ceil((((dd - new Date(Date.UTC(dd.getUTCFullYear(),0,1))) / 86400000) + 1) / 7);
+        if (+match[2] > maxWeek) { showToast('Esa semana ISO no existe en el año indicado.'); return; }
+      }
+      if (comprasNueva && estadoNuevo !== 'Aprobado') { showToast('Compras solamente puede ser Verdadero con Estado Aprobado.'); return; }
       pc.enReprogramacionCon = document.getElementById('adminInputEnReprogramacionCon')?.value.trim() || '';
       pc.prioridad = document.getElementById('adminInputPrioridad')?.value || '';
       pc.comprador = document.getElementById('adminInputComprador')?.value.trim() || '';
       pc.estado = document.getElementById('adminInputEstado')?.value || 'Pendiente';
       
       const previousCompras = pc.compras;
-      pc.compras = document.getElementById('adminInputCompras')?.checked || false;
-      pc.reprogramacion = document.getElementById('adminInputReprogramacion')?.value || 'No';
-      pc.semanaReprogramada = pc.reprogramacion === 'En espera' ? document.getElementById('adminInputSemanaReprog')?.value.trim() : '';
+      pc.compras = comprasNueva;
+      pc.reprogramacion = estadoNuevo === 'En espera' ? 'En espera' : 'No';
+      pc.semanaReprogramada = estadoNuevo === 'En espera' ? semanaNueva : '';
 
       cacheOrderComputedFields(pc);
       saveStateToLocalStorage();
@@ -1961,7 +1971,7 @@
       renderCompletedTable();
       renderMetricsDashboard();
 
-      if (pc.compras && !previousCompras) {
+      if (pc.estado === 'Aprobado' && pc.compras && !previousCompras) {
         showToast(`Orden ${pc.nroPC} finalizada y movida a Compras Realizadas.`);
       } else {
         showToast(`Orden ${pc.nroPC} guardada con éxito.`);
@@ -2474,10 +2484,7 @@
               existing.unidad = unidadResuelta;
             }
             if (rep1Data.responsablePedido) existing.responsablePedido = rep1Data.responsablePedido;
-            // Estado: si todavía está Pendiente/vacío, refrescar con el valor real de Finnegans.
-            if ((!existing.estado || normalizeStr(existing.estado) === normalizeStr('Pendiente')) && grp.estadoFinnegans) {
-              existing.estado = grp.estadoFinnegans;
-            }
+            // Estado es manual: nunca reemplazarlo por el estado importado desde Finnegans.
             cacheOrderComputedFields(existing);
             preservedCount++;
           } else {
@@ -2496,7 +2503,7 @@
               presupuestoUSD: null,
               presupuestoARS: null,
               comprador: '',
-              estado: grp.estadoFinnegans || 'Pendiente',
+              estado: 'Pendiente',
               compras: false,
               reprogramacion: 'No',
               semanaReprogramada: '',
@@ -3063,7 +3070,7 @@
         "Presupuesto ($)": parseCurrencySafe(item.presupuestoARS) !== null ? Math.round(parseCurrencySafe(item.presupuestoARS)) : '',
         "Comprador": item.comprador,
         "Estado": item.estado,
-        "Compras": (item.compras === true || item.compras === 'TRUE' || item.compras === 'true'),
+        "Compras": (item.estado === 'Aprobado' && (item.compras === true || item.compras === 'TRUE' || item.compras === 'true')),
         "Reprogramacion": item.reprogramacion === 'En espera' && item.semanaReprogramada ? `En espera (${item.semanaReprogramada})` : item.reprogramacion
       }));
 
