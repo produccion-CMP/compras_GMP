@@ -70,6 +70,32 @@
     #finDetailFields strong{display:block;color:#64748b;font-size:11px;margin-bottom:4px;}
     #finColumnPanel label{display:inline-flex;gap:5px;align-items:center;margin:5px 10px 5px 0;cursor:pointer;}
     @media(max-width:600px){#finDetailCard{padding:14px;}#finDetailFields{grid-template-columns:1fr 1fr;}}
+    .fin-age{display:inline-block;margin-left:6px;padding:1px 6px;border-radius:999px;font-size:10px;font-weight:700;font-family:ui-monospace,monospace;}
+    .fin-age-ok{background:#dcfce7;color:#166534;}
+    .fin-age-warn{background:#fef3c7;color:#92400e;}
+    .fin-age-crit{background:#fee2e2;color:#991b1b;}
+    .fin-overdue{display:inline-block;margin-left:4px;padding:1px 6px;border-radius:6px;font-size:10px;font-weight:800;background:#dc2626;color:#fff;}
+    .fin-resp-manual{display:inline-block;margin-left:4px;padding:0 5px;border-radius:5px;font-size:9px;font-weight:700;background:#e0e7ff;color:#3730a3;vertical-align:middle;}
+    .fin-sel{width:15px;height:15px;margin-right:6px;vertical-align:middle;cursor:pointer;accent-color:#4f46e5;}
+    #finBulkBar{position:sticky;top:0;z-index:40;}
+    .fin-view-btn{padding:6px 12px;font-size:12px;font-weight:600;border-radius:9px;color:#475569;}
+    .fin-view-btn.fin-active{background:#4f46e5;color:#fff;box-shadow:0 1px 2px rgba(0,0,0,.12);}
+    #finKanban{display:grid;grid-template-columns:repeat(3,minmax(280px,1fr));gap:14px;overflow-x:auto;padding-bottom:6px;}
+    .fin-kcol{background:#f1f5f9;border:1px solid #e2e8f0;border-radius:16px;display:flex;flex-direction:column;min-height:240px;max-height:calc(100vh - 260px);}
+    .fin-kcol.fin-drop{outline:2px dashed #6366f1;outline-offset:-4px;background:#eef2ff;}
+    .fin-khead{padding:10px 12px;border-bottom:1px solid #e2e8f0;display:flex;align-items:center;justify-content:space-between;gap:8px;font-size:12px;}
+    .fin-kbody{padding:10px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;flex:1;}
+    .fin-kcard{background:#fff;border:1px solid #e2e8f0;border-left:4px solid #cbd5e1;border-radius:12px;padding:9px 10px;font-size:11px;cursor:pointer;box-shadow:0 1px 2px rgba(15,23,42,.05);transition:box-shadow .12s,transform .12s;}
+    .fin-kcard:hover{box-shadow:0 4px 14px rgba(15,23,42,.10);}
+    .fin-kcard[draggable="true"]{cursor:grab;}
+    .fin-kcard.fin-dragging{opacity:.45;transform:scale(.98);}
+    .fin-kcard.fin-prio-urgente{border-left-color:#e11d48;}
+    .fin-kcard.fin-prio-alta{border-left-color:#fb7185;}
+    .fin-kcard.fin-prio-intermedio{border-left-color:#f59e0b;}
+    .fin-kcard.fin-kselected{box-shadow:0 0 0 2px #6366f1;}
+    #finDetailHistory table{width:100%;border-collapse:collapse;font-size:11px;margin-top:8px;}
+    #finDetailHistory th,#finDetailHistory td{border-bottom:1px solid #e2e8f0;padding:6px 8px;text-align:left;vertical-align:top;}
+    #finDetailHistory th{color:#64748b;font-weight:700;background:#f8fafc;}
   </style>
 </head>
 <body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col antialiased selection:bg-indigo-100 selection:text-indigo-900 relative">
@@ -179,7 +205,7 @@
     <div id="sectionDashboard" class="space-y-4">
       
       <!-- KPIs Dinámicos según Filtro Actual -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-4">
         <div class="bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between">
           <div>
             <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Órdenes Activas en Filtro</p>
@@ -223,6 +249,17 @@
             <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
           </div>
         </div>
+
+        <button type="button" onclick="finSetAlertFilter('critica')" class="text-left bg-white p-4 rounded-2xl border border-slate-200 shadow-xs flex items-center justify-between hover:border-rose-300 transition" title="Filtrar pedidos críticos">
+          <div>
+            <p class="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Alertas de Antigüedad</p>
+            <h3 class="text-2xl font-black text-rose-700" id="kpiAgingCritCount">0</h3>
+            <span class="text-xs text-slate-500" id="kpiAgingDetail">0 con más de 30 días · 0 reprog. vencidas</span>
+          </div>
+          <div class="p-3 bg-rose-50 text-rose-700 rounded-2xl">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"></path></svg>
+          </div>
+        </button>
       </div>
 
       <!-- Barra de Filtros y Período -->
@@ -261,6 +298,7 @@
 
             <select id="filterPrioridad" onchange="renderTable()" class="text-xs rounded-xl border border-slate-300 py-1 px-2 bg-white text-slate-700">
               <option value="">Todas las Prioridades</option>
+              <option value="Urgente">Urgente</option>
               <option value="Alta">Alta</option>
               <option value="Intermedio">Intermedio</option>
               <option value="Sin asignar">Sin asignar</option>
@@ -273,6 +311,14 @@
               <option value="En espera">En espera</option>
             </select>
 
+            <select id="filterAlerta" onchange="renderTable()" class="text-xs rounded-xl border border-slate-300 py-1 px-2 bg-white text-slate-700">
+              <option value="">Todas las alertas</option>
+              <option value="critica">Más de 90 días</option>
+              <option value="atencion">Más de 30 días</option>
+              <option value="reprogVencida">Reprogramación vencida</option>
+              <option value="sinResponsable">Sin responsable</option>
+            </select>
+
             <button onclick="resetFilters()" class="text-xs text-indigo-600 hover:text-indigo-800 font-semibold px-2 py-1">Restablecer</button>
           </div>
         </div>
@@ -283,7 +329,42 @@
         </div>
       </div>
 
-      <div class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+      <div class="flex flex-wrap items-center justify-between gap-2">
+        <div class="inline-flex items-center gap-1 bg-white border border-slate-200 rounded-xl p-1 shadow-xs" role="tablist" aria-label="Vista">
+          <button type="button" id="finViewTable" class="fin-view-btn" onclick="finSetView('table')">☰ Tabla</button>
+          <button type="button" id="finViewKanban" class="fin-view-btn" onclick="finSetView('kanban')">▦ Kanban</button>
+        </div>
+        <span class="text-[11px] text-slate-500" id="finViewHint"></span>
+      </div>
+
+      <div id="finBulkBar" class="hidden bg-indigo-950 text-white rounded-2xl px-3 py-2.5 shadow-lg flex flex-wrap items-center gap-2 text-xs">
+        <span class="font-bold bg-indigo-700 rounded-lg px-2 py-1" id="finBulkCount">0 seleccionadas</span>
+        <select id="finBulkPrioridad" class="rounded-lg text-slate-900 px-2 py-1.5">
+          <option value="__keep">Prioridad: sin cambio</option>
+          <option value="">Prioridad: quitar</option>
+          <option value="Urgente">Urgente</option>
+          <option value="Alta">Alta</option>
+          <option value="Intermedio">Intermedio</option>
+        </select>
+        <select id="finBulkComprador" class="rounded-lg text-slate-900 px-2 py-1.5"></select>
+        <select id="finBulkEstado" class="rounded-lg text-slate-900 px-2 py-1.5" onchange="document.getElementById('finBulkSemana').classList.toggle('hidden', this.value !== 'En espera')">
+          <option value="__keep">Estado: sin cambio</option>
+          <option value="Pendiente">Pendiente</option>
+          <option value="Aprobado">Aprobado</option>
+          <option value="En espera">En espera</option>
+        </select>
+        <input id="finBulkSemana" class="hidden rounded-lg text-slate-900 px-2 py-1.5 w-24" placeholder="yyyy-ss" aria-label="Semana de reprogramación">
+        <input id="finBulkResponsable" list="finResponsablesList" class="rounded-lg text-slate-900 px-2 py-1.5 w-48" placeholder="Responsable: sin cambio" aria-label="Responsable pedido">
+        <button type="button" onclick="finApplyBulk()" id="finBulkApply" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-bold rounded-lg px-3 py-1.5">Aplicar</button>
+        <button type="button" onclick="finClearSelection()" class="border border-indigo-400 hover:bg-indigo-800 rounded-lg px-3 py-1.5">Limpiar selección</button>
+      </div>
+      <datalist id="finResponsablesList"></datalist>
+
+      <div id="finKanbanWrap" class="hidden">
+        <div id="finKanban"></div>
+      </div>
+
+      <div id="finTableWrap" class="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
         <div class="table-scroll-container">
           
 <div class="flex flex-wrap items-center gap-2 text-xs py-2 px-1" id="columnControlPanel">
@@ -302,7 +383,7 @@
                   <div class="flex items-center space-x-1"><span>Semana</span><span id="sortIcon_semana">↕</span></div>
                 </th>
                 <th onclick="handleSort('nroPC')" class="p-2.5 whitespace-nowrap th-sortable w-[110px]">
-                  <div class="flex items-center space-x-1"><span>Nro de PC</span><span id="sortIcon_nroPC">↕</span></div>
+                  <div class="flex items-center space-x-1"><input type="checkbox" id="finSelectPage" class="fin-sel hidden" title="Seleccionar página" aria-label="Seleccionar todas las PC de la página" onclick="event.stopPropagation()"><span>Nro de PC</span><span id="sortIcon_nroPC">↕</span></div>
                 </th>
                 <th onclick="handleSort('fechaPedido')" class="p-2.5 whitespace-nowrap th-sortable w-[120px]">
                   <div class="flex items-center space-x-1"><span>Fecha Pedido</span><span id="sortIcon_fechaPedido">↕</span></div>
@@ -604,6 +685,11 @@
           <input type="password" id="inputAdminPassword" placeholder="••••••••" class="w-full text-xs rounded-xl border border-slate-300 p-2.5 outline-none focus:ring-2 focus:ring-indigo-500">
           <span class="text-[10px] text-slate-400 mt-1 block">La contraseña se valida en el backend de Apps Script y no queda expuesta en este archivo.</span>
         </div>
+        <div>
+          <label class="block text-[11px] font-semibold text-slate-700 mb-1">Tu nombre</label>
+          <input type="text" id="inputEditorName" maxlength="80" autocomplete="name" placeholder="Nombre y apellido" class="w-full text-xs rounded-xl border border-slate-300 p-2.5 outline-none focus:ring-2 focus:ring-indigo-500">
+          <span class="text-[10px] text-slate-400 mt-1 block">Se registra en la hoja Historial PC con cada cambio.</span>
+        </div>
 
         <div id="authErrorMessage" class="text-[11px] text-rose-600 font-semibold hidden">Contraseña incorrecta. Intente nuevamente.</div>
 
@@ -717,9 +803,15 @@
                     <label class="block font-semibold text-slate-700 mb-1">Prioridad</label>
                     <select id="adminInputPrioridad" class="w-full rounded-xl border border-slate-300 p-2 bg-white">
                       <option value="">-- Sin Prioridad --</option>
+                      <option value="Urgente">Urgente</option>
                       <option value="Alta">Alta</option>
                       <option value="Intermedio">Intermedio</option>
                     </select>
+                  </div>
+
+                  <div class="sm:col-span-2">
+                    <label class="block font-semibold text-slate-700 mb-1">Responsable pedido <span id="adminResponsableOrigen" class="font-normal text-slate-400"></span></label>
+                    <input type="text" id="adminInputResponsable" list="finResponsablesList" maxlength="120" placeholder="Solo si Finnegans no lo informa" class="w-full rounded-xl border border-slate-300 p-2 bg-white outline-none">
                   </div>
 
                   <!-- Bloque de Presupuesto -->
@@ -1148,7 +1240,7 @@
       target.setMonth(0, 1);
       if (target.getDay() !== 4) target.setMonth(0, 1 + ((4 - target.getDay()) + 7) % 7);
       const weekNum = 1 + Math.ceil((firstThursday - target) / 604800000);
-      const year = d.getFullYear();
+      const year = new Date(firstThursday).getFullYear();
       const padWeek = weekNum < 10 ? '0' + weekNum : String(weekNum);
       
       return `${year}-${padWeek}`;
@@ -1367,6 +1459,10 @@
       order._displayDate = formatDisplayDate(order.fechaPedido);
       order._ymdDate = normalizeDateToYMD(order.fechaPedido);
       order._searchBlob = `${order.semana} ${order.nroPC} ${order.fechaPedido} ${order.enReprogramacionCon} ${order.descripcion} ${order.unidad} ${order.responsablePedido || ''} ${order.prioridad} ${order.comprador} ${order.estado} ${order.reprogramacion}`.toLowerCase();
+      const alertInfo = finAlertInfo(order);
+      order._age = alertInfo.age;
+      order._ageLevel = alertInfo.level;
+      order._reprogVencida = alertInfo.reprogVencida;
     }
 
     function changePageSize(newSize) {
@@ -1426,6 +1522,7 @@
       const semFilter = document.getElementById('filterSemana')?.value || '';
       const prioFilter = document.getElementById('filterPrioridad')?.value || '';
       const estFilter = document.getElementById('filterEstado')?.value || '';
+      const alertFilter = document.getElementById('filterAlerta')?.value || '';
       const datePreset = document.getElementById('filterDatePreset')?.value || 'all';
       const dateFrom = document.getElementById('filterDateFrom')?.value || '';
       const dateTo = document.getElementById('filterDateTo')?.value || '';
@@ -1447,6 +1544,10 @@
         if (semFilter && item.semana !== semFilter) return false;
         if (prioFilter && (prioFilter === 'Sin asignar' ? !!item.prioridad : item.prioridad !== prioFilter)) return false;
         if (estFilter && item.estado !== estFilter) return false;
+        if (alertFilter === 'critica' && item._ageLevel !== 'critica') return false;
+        if (alertFilter === 'atencion' && item._ageLevel !== 'critica' && item._ageLevel !== 'atencion') return false;
+        if (alertFilter === 'reprogVencida' && !item._reprogVencida) return false;
+        if (alertFilter === 'sinResponsable' && String(item.responsablePedido || '').trim()) return false;
 
         return true;
       });
@@ -1482,6 +1583,10 @@
 
       // ACTUALIZAR KPIS DINÁMICOS BASADOS EN EL FILTRO REALIZADO
       updateKPIs(filtered);
+      finSyncViewChrome();
+      finRefreshResponsablesList();
+      finRenderBulkBar();
+      if (window.finViewMode === 'kanban') finRenderKanban(filtered);
 
       const totalItems = filtered.length;
       const totalPages = Math.ceil(totalItems / window.pageSize) || 1;
@@ -1491,6 +1596,7 @@
 
       const startIndex = (window.currentPage - 1) * window.pageSize;
       const paginatedItems = filtered.slice(startIndex, startIndex + window.pageSize);
+      window.finPageItems = paginatedItems;
 
       const pageIndicator = document.getElementById('pageIndicator');
       if (pageIndicator) pageIndicator.innerText = `Pág ${window.currentPage} de ${totalPages}`;
@@ -1541,20 +1647,20 @@
           return `
             <tr class="hover:bg-slate-50/80 transition border-b border-slate-100" data-fin-pc="${encodeURIComponent(item.nroPC)}">
               <td class="p-2.5 font-mono font-bold text-slate-900 whitespace-nowrap">${item.semana}</td>
-              <td class="p-2.5 font-bold text-indigo-700 whitespace-nowrap font-mono">${item.nroPC}</td>
-              <td class="p-2.5 whitespace-nowrap text-slate-600 font-mono">${item._displayDate || '-'}</td>
+              <td class="p-2.5 font-bold text-indigo-700 whitespace-nowrap font-mono">${finSelectBox(item)}${item.nroPC}</td>
+              <td class="p-2.5 whitespace-nowrap text-slate-600 font-mono">${item._displayDate || '-'}${finAgeBadge(item)}</td>
               <td class="p-2.5 whitespace-nowrap text-slate-600">${item.enReprogramacionCon || '-'}</td>
               <td class="p-2.5 text-slate-800 font-medium min-w-[280px]">
                 <div class="line-clamp-2" title="${item.descripcion}">${item.descripcion}</div>
               </td>
               <td class="p-2.5 whitespace-nowrap">${getUnitPastelBadge(item.unidad)}</td>
-              <td class="p-2.5 whitespace-nowrap font-medium text-slate-700">${item.responsablePedido || '<span class="text-slate-400 italic">Sin asignar</span>'}</td>
+              <td class="p-2.5 whitespace-nowrap font-medium text-slate-700">${item.responsablePedido ? finEsc(item.responsablePedido) + (item.responsableOrigen === 'Manual' ? '<span class="fin-resp-manual" title="Cargado a mano: Finnegans no lo informa">manual</span>' : '') : '<span class="text-slate-400 italic">Sin asignar</span>'}</td>
               <td class="p-2.5 whitespace-nowrap">${finInlineSelect(item,"prioridad",prioBadge)}</td>
               <td class="p-2.5 whitespace-nowrap text-right font-mono font-bold text-indigo-700">${item._formattedUSD}</td>
               <td class="p-2.5 whitespace-nowrap text-right font-mono font-black text-emerald-700" title="${cotizTooltip}">${item._formattedARS}</td>
               <td class="p-2.5 whitespace-nowrap font-medium text-slate-700">${finInlineSelect(item,"comprador",item.comprador || "-")}</td>
               <td class="p-2.5 whitespace-nowrap">${finInlineSelect(item,"estado",estadoBadge)}</td>
-              <td class="p-2.5 whitespace-nowrap">${reprogDisplay}</td>
+              <td class="p-2.5 whitespace-nowrap">${reprogDisplay}${item._reprogVencida ? '<span class="fin-overdue" title="La semana de reprogramación ya pasó">Vencida</span>' : ''}</td>
               <td class="p-2.5 whitespace-nowrap text-center">${editBtn}</td>
             </tr>
           `;
@@ -1609,6 +1715,11 @@
       setEl('kpiWaitingCount', waitingCount);
       setEl('kpiWaitingPerc', total > 0 ? `${Math.round((waitingCount / total) * 100)}% del filtro` : '0% del filtro');
       setEl('kpiUnassignedCount', unassignedCount);
+      const critCount = activeList.filter(o => o._ageLevel === 'critica').length;
+      const warnCount = activeList.filter(o => o._ageLevel === 'critica' || o._ageLevel === 'atencion').length;
+      const overdueCount = activeList.filter(o => o._reprogVencida).length;
+      setEl('kpiAgingCritCount', critCount);
+      setEl('kpiAgingDetail', `${warnCount} con más de ${finAgingThresholds().warn} días · ${overdueCount} reprog. vencidas`);
     }
 
     function renderCompletedTable() {
@@ -1876,6 +1987,16 @@
 
       document.getElementById('adminInputEnReprogramacionCon').value = pc.enReprogramacionCon || '';
       document.getElementById('adminInputPrioridad').value = pc.prioridad === 'Intermedia' ? 'Intermedio' : (pc.prioridad || '');
+      const respInput = document.getElementById('adminInputResponsable');
+      const respOrigen = document.getElementById('adminResponsableOrigen');
+      const respFinnegans = pc.responsableOrigen === 'Finnegans';
+      if (respInput) {
+        respInput.value = pc.responsablePedido || '';
+        respInput.readOnly = respFinnegans;
+        respInput.classList.toggle('bg-slate-100', respFinnegans);
+        respInput.classList.toggle('bg-white', !respFinnegans);
+      }
+      if (respOrigen) respOrigen.textContent = respFinnegans ? '(informado por Finnegans: no editable)' : (pc.responsablePedido ? '(carga manual)' : '(Finnegans no lo informa: podés cargarlo)');
       
       const parsedUSD = pc._numUSD !== undefined ? pc._numUSD : parseCurrencySafe(pc.presupuestoUSD);
       document.getElementById('adminInputUSD').value = parsedUSD !== null ? parsedUSD : '';
@@ -2097,6 +2218,8 @@
       if (buyerChoice && !window.compradoresActivos.some(n => n.toLowerCase() === buyerChoice.toLowerCase())) { showToast('El comprador debe estar activo en la hoja Comprador.'); return; }
       pc.enReprogramacionCon = document.getElementById('adminInputEnReprogramacionCon')?.value.trim() || '';
       pc.prioridad = document.getElementById('adminInputPrioridad')?.value || '';
+      const respInputSave = document.getElementById('adminInputResponsable');
+      if (respInputSave && !respInputSave.readOnly) pc.responsablePedido = respInputSave.value.trim();
       pc.comprador = document.getElementById('adminInputComprador')?.value.trim() || '';
       pc.estado = document.getElementById('adminInputEstado')?.value || 'Pendiente';
       
@@ -2110,7 +2233,7 @@
         showToast('Debés conectarte y autenticarte para guardar cambios en Sheets.'); return;
       }
       try {
-        const result = await gasPost({ action: 'UPDATE_ORDER', order: pc }, true);
+        const result = await gasPost({ action: 'UPDATE_ORDER', order: pc, origen: 'Edición individual' }, true);
         if (result.status !== 'SUCCESS') throw new Error(result.message || 'Error de guardado');
         if (result.order) Object.assign(pc, result.order);
       } catch (err) {
@@ -2217,9 +2340,15 @@
     async function verifyAdminPassword() {
       const entered = document.getElementById('inputAdminPassword').value;
       const errorEl = document.getElementById('authErrorMessage');
+      const editorName = (document.getElementById('inputEditorName')?.value || '').trim();
       if (!entered) {
         errorEl.classList.remove('hidden');
         errorEl.innerText = 'Ingresa la contraseña de administración.';
+        return;
+      }
+      if (editorName.length < 3) {
+        errorEl.classList.remove('hidden');
+        errorEl.innerText = 'Ingresá tu nombre: se registra en el historial de cambios.';
         return;
       }
 
@@ -2228,6 +2357,8 @@
         if (result.status === 'SUCCESS') {
           window.adminPasswordSession = entered;
           window.isAdminAuthenticated = true;
+          window.finEditorName = editorName;
+          try { localStorage.setItem('finnegans_editor_name', editorName); } catch (e) {}
           finRenderColumnConfig();renderTable();
           closeAdminAuthModal();
           updateAdminUIState();
@@ -2249,6 +2380,7 @@
     function lockAdminMode() {
       window.isAdminAuthenticated = false;
       window.adminPasswordSession = '';
+      if (window.finSelected) window.finSelected.clear();
       closeAdminPanelModal();
       updateAdminUIState();
       showToast('Modo edición bloqueado.');
@@ -2901,6 +3033,7 @@
       setV('filterSemana', '');
       setV('filterPrioridad', '');
       setV('filterEstado', '');
+      setV('filterAlerta', '');
       setV('filterDatePreset', 'all');
       applyDatePreset();
     }
@@ -3057,6 +3190,7 @@
       if (requireAdmin) {
         if (!window.adminPasswordSession) throw new Error('Sesión de administración no autenticada.');
         body.adminPassword = window.adminPasswordSession;
+        body.editor = window.finEditorName || '';
       }
       const response = await fetch(url, {
         method: 'POST',
@@ -3326,7 +3460,7 @@
       }
       el.disabled=true;
       try {
-        const result=await gasPost({action:'UPDATE_ORDER',order:next},true);
+        const result=await gasPost({action:'UPDATE_ORDER',order:next,origen:'Edición en tabla'},true);
         if(result.status!=='SUCCESS')throw new Error(result.message||'Error al guardar');
         await syncWithGoogleSheets(true);
         showToast('Cambio guardado en Google Sheets.');
@@ -3337,10 +3471,11 @@
       const item=window.masterPCData.find(o=>o.nroPC===pcId); if(!item)return;
       window.finDetailPC=pcId;
       document.getElementById('finDetailTitle').textContent='Pedido '+pcId;
-      const fields=[['Semana',item.semana],['Fecha del pedido',item.fechaPedido],['Descripción',item.descripcion],['Unidad',item.unidad],['Responsable pedido',item.responsablePedido],['Prioridad',item.prioridad],['Comprador',item.comprador],['Estado',item.estado],['Compras',item.compras?'Verdadero':'Falso'],['Reprogramación',item.semanaReprogramada||'—'],['Presupuesto USD',item.presupuestoUSD],['Presupuesto ARS',item.presupuestoARS],['Fecha cotización',item.fechaCotizacion],['Cotización aplicada',item.cotizacionAplicada],['En reprogramación con',item.enReprogramacionCon],['Autorización Finnegans',item.actividadAutorizacion]];
+      const fields=[['Semana',item.semana],['Fecha del pedido',item.fechaPedido],['Antigüedad',item._age===null||item._age===undefined?'':item._age+' días'],['Descripción',item.descripcion],['Unidad',item.unidad],['Responsable pedido',item.responsablePedido?(item.responsablePedido+(item.responsableOrigen?' ('+item.responsableOrigen+')':'')):''],['Prioridad',item.prioridad],['Comprador',item.comprador],['Estado',item.estado],['Compras',item.compras?'Verdadero':'Falso'],['Reprogramación',item.semanaReprogramada||'—'],['Presupuesto USD',item.presupuestoUSD],['Presupuesto ARS',item.presupuestoARS],['Fecha cotización',item.fechaCotizacion],['Cotización aplicada',item.cotizacionAplicada],['En reprogramación con',item.enReprogramacionCon],['Autorización Finnegans',item.actividadAutorizacion]];
       document.getElementById('finDetailFields').innerHTML=fields.map(([k,v])=>'<div><strong>'+finEsc(k)+'</strong><span>'+finEsc(v==null||v===''?'—':v)+'</span></div>').join('');
       document.getElementById('finDetailEdit').textContent=window.isAdminAuthenticated?'Editar pedido':'Editar (requiere contraseña)';
       document.getElementById('finDetailOverlay').classList.add('fin-visible');
+      finLoadHistory(pcId);
     }
     function finCloseDetail(){document.getElementById('finDetailOverlay').classList.remove('fin-visible');}
     function finDetailEditOrder(){const pc=window.finDetailPC;finCloseDetail();if(pc)handleQuickEditClick(pc);}
@@ -3367,11 +3502,319 @@
       finUpdateInline(decodeURIComponent(select.dataset.finPc),select.dataset.finField,select.value,select);
     });
     document.addEventListener('keydown',e=>{if(e.key==='Escape')finCloseDetail();});
+    function finAgingThresholds() { return { warn: 30, crit: 90 }; }
+    function finTodayYMD() {
+      const d = new Date();
+      return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    }
+    function finIsoWeekFromYMD(ymd) {
+      const p = String(ymd || '').split('-').map(Number);
+      if (p.length !== 3 || !p[0] || !p[1] || !p[2]) return '';
+      const d = new Date(Date.UTC(p[0], p[1] - 1, p[2]));
+      const dayNum = d.getUTCDay() || 7;
+      d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+      const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+      const week = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+      return `${d.getUTCFullYear()}-${String(week).padStart(2, '0')}`;
+    }
+    function finIsValidIsoWeek(value) {
+      const m = /^(\d{4})-(\d{2})$/.exec(String(value || '').trim());
+      if (!m || +m[2] < 1 || +m[2] > 53) return false;
+      const dd = new Date(Date.UTC(+m[1], 11, 28));
+      dd.setUTCDate(dd.getUTCDate() + 4 - (dd.getUTCDay() || 7));
+      const maxWeek = Math.ceil((((dd - new Date(Date.UTC(dd.getUTCFullYear(), 0, 1))) / 86400000) + 1) / 7);
+      return +m[2] <= maxWeek;
+    }
+    function finAlertInfo(order) {
+      const ymd = order._ymdDate || normalizeDateToYMD(order.fechaPedido);
+      let age = null;
+      if (ymd && /^\d{4}-\d{2}-\d{2}$/.test(ymd)) {
+        const diff = Math.floor((Date.parse(finTodayYMD() + 'T12:00:00Z') - Date.parse(ymd + 'T12:00:00Z')) / 86400000);
+        age = Number.isFinite(diff) ? Math.max(0, diff) : null;
+      }
+      const t = finAgingThresholds();
+      const level = age === null ? 'none' : (age > t.crit ? 'critica' : (age > t.warn ? 'atencion' : 'ok'));
+      const semana = String(order.semanaReprogramada || '');
+      const reprogVencida = order.estado === 'En espera' && /^\d{4}-\d{2}$/.test(semana) && semana < finIsoWeekFromYMD(finTodayYMD());
+      return { age, level, reprogVencida };
+    }
+    function finAgeBadge(order) {
+      if (order._age === null || order._age === undefined) return '';
+      const cls = order._ageLevel === 'critica' ? 'fin-age-crit' : (order._ageLevel === 'atencion' ? 'fin-age-warn' : 'fin-age-ok');
+      return `<span class="fin-age ${cls}" title="Días desde el pedido">${order._age} d</span>`;
+    }
+    function finSetAlertFilter(value) {
+      const el = document.getElementById('filterAlerta');
+      if (!el) return;
+      el.value = el.value === value ? '' : value;
+      window.currentPage = 1;
+      renderTable();
+    }
+
+    function finSelectedSet() {
+      if (!(window.finSelected instanceof Set)) window.finSelected = new Set();
+      return window.finSelected;
+    }
+    function finSelectBox(item) {
+      if (!window.isAdminAuthenticated) return '';
+      const checked = finSelectedSet().has(item.nroPC) ? 'checked' : '';
+      return `<input type="checkbox" class="fin-sel" data-fin-sel="${encodeURIComponent(item.nroPC)}" aria-label="Seleccionar ${finEsc(item.nroPC)}" ${checked}>`;
+    }
+    function finToggleSelection(pc, on) {
+      const set = finSelectedSet();
+      if (on) set.add(pc); else set.delete(pc);
+      finRenderBulkBar();
+      document.querySelectorAll(`.fin-kcard[data-kpc="${CSS.escape(encodeURIComponent(pc))}"]`).forEach(c => c.classList.toggle('fin-kselected', on));
+    }
+    function finClearSelection() {
+      finSelectedSet().clear();
+      renderTable();
+    }
+    function finRenderBulkBar() {
+      const bar = document.getElementById('finBulkBar');
+      const headBox = document.getElementById('finSelectPage');
+      const set = finSelectedSet();
+      const activeIds = new Set((window.masterPCData || []).map(o => o.nroPC));
+      Array.from(set).forEach(pc => { if (!activeIds.has(pc)) set.delete(pc); });
+      if (headBox) {
+        headBox.classList.toggle('hidden', !window.isAdminAuthenticated);
+        const page = window.finPageItems || [];
+        const onPage = page.filter(o => set.has(o.nroPC)).length;
+        headBox.checked = page.length > 0 && onPage === page.length;
+        headBox.indeterminate = onPage > 0 && onPage < page.length;
+      }
+      if (!bar) return;
+      const show = window.isAdminAuthenticated && set.size > 0;
+      bar.classList.toggle('hidden', !show);
+      if (!show) return;
+      document.getElementById('finBulkCount').textContent = `${set.size} seleccionada${set.size === 1 ? '' : 's'}`;
+      const buyer = document.getElementById('finBulkComprador');
+      const current = buyer.value || '__keep';
+      buyer.innerHTML = '<option value="__keep">Comprador: sin cambio</option><option value="">Comprador: quitar</option>' + (window.compradoresActivos || []).map(n => `<option value="${finEsc(n)}">${finEsc(n)}</option>`).join('');
+      buyer.value = [...buyer.options].some(o => o.value === current) ? current : '__keep';
+    }
+    function finRefreshResponsablesList() {
+      const list = document.getElementById('finResponsablesList');
+      if (!list) return;
+      const names = Array.from(new Set((window.masterPCData || []).map(o => String(o.responsablePedido || '').trim()).filter(Boolean))).sort((a, b) => a.localeCompare(b, 'es'));
+      const html = names.map(n => `<option value="${finEsc(n)}"></option>`).join('');
+      if (list.dataset.sig !== html) { list.innerHTML = html; list.dataset.sig = html; }
+    }
+    async function finPostBulk(pcs, changes, origen) {
+      const result = await gasPost({ action: 'BULK_UPDATE_ORDERS', pcs, changes, origen }, true);
+      if (result.status !== 'SUCCESS') throw new Error(result.message || 'No se pudo aplicar el cambio.');
+      return result;
+    }
+    async function finApplyBulk() {
+      if (!window.isAdminAuthenticated) { showToast('Requiere acceso de edición.'); return; }
+      const pcs = Array.from(finSelectedSet());
+      if (!pcs.length) return;
+      const changes = {};
+      const prio = document.getElementById('finBulkPrioridad').value;
+      const buyer = document.getElementById('finBulkComprador').value;
+      const estado = document.getElementById('finBulkEstado').value;
+      const semana = document.getElementById('finBulkSemana').value.trim();
+      const resp = document.getElementById('finBulkResponsable').value.trim();
+      if (prio !== '__keep') changes.prioridad = prio;
+      if (buyer !== '__keep') changes.comprador = buyer;
+      if (estado !== '__keep') {
+        if (estado === 'En espera' && !finIsValidIsoWeek(semana)) { showToast('Ingresá una semana ISO válida yyyy-ss para En espera.'); return; }
+        changes.estado = estado;
+        if (estado === 'En espera') changes.semanaReprogramada = semana;
+      }
+      if (resp) changes.responsablePedido = resp;
+      if (!Object.keys(changes).length) { showToast('Elegí al menos un cambio para aplicar.'); return; }
+      const resumen = Object.entries(changes).map(([k, v]) => `${k}: ${v === '' ? '(vacío)' : v}`).join('\n');
+      if (!confirm(`Aplicar a ${pcs.length} PC:\n\n${resumen}`)) return;
+      const btn = document.getElementById('finBulkApply');
+      btn.disabled = true;
+      try {
+        const result = await finPostBulk(pcs, changes, 'Edición masiva');
+        finSelectedSet().clear();
+        ['finBulkPrioridad', 'finBulkComprador', 'finBulkEstado'].forEach(id => { document.getElementById(id).value = '__keep'; });
+        document.getElementById('finBulkSemana').value = '';
+        document.getElementById('finBulkSemana').classList.add('hidden');
+        document.getElementById('finBulkResponsable').value = '';
+        await syncWithGoogleSheets(true);
+        showToast(result.message || 'Cambios aplicados.');
+      } catch (err) {
+        showToast('No se aplicaron los cambios: ' + err.message);
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    function finSyncViewChrome() {
+      if (!window.finViewMode) {
+        let saved = 'table';
+        try { saved = localStorage.getItem('finnegans_view_mode') || 'table'; } catch (e) {}
+        window.finViewMode = saved === 'kanban' ? 'kanban' : 'table';
+      }
+      const kanban = window.finViewMode === 'kanban';
+      document.getElementById('finTableWrap')?.classList.toggle('hidden', kanban);
+      document.getElementById('finKanbanWrap')?.classList.toggle('hidden', !kanban);
+      document.getElementById('finViewTable')?.classList.toggle('fin-active', !kanban);
+      document.getElementById('finViewKanban')?.classList.toggle('fin-active', kanban);
+      const hint = document.getElementById('finViewHint');
+      if (hint) hint.textContent = kanban ? (window.isAdminAuthenticated ? 'Arrastrá una tarjeta a otra columna para cambiar el Estado. Usa los mismos filtros.' : 'Vista de consulta. Ingresá con contraseña para mover tarjetas.') : '';
+    }
+    function finSetView(mode) {
+      window.finViewMode = mode === 'kanban' ? 'kanban' : 'table';
+      try { localStorage.setItem('finnegans_view_mode', window.finViewMode); } catch (e) {}
+      renderTable();
+    }
+    function finPrioRank(p) {
+      return ({ 'Urgente': 0, 'Alta': 1, 'Intermedio': 2, 'Intermedia': 2 })[p] ?? 3;
+    }
+    function finKanbanCard(o) {
+      const admin = window.isAdminAuthenticated;
+      const prioCls = o.prioridad ? 'fin-prio-' + String(o.prioridad).toLowerCase().replace('intermedia', 'intermedio') : '';
+      const sel = finSelectedSet().has(o.nroPC);
+      const prio = o.prioridad ? `<span class="px-1.5 py-0.5 rounded-full text-[10px] font-bold ${o.prioridad === 'Urgente' ? 'bg-rose-200 text-rose-900' : (o.prioridad === 'Alta' ? 'bg-rose-100 text-rose-700' : 'bg-amber-100 text-amber-700')}">${finEsc(o.prioridad)}</span>` : '';
+      const reprog = o.estado === 'En espera' && o.semanaReprogramada ? `<span class="text-amber-700 font-bold bg-amber-50 px-1.5 py-0.5 rounded">${finEsc(o.semanaReprogramada)}</span>${o._reprogVencida ? '<span class="fin-overdue">Vencida</span>' : ''}` : '';
+      const usd = o._numUSD ? `<span class="font-mono font-bold text-indigo-700">${o._formattedUSD}</span>` : '';
+      return `<div class="fin-kcard ${prioCls} ${sel ? 'fin-kselected' : ''}" draggable="${admin ? 'true' : 'false'}" data-kpc="${encodeURIComponent(o.nroPC)}">
+        <div class="flex items-center justify-between gap-2">
+          <span class="flex items-center font-mono font-black text-indigo-700">${finSelectBox(o)}${finEsc(o.nroPC)}</span>
+          <span class="flex items-center gap-1">${prio}${finAgeBadge(o)}</span>
+        </div>
+        <div class="mt-1.5 text-slate-800 font-medium line-clamp-2" title="${finEsc(o.descripcion)}">${finEsc(o.descripcion)}</div>
+        <div class="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] text-slate-500">
+          <span>${finEsc(o.unidad || 'Sin unidad')}</span>
+          <span>· ${o.responsablePedido ? finEsc(o.responsablePedido) : '<em class="text-rose-500">Sin responsable</em>'}</span>
+          <span>· ${o.comprador ? finEsc(o.comprador) : '<em>Sin comprador</em>'}</span>
+        </div>
+        ${(reprog || usd) ? `<div class="mt-1.5 flex items-center justify-between gap-2 text-[10px]">${reprog || '<span></span>'}${usd}</div>` : ''}
+      </div>`;
+    }
+    function finRenderKanban(list) {
+      const board = document.getElementById('finKanban');
+      if (!board) return;
+      const cols = [
+        { estado: 'Pendiente', color: 'bg-amber-100 text-amber-800' },
+        { estado: 'Aprobado', color: 'bg-emerald-100 text-emerald-800' },
+        { estado: 'En espera', color: 'bg-orange-100 text-orange-800' }
+      ];
+      board.innerHTML = cols.map(c => {
+        const items = list.filter(o => (o.estado || 'Pendiente') === c.estado)
+          .sort((a, b) => finPrioRank(a.prioridad) - finPrioRank(b.prioridad) || (b._age ?? -1) - (a._age ?? -1));
+        const usd = items.reduce((acc, o) => acc + (o._numUSD || 0), 0);
+        const crit = items.filter(o => o._ageLevel === 'critica').length;
+        return `<section class="fin-kcol" data-kestado="${c.estado}">
+          <header class="fin-khead">
+            <span class="px-2 py-0.5 rounded-md font-bold ${c.color}">${c.estado}</span>
+            <span class="text-slate-500"><b class="text-slate-800">${items.length}</b> PC${crit ? ` · <b class="text-rose-700">${crit}</b> críticas` : ''}${usd ? ` · <span class="font-mono">$ ${usd.toLocaleString('es-AR', { maximumFractionDigits: 0 })} USD</span>` : ''}</span>
+          </header>
+          <div class="fin-kbody">${items.map(finKanbanCard).join('') || '<p class="text-center text-slate-400 text-xs py-6">Sin pedidos</p>'}</div>
+        </section>`;
+      }).join('');
+    }
+    async function finMoveKanban(pc, estado) {
+      const item = (window.masterPCData || []).find(o => o.nroPC === pc);
+      if (!item || item.estado === estado) return;
+      const changes = { estado };
+      if (estado === 'En espera') {
+        const w = prompt(`Semana de reprogramación para ${pc} (yyyy-ss):`, item.semanaReprogramada || finIsoWeekFromYMD(finTodayYMD()));
+        if (w === null) return;
+        if (!finIsValidIsoWeek(w.trim())) { showToast('Semana inválida. Usá yyyy-ss.'); return; }
+        changes.semanaReprogramada = w.trim();
+      }
+      const previous = { estado: item.estado, semanaReprogramada: item.semanaReprogramada, reprogramacion: item.reprogramacion, compras: item.compras };
+      item.estado = estado;
+      item.semanaReprogramada = changes.semanaReprogramada || '';
+      item.reprogramacion = estado === 'En espera' ? 'En espera' : 'No';
+      if (estado !== 'Aprobado') item.compras = false;
+      cacheOrderComputedFields(item);
+      renderTable();
+      try {
+        await finPostBulk([pc], changes, 'Kanban');
+        showToast(`${pc} → ${estado}`);
+        await syncWithGoogleSheets(true);
+      } catch (err) {
+        Object.assign(item, previous);
+        cacheOrderComputedFields(item);
+        renderTable();
+        showToast('No se movió la tarjeta: ' + err.message);
+      }
+    }
+
+    async function finLoadHistory(pcId) {
+      const box = document.getElementById('finDetailHistory');
+      if (!box) return;
+      box.innerHTML = '<p class="text-xs text-slate-400">Cargando historial de cambios...</p>';
+      try {
+        const result = await gasPost({ action: 'GET_HISTORY', nroPC: pcId, limit: 30 }, false);
+        if (window.finDetailPC !== pcId) return;
+        if (result.status !== 'SUCCESS') throw new Error(result.message || 'Error');
+        const rows = result.history || [];
+        box.innerHTML = '<h3 class="font-bold text-sm text-slate-800">Historial de cambios</h3>' + (rows.length
+          ? '<table><thead><tr><th>Fecha</th><th>Campo</th><th>Anterior</th><th>Nuevo</th><th>Editor</th><th>Origen</th></tr></thead><tbody>' + rows.map(r => `<tr><td class="whitespace-nowrap font-mono">${finEsc(r.fecha)}</td><td>${finEsc(r.campo)}</td><td class="text-slate-500">${finEsc(r.anterior || '—')}</td><td class="font-semibold">${finEsc(r.nuevo || '—')}</td><td>${finEsc(r.editor)}</td><td class="text-slate-500">${finEsc(r.origen)}</td></tr>`).join('') + '</tbody></table>'
+          : '<p class="text-xs text-slate-400 mt-1">Sin cambios registrados desde la V11.</p>');
+      } catch (err) {
+        if (window.finDetailPC === pcId) box.innerHTML = `<p class="text-xs text-rose-600">No se pudo cargar el historial: ${finEsc(err.message)}</p>`;
+      }
+    }
+
+    document.getElementById('mainDataTable')?.addEventListener('change', e => {
+      const box = e.target.closest('input[data-fin-sel]');
+      if (box) { finToggleSelection(decodeURIComponent(box.dataset.finSel), box.checked); return; }
+      if (e.target.id === 'finSelectPage') {
+        const on = e.target.checked;
+        (window.finPageItems || []).forEach(o => { if (on) finSelectedSet().add(o.nroPC); else finSelectedSet().delete(o.nroPC); });
+        renderTable();
+      }
+    });
+    (function finBindKanban() {
+      const board = document.getElementById('finKanban');
+      if (!board) return;
+      board.addEventListener('change', e => {
+        const box = e.target.closest('input[data-fin-sel]');
+        if (box) finToggleSelection(decodeURIComponent(box.dataset.finSel), box.checked);
+      });
+      board.addEventListener('click', e => {
+        if (e.target.closest('input,button,select,a')) return;
+        const card = e.target.closest('.fin-kcard');
+        if (card) finOpenDetail(decodeURIComponent(card.dataset.kpc));
+      });
+      board.addEventListener('dragstart', e => {
+        const card = e.target.closest('.fin-kcard[draggable="true"]');
+        if (!card) return;
+        e.dataTransfer.setData('text/plain', card.dataset.kpc);
+        e.dataTransfer.effectAllowed = 'move';
+        card.classList.add('fin-dragging');
+      });
+      board.addEventListener('dragend', e => {
+        e.target.closest('.fin-kcard')?.classList.remove('fin-dragging');
+        board.querySelectorAll('.fin-drop').forEach(c => c.classList.remove('fin-drop'));
+      });
+      board.addEventListener('dragover', e => {
+        const col = e.target.closest('.fin-kcol');
+        if (!col || !window.isAdminAuthenticated) return;
+        e.preventDefault();
+        board.querySelectorAll('.fin-drop').forEach(c => { if (c !== col) c.classList.remove('fin-drop'); });
+        col.classList.add('fin-drop');
+      });
+      board.addEventListener('drop', e => {
+        const col = e.target.closest('.fin-kcol');
+        if (!col) return;
+        e.preventDefault();
+        col.classList.remove('fin-drop');
+        const pc = decodeURIComponent(e.dataTransfer.getData('text/plain') || '');
+        if (pc) finMoveKanban(pc, col.dataset.kestado);
+      });
+    })();
+    (function finRestoreEditorName() {
+      let name = '';
+      try { name = localStorage.getItem('finnegans_editor_name') || ''; } catch (e) {}
+      const input = document.getElementById('inputEditorName');
+      if (input && name) input.value = name;
+    })();
+
     finRenderColumnConfig();
 </script>
 <footer style="padding:10px 16px;text-align:center;opacity:.36;font-size:10px;letter-spacing:.035em;pointer-events:none">App realizada por Acevedo Ezequiel - Produccion CMP</footer>
 <div id="finDetailOverlay" role="dialog" aria-modal="true" aria-label="Detalle del pedido" onclick="if(event.target===this)finCloseDetail()">
-  <div id="finDetailCard"><div class="flex items-center justify-between gap-3"><h2 id="finDetailTitle" class="font-bold text-xl text-slate-900">Detalle del pedido</h2><button type="button" onclick="finCloseDetail()" class="border rounded-lg px-3 py-2">Cerrar ×</button></div><div id="finDetailFields"></div><div class="mt-4 flex justify-end"><button type="button" id="finDetailEdit" class="bg-indigo-700 text-white rounded-lg px-4 py-2" onclick="finDetailEditOrder()">Editar pedido</button></div></div>
+  <div id="finDetailCard"><div class="flex items-center justify-between gap-3"><h2 id="finDetailTitle" class="font-bold text-xl text-slate-900">Detalle del pedido</h2><button type="button" onclick="finCloseDetail()" class="border rounded-lg px-3 py-2">Cerrar ×</button></div><div id="finDetailFields"></div><div id="finDetailHistory" class="mt-5"></div><div class="mt-4 flex justify-end"><button type="button" id="finDetailEdit" class="bg-indigo-700 text-white rounded-lg px-4 py-2" onclick="finDetailEditOrder()">Editar pedido</button></div></div>
 </div>
 </body>
 </html>
