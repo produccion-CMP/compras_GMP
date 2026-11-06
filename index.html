@@ -2607,8 +2607,11 @@
               fComp,
               descripcion: descPrincipal || descItem || 'Sin descripción',
               nombreUsuarioAlta: nombreUsuarioAlta,
-              estadoFinnegans: estado
+              estadoFinnegans: estado,
+              empresa: empresa
             });
+          } else if (!groupedRows.get(id).empresa && empresa) {
+            groupedRows.get(id).empresa = empresa;
           }
         });
 
@@ -2673,6 +2676,17 @@
             newCount++;
           }
         });
+
+        if (rawDetectedReport1) {
+          const sinAutImport = {};
+          groupedRows.forEach((grp, id) => {
+            if (!rep1Map.has(id)) {
+              const e = grp.empresa || 'Sin empresa';
+              sinAutImport[e] = (sinAutImport[e] || 0) + 1;
+            }
+          });
+          formatSinAutorizacionDiagnostic(sinAutImport).forEach(line => diagnostics.push(line.replace(/^(<span[^>]*>)• /, '$1')));
+        }
       }
 
       window.masterPCData = Array.from(existingMap.values());
@@ -2696,6 +2710,15 @@
 
       showToast(`¡Consolidación exitosa! +${newCount} nuevas órdenes.`);
       sendFullSyncToSheets();
+    }
+
+    function formatSinAutorizacionDiagnostic(map) {
+      if (!map || typeof map !== 'object') return [];
+      const entries = Object.entries(map).filter(([, c]) => Number(c) > 0).sort((a, b) => b[1] - a[1]);
+      if (!entries.length) return [];
+      const total = entries.reduce((acc, [, c]) => acc + Number(c), 0);
+      const detalle = entries.map(([e, c]) => `${escapeHtml(e)}: ${c}`).join(' · ');
+      return [`<span class="text-rose-700 font-bold">• ${total} PC sin registro en master autorizaciones (Responsable vacío):</span> ${detalle}`];
     }
 
     async function reprocessImportedMasters() {
@@ -2732,7 +2755,9 @@
             `• Total Programacion PC: ${result.total ?? (result.orders || []).length}`,
             `• Nuevas: ${result.nuevos ?? 0}`,
             `• Actualizadas: ${result.actualizados ?? 0}`,
-            `• Estado refrescado desde Finnegans cuando no estaba tratado manualmente`
+            `• Solo en master autorizaciones: ${result.soloAutorizaciones ?? 0}`,
+            `• Estado manual preservado en PC existentes; Actividad de Finnegans solo define el estado inicial de PC nuevas`,
+            ...formatSinAutorizacionDiagnostic(result.sinAutorizacion)
           ].map(x => `<li>${x}</li>`).join('');
           box.classList.remove('hidden');
         }
@@ -2770,9 +2795,23 @@
         const result = await gasPost(payload, true);
         if (result.status !== 'SUCCESS') throw new Error(result.message || 'Error de sincronización');
         setSheetsConnectionStatus(true, "Google Sheets: Conectado");
-        showToast(`✓ Datos sincronizados en Google Sheets.`);
+        if (Array.isArray(result.orders)) {
+          window.masterPCData = result.orders;
+          window.masterPCData.forEach(o => cacheOrderComputedFields(o));
+          populateSemanaFilter();
+          renderTable();
+          renderCompletedTable();
+          renderMetricsDashboard();
+          saveStateToLocalStorage();
+        }
+        const rebuild = result.rebuildProgramacion || {};
+        const diagList = document.getElementById('diagnosticsList');
+        const sinAutLines = formatSinAutorizacionDiagnostic(rebuild.sinAutorizacion);
+        if (diagList && sinAutLines.length) diagList.innerHTML += sinAutLines.map(x => `<li>${x}</li>`).join('');
+        showToast(rebuild.message ? `✓ ${rebuild.message}` : `✓ Datos sincronizados en Google Sheets.`);
       } catch (err) {
         console.warn("Fallo de guardado en Google Sheets:", err);
+        showToast('Error al guardar en Google Sheets: ' + (err.message || err));
       } finally {
         if (btn) {
           btn.disabled = false;
